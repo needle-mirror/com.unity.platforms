@@ -82,6 +82,12 @@ namespace Unity.Platforms
         public abstract string GetExecutableExtension();
         public abstract string GetBeeTargetName();
         public abstract bool Run(FileInfo buildTarget);
+
+        // this method requires default implementation to resolve problem with Samples project
+        public virtual ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public sealed class EditorBuildTarget : BuildTarget
@@ -109,6 +115,11 @@ namespace Unity.Platforms
         }
 
         public override string GetBeeTargetName()
+        {
+            throw new NotSupportedException();
+        }
+
+        public override ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
         {
             throw new NotSupportedException();
         }

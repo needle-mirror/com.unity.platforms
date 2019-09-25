@@ -214,6 +214,7 @@ namespace Unity.Platforms
                 if (idleAsError)
                     Debug.LogError("Idle process detected. See console for more details.");
                 process.Kill();
+                process.WaitForExit();
                 yield return ProcessStatus.Killed;
                 break;
             }
