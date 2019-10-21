@@ -8,7 +8,8 @@ namespace Unity.Platforms
 {
     public abstract class BuildTarget
     {
-        static readonly List<BuildTarget> m_AvailableBuildTargets;
+        static readonly List<BuildTarget> m_AvailableBuildTargets = new List<BuildTarget>();
+        static readonly Dictionary<string, BuildTarget> m_UnknownBuildTargets = new Dictionary<string, BuildTarget>();
 
         static BuildTarget()
         {
@@ -35,7 +36,6 @@ namespace Unity.Platforms
                 }
             }
 
-            m_AvailableBuildTargets = new List<BuildTarget>();
             foreach (var buildTargetType in buildTargetTypes)
             {
                 try
@@ -45,19 +45,21 @@ namespace Unity.Platforms
                         continue;
                     }
 
-                    var buildTarget = (BuildTarget)Activator.CreateInstance(buildTargetType);
-                    if (!buildTarget.HideInBuildTargetPopup)
+                    if (buildTargetType == typeof(UnknownBuildTarget))
                     {
-                        m_AvailableBuildTargets.Add(buildTarget);
-                        if (buildTarget.IsDefaultBuildTarget)
+                        continue;
+                    }
+
+                    var buildTarget = (BuildTarget)Activator.CreateInstance(buildTargetType);
+                    m_AvailableBuildTargets.Add(buildTarget);
+                    if (buildTarget.IsDefaultBuildTarget)
+                    {
+                        if (DefaultBuildTarget != null)
                         {
-                            if (DefaultBuildTarget != null)
-                            {
-                                UnityEngine.Debug.LogError($"Cannot set {nameof(DefaultBuildTarget)} to '{buildTarget.GetType().FullName}' because it is already set to '{DefaultBuildTarget.GetType().FullName}'.");
-                                continue;
-                            }
-                            DefaultBuildTarget = buildTarget;
+                            UnityEngine.Debug.LogError($"Cannot set {nameof(DefaultBuildTarget)} to '{buildTarget.GetType().FullName}' because it is already set to '{DefaultBuildTarget.GetType().FullName}'.");
+                            continue;
                         }
+                        DefaultBuildTarget = buildTarget;
                     }
                 }
                 catch (Exception e)
@@ -65,23 +67,44 @@ namespace Unity.Platforms
                     UnityEngine.Debug.LogError($"Error instantiating '{buildTargetType.FullName}': " + e.Message);
                 }
             }
+
+            m_AvailableBuildTargets = m_AvailableBuildTargets.OrderBy(target => target.GetDisplayName()).ToList();
         }
 
-        public static IReadOnlyList<BuildTarget> AvailableBuildTargets => m_AvailableBuildTargets;
+        public static IReadOnlyList<BuildTarget> AvailableBuildTargets => m_AvailableBuildTargets.Concat(m_UnknownBuildTargets.Values).ToList();
         public static BuildTarget DefaultBuildTarget { get; }
+
         public virtual bool HideInBuildTargetPopup => false;
         protected virtual bool IsDefaultBuildTarget => false;
-
-        public override string ToString()
-        {
-            return GetDisplayName();
-        }
-
         public abstract string GetDisplayName();
         public abstract string GetUnityPlatformName();
         public abstract string GetExecutableExtension();
         public abstract string GetBeeTargetName();
         public abstract bool Run(FileInfo buildTarget);
+
+        public override string ToString() => GetDisplayName();
+        public static BuildTarget GetBuildTargetFromUnityPlatformName(string name) => GetBuildTargetFromName(name, (target) => target.GetUnityPlatformName());
+        public static BuildTarget GetBuildTargetFromBeeTargetName(string name) => GetBuildTargetFromName(name, (target) => target.GetBeeTargetName());
+
+        static BuildTarget GetBuildTargetFromName(string name, Func<BuildTarget, string> getBuildTargetName)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                return null;
+            }
+
+            var buildTarget = AvailableBuildTargets.FirstOrDefault(target => getBuildTargetName(target) == name);
+            if (buildTarget == null)
+            {
+                if (!m_UnknownBuildTargets.TryGetValue(name, out buildTarget))
+                {
+                    buildTarget = new UnknownBuildTarget(name);
+                    m_UnknownBuildTargets.Add(name, buildTarget);
+                }
+            }
+
+            return buildTarget;
+        }
 
         // this method requires default implementation to resolve problem with Samples project
         public virtual ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
@@ -90,39 +113,34 @@ namespace Unity.Platforms
         }
     }
 
-    public sealed class EditorBuildTarget : BuildTarget
+    internal sealed class UnknownBuildTarget : BuildTarget
+    {
+        readonly string m_Name;
+
+        public UnknownBuildTarget()
+        {
+        }
+
+        public UnknownBuildTarget(string name)
+        {
+            m_Name = name;
+        }
+
+        public override string GetDisplayName() => $"Unknown ({m_Name})";
+        public override string GetUnityPlatformName() => m_Name;
+        public override string GetExecutableExtension() => null;
+        public override string GetBeeTargetName() => m_Name;
+        public override bool Run(FileInfo buildTarget) => false;
+    }
+
+    internal sealed class EditorBuildTarget : BuildTarget
     {
         public override bool HideInBuildTargetPopup => true;
-
-        public override string GetDisplayName()
-        {
-            return "Editor";
-        }
-
-        public override string GetUnityPlatformName()
-        {
-            return UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString();
-        }
-
-        public override string GetExecutableExtension()
-        {
-            throw new NotSupportedException();
-        }
-
-        public override bool Run(FileInfo buildTarget)
-        {
-            throw new NotSupportedException();
-        }
-
-        public override string GetBeeTargetName()
-        {
-            throw new NotSupportedException();
-        }
-
-        public override ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
-        {
-            throw new NotSupportedException();
-        }
+        public override string GetDisplayName() => "Editor";
+        public override string GetUnityPlatformName() => UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString();
+        public override string GetExecutableExtension() => null;
+        public override string GetBeeTargetName() => null;
+        public override bool Run(FileInfo buildTarget) => false;
     }
 
     static class AssemblyExtensions
