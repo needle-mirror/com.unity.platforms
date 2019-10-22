@@ -68,23 +68,24 @@ namespace Unity.Platforms
                 }
             }
 
-            m_AvailableBuildTargets = m_AvailableBuildTargets.OrderBy(target => target.GetDisplayName()).ToList();
+            m_AvailableBuildTargets = m_AvailableBuildTargets.OrderBy(target => target.DisplayName).ToList();
         }
 
         public static IReadOnlyList<BuildTarget> AvailableBuildTargets => m_AvailableBuildTargets.Concat(m_UnknownBuildTargets.Values).ToList();
         public static BuildTarget DefaultBuildTarget { get; }
 
+        public abstract bool CanBuild { get; }
+        public abstract string DisplayName { get; }
+        public abstract string UnityPlatformName { get; }
+        public abstract string ExecutableExtension { get; }
+        public abstract string BeeTargetName { get; }
         public virtual bool HideInBuildTargetPopup => false;
         protected virtual bool IsDefaultBuildTarget => false;
-        public abstract string GetDisplayName();
-        public abstract string GetUnityPlatformName();
-        public abstract string GetExecutableExtension();
-        public abstract string GetBeeTargetName();
-        public abstract bool Run(FileInfo buildTarget);
 
-        public override string ToString() => GetDisplayName();
-        public static BuildTarget GetBuildTargetFromUnityPlatformName(string name) => GetBuildTargetFromName(name, (target) => target.GetUnityPlatformName());
-        public static BuildTarget GetBuildTargetFromBeeTargetName(string name) => GetBuildTargetFromName(name, (target) => target.GetBeeTargetName());
+        public abstract bool Run(FileInfo buildTarget);
+        public static BuildTarget GetBuildTargetFromUnityPlatformName(string name) => GetBuildTargetFromName(name, (target) => target.UnityPlatformName);
+        public static BuildTarget GetBuildTargetFromBeeTargetName(string name) => GetBuildTargetFromName(name, (target) => target.BeeTargetName);
+        public override string ToString() => DisplayName;
 
         static BuildTarget GetBuildTargetFromName(string name, Func<BuildTarget, string> getBuildTargetName)
         {
@@ -126,20 +127,22 @@ namespace Unity.Platforms
             m_Name = name;
         }
 
-        public override string GetDisplayName() => $"Unknown ({m_Name})";
-        public override string GetUnityPlatformName() => m_Name;
-        public override string GetExecutableExtension() => null;
-        public override string GetBeeTargetName() => m_Name;
+        public override bool CanBuild => false;
+        public override string DisplayName => $"Unknown ({m_Name})";
+        public override string UnityPlatformName => m_Name;
+        public override string ExecutableExtension => null;
+        public override string BeeTargetName => m_Name;
         public override bool Run(FileInfo buildTarget) => false;
     }
 
     internal sealed class EditorBuildTarget : BuildTarget
     {
+        public override bool CanBuild => false;
         public override bool HideInBuildTargetPopup => true;
-        public override string GetDisplayName() => "Editor";
-        public override string GetUnityPlatformName() => UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString();
-        public override string GetExecutableExtension() => null;
-        public override string GetBeeTargetName() => null;
+        public override string DisplayName => "Editor";
+        public override string UnityPlatformName => UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString();
+        public override string ExecutableExtension => null;
+        public override string BeeTargetName => null;
         public override bool Run(FileInfo buildTarget) => false;
     }
 

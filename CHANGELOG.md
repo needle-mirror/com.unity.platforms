@@ -4,6 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.6-preview] - 2019-10-23
+
+### Added
+* Re-introduce the concept of "buildable" build targets with the `CanBuild` property.
+
+### Changed
+* `GetDisplayName` method changed for `DisplayName` property.
+* `GetUnityPlatformName` method changed for `UnityPlatformName` property.
+* `GetExecutableExtension` method changed for `ExecutableExtension` property.
+* `GetBeeTargetName` method changed for `BeeTargetName` property.
+
 ## [0.1.5-preview] - 2019-10-22
 
 ### Added
