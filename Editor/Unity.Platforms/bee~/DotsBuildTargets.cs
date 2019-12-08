@@ -69,11 +69,16 @@ namespace DotsBuildTargets
         /*
          * disabled by default because it takes work to enable each platform for burst
          */
-        protected virtual bool CanUseBurst => false;
-        protected abstract string Identifier { get; }
-        protected abstract ToolChain ToolChain { get; }
-        protected virtual ScriptingBackend ScriptingBackend => ScriptingBackend.TinyIl2cpp;
+        public virtual bool CanUseBurst => false;
+
+        public abstract string Identifier { get; }
+        public abstract ToolChain ToolChain { get; }
+
+        public virtual ScriptingBackend ScriptingBackend { get; set; } = ScriptingBackend.TinyIl2cpp;
+
         protected virtual NativeProgramFormat GetExecutableFormatForConfig(DotsConfiguration config, bool enableManagedDebugger) => null;
+
+        public virtual NativeProgramFormat CustomizeExecutableForSettings(FriendlyJObject settings) => null;
 
     }
 }

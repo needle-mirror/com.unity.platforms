@@ -4,6 +4,21 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.7-preview.3] - 2019-12-09
+
+### Changed
+* Disabled burst for windows/dotnet/collections checks, because it was broken.
+
+## [0.1.7-preview.2] - 2019-11-12
+
+### Changed
+* Changed the way platforms customize builds for dots runtime, in a way that makes buildsettings usage clearer and faster, and more reliable.
+
+## [0.1.7-preview] - 2019-10-25
+
+### Added
+* Added `WriteBeeConfigFile` method to pass build target specifc configuration to Bee.
+
 ## [0.1.6-preview] - 2019-10-23
 
 ### Added
