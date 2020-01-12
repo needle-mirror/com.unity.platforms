@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
 
 namespace Unity.Platforms
 {
@@ -114,7 +113,7 @@ namespace Unity.Platforms
             throw new NotImplementedException();
         }
 
-        public virtual void WriteBeeConfigFile(string path) {}
+        public virtual void WriteBeeConfigFile(string path) { }
     }
 
     internal sealed class UnknownBuildTarget : BuildTarget
@@ -167,10 +166,5 @@ namespace Unity.Platforms
                 return exception.Types.Where(type => type != null);
             }
         }
-    }
-
-    public interface IDotsRuntimeBuildModifier
-    {
-        void Modify(JObject settingsJObject);
     }
 }

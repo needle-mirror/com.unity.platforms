@@ -4,6 +4,45 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-preview] - 2020-01-13
+
+The package `com.unity.build` has been merged in the `com.unity.platforms` package, and includes the following changes since the release of `com.unity.build@0.1.0-preview`:
+
+## Added
+- New `BuildStepRunBefore` and `BuildStepRunAfter` attributes which can be optionally added to a `BuildStep` to declare which other steps must be run before or after that step.
+- `BuildStep` attribute now support `Name`, `Description` and `Category` properties.
+- Added new `RunStep` attribute to configure run step types various properties.
+
+## Changed
+- Updated `com.unity.properties` to version `0.10.4-preview`.
+- Updated `com.unity.serialization` to version `0.6.4-preview`.
+- All classes that should not be derived from are now properly marked as `sealed`.
+- All UI related code has been moved into assembly `Unity.Platforms.Build.Editor`.
+- Added support for `[HideInInspector]` attribute for build components, build steps and run steps. Using that attribute will hide the corresponding type from the inspector view.
+- Field `BuildStepAttribute.flags` is now obsolete. The attribute `[HideInInspector]` should now be used to hide build steps in inspector or searcher menu.
+- Field `BuildStepAttribute.description` is now obsolete: it has been renamed to `BuildStepAttribute.Description`.
+- Field `BuildStepAttribute.category` is now obsolete: it has been renamed to `BuildStepAttribute.Category`.
+- Interface `IBuildSettingsComponent` is now obsolete: it has been renamed to `IBuildComponent`.
+- Class `BuildSettings` is now obsolete: it has been renamed to `BuildConfiguration`.
+- Asset extension `.buildsettings` is now obsolete: it has been renamed to `.buildconfiguration`.
+- Because all build steps must derive from `BuildStep`, all methods and properties on `IBuildStep` are no longer necessary and have been removed.
+- Property `BuildStep.Description` is no longer abstract, and can now be set from attribute `BuildStepAttribute(Description = "...")`.
+- Enum `BuildConfiguration` is now obsolete: it has been renamed to `BuildType`.
+- Interface `IRunStep` is now obsolete: run steps must derive from `RunStep`.
+- Nested `BuildPipeline` build steps are now executed as a flat list from the main `BuildPipeline`, rather than calling `IBuildStep.RunBuildStep` recursively on them.
+- Build step cleanup pass will only be executed if the default implementation is overridden, greatly reducing irrelevant logging in `BuildPipelineResult`.
+- Class `ComponentContainer` should not be instantiated directly and thus has been properly marked as `abstract`.
+- Class `ComponentContainer` is now obsolete: it has been renamed to `HierarchicalComponentContainer`.
+
+## Fixed
+- Empty dependencies in inspector are now properly supported again.
+- Dependencies label in inspector will now as "Dependencies" again.
+
+## [0.1.8-preview] - 2019-12-11
+
+### Added
+* Added Unity.Build.Common files, moved them from com.unity.entities.
+
 ## [0.1.7-preview.3] - 2019-12-09
 
 ### Changed
