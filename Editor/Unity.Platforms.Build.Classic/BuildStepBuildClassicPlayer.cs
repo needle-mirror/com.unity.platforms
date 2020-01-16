@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Unity.Platforms.Build.Common;
+using Unity.Platforms.Build.Internals;
 using Unity.Properties;
 using UnityEditor;
 
@@ -53,7 +54,7 @@ namespace Unity.Platforms.Build.Classic
             return value == 1;
         }
 
-        public static bool Prepare(BuildContext context, BuildStep step, TemporaryFileTracker tracker, out BuildStepResult failure, out BuildPlayerOptions buildPlayerOptions)
+        public static bool Prepare(BuildContext context, BuildStep step, bool liveLink, TemporaryFileTracker tracker, out BuildStepResult failure, out BuildPlayerOptions buildPlayerOptions)
         {
             buildPlayerOptions = default;
             var profile = step.GetRequiredComponent<ClassicBuildProfile>(context);
@@ -117,6 +118,15 @@ namespace Unity.Platforms.Build.Classic
                 buildPlayerOptions.options |= BuildOptions.AutoRunPlayer;
             }
 
+            if (liveLink)
+            {
+                File.WriteAllText(tracker.TrackFile(k_BootstrapFilePath), BuildContextInternals.GetBuildConfigurationGUID(context));
+            }
+            else
+            {
+                // Make sure we didn't leak a bootstrap file from a previous crashed build
+                tracker.EnsureFileDoesntExist(k_BootstrapFilePath);
+            }
 
             failure = default;
             return true;
@@ -125,7 +135,7 @@ namespace Unity.Platforms.Build.Classic
         public override BuildStepResult RunBuildStep(BuildContext context)
         {
             m_TemporaryFileTracker = new TemporaryFileTracker();
-            if (!Prepare(context, this, m_TemporaryFileTracker, out var failure, out var options))
+            if (!Prepare(context, this, false, m_TemporaryFileTracker, out var failure, out var options))
                 return failure;
             else
                 m_TemporaryFileTracker.EnsureFileDoesntExist(k_BootstrapFilePath);

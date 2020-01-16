@@ -27,7 +27,7 @@ namespace Unity.Platforms.Build.Classic
         public override BuildStepResult RunBuildStep(BuildContext context)
         {
             m_TemporaryFileTracker = new TemporaryFileTracker();
-            if (!BuildStepBuildClassicPlayer.Prepare(context, this, m_TemporaryFileTracker, out var failure, out var buildPlayerOptions))
+            if (!BuildStepBuildClassicPlayer.Prepare(context, this, true, m_TemporaryFileTracker, out var failure, out var buildPlayerOptions))
             {
                 return failure;
             }

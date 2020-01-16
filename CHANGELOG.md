@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.0-preview.2] - 2020-01-17
+
+## Fixed
+- Fix `BuildStepBuildClassicLiveLink` build step to re-generate Live Link player required metadata file.
+
+## [0.2.0-preview.1] - 2020-01-15
+
+### Added
+* Platform specific event processing support (new Unity.Platforms.Common assembly).
+
 ## [0.2.0-preview] - 2020-01-13
 
 The package `com.unity.build` has been merged in the `com.unity.platforms` package, and includes the following changes since the release of `com.unity.build@0.1.0-preview`:
