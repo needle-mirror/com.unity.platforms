@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
+using Unity.Build;
 
 namespace Unity.Platforms
 {
@@ -169,7 +170,7 @@ namespace Unity.Platforms
         }
     }
 
-    public interface IDotsRuntimeBuildModifier
+    public interface IDotsRuntimeBuildModifier : IBuildSettingsComponent
     {
         void Modify(JObject settingsJObject);
     }
