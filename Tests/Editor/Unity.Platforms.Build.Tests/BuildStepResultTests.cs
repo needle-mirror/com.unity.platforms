@@ -1,5 +1,8 @@
 using NUnit.Framework;
 using System.Linq;
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Platforms.Build.Tests
 {
@@ -43,6 +46,20 @@ namespace Unity.Platforms.Build.Tests
             });
             Assert.That(result.Succeeded, Is.False);
             Assert.That(result.BuildStepsResults.Select(r => (bool)r), Is.EqualTo(new[] { true, false, false, true }));
+        }
+
+        [Test]
+        public void LogResult_SupportFormattingCharacters()
+        {
+            var config = BuildConfiguration.CreateInstance();
+            var step = new TestRunStep();
+
+            var resultFailure = RunStepResult.Failure(config, step, @"{}{{}}{0}{s}%s%%\s±@£¢¤¬¦²³¼½¾");
+            Assert.DoesNotThrow(() =>
+            {
+                LogAssert.Expect(LogType.Error, new Regex(@"Run.* failed\.\n.+"));
+                resultFailure.LogResult();
+            });
         }
     }
 }

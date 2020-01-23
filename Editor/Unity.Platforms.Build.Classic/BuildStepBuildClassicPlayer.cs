@@ -1,9 +1,8 @@
 ﻿using System;
 using System.IO;
-using Unity.Platforms.Build.Common;
-using Unity.Platforms.Build.Internals;
-using Unity.Properties;
 using UnityEditor;
+using Unity.Properties;
+using Unity.Platforms.Build.Common;
 
 namespace Unity.Platforms.Build.Classic
 {
@@ -11,10 +10,6 @@ namespace Unity.Platforms.Build.Classic
     [FormerlySerializedAs("Unity.Build.Common.BuildStepBuildClassicPlayer, Unity.Build.Common")]
     sealed class BuildStepBuildClassicPlayer : BuildStep
     {
-        const string k_BootstrapFilePath = "Assets/StreamingAssets/livelink-bootstrap.txt";
-
-        TemporaryFileTracker m_TemporaryFileTracker;
-
         public override Type[] RequiredComponents => new[]
         {
             typeof(ClassicBuildProfile),
@@ -28,17 +23,9 @@ namespace Unity.Platforms.Build.Classic
             typeof(SourceBuildConfiguration)
         };
 
-        /// <summary>
-        /// Returns true if we need to use BuildOptions.AutoRunPlayer. 
-        /// For ex., when platform doesn't have RunStep implemented yet.
-        /// This function should be removed when we'll have run steps implemented for all platforms
-        /// </summary>
-        /// <param name="context"></param>
-        /// <returns></returns>
-        private static bool UseAutoRunPlayer(BuildContext context)
+        private bool UseAutoRunPlayer(BuildContext context)
         {
-            var settings = Unity.Platforms.Build.Internals.BuildContextInternals.GetBuildConfiguration(context);
-            var pipeline = settings.GetComponent<IBuildPipelineComponent>().Pipeline;
+            var pipeline = GetRequiredComponent<ClassicBuildProfile>(context).Pipeline;
             var runStep = pipeline.RunStep;
 
             // RunStep is provided no need to use AutoRunPlayer
@@ -54,44 +41,31 @@ namespace Unity.Platforms.Build.Classic
             return value == 1;
         }
 
-        public static bool Prepare(BuildContext context, BuildStep step, bool liveLink, TemporaryFileTracker tracker, out BuildStepResult failure, out BuildPlayerOptions buildPlayerOptions)
+        public override BuildStepResult RunBuildStep(BuildContext context)
         {
-            buildPlayerOptions = default;
-            var profile = step.GetRequiredComponent<ClassicBuildProfile>(context);
+            BuildPlayerOptions buildPlayerOptions = default;
+            var generalSettings = GetRequiredComponent<GeneralSettings>(context);
+            var profile = GetRequiredComponent<ClassicBuildProfile>(context);
             if (profile.Target <= 0)
-            {
-                failure = BuildStepResult.Failure(step, $"Invalid build target '{profile.Target.ToString()}'.");
-                return false;
-            }
+                return BuildStepResult.Failure(this, $"Invalid build target '{profile.Target.ToString()}'.");
 
             if (profile.Target != EditorUserBuildSettings.activeBuildTarget)
-            {
-                failure = BuildStepResult.Failure(step, $"{nameof(EditorUserBuildSettings.activeBuildTarget)} must be switched before {nameof(BuildStepBuildClassicPlayer)} step.");
-                return false;
-            }
+                return BuildStepResult.Failure(this, $"{nameof(EditorUserBuildSettings.activeBuildTarget)} must be switched before {nameof(BuildStepBuildClassicPlayer)} step.");
+            var sceneList = GetRequiredComponent<SceneList>(context);
 
-            var scenesList = step.GetRequiredComponent<SceneList>(context).GetScenePathsForBuild();
-            if (scenesList.Length == 0)
-            {
-                failure = BuildStepResult.Failure(step, "There are no scenes to build.");
-                return false;
-            }
+            var scenePaths = sceneList.GetScenePathsForBuild();
+            if (scenePaths.Length == 0)
+                return BuildStepResult.Failure(this, "There are no scenes to build.");
 
-            var outputPath = step.GetOutputBuildDirectory(context);
+            var outputPath = this.GetOutputBuildDirectory(context);
             if (!Directory.Exists(outputPath))
-            {
                 Directory.CreateDirectory(outputPath);
-            }
-
-            var productName = step.GetRequiredComponent<GeneralSettings>(context).ProductName;
-            var extension = profile.GetExecutableExtension();
-            var locationPathName = Path.Combine(outputPath, productName + extension);
 
             buildPlayerOptions = new BuildPlayerOptions()
             {
-                scenes = scenesList,
+                scenes = scenePaths,
                 target = profile.Target,
-                locationPathName = locationPathName,
+                locationPathName = Path.Combine(outputPath, generalSettings.ProductName + profile.GetExecutableExtension()),
                 targetGroup = UnityEditor.BuildPipeline.GetBuildTargetGroup(profile.Target),
             };
 
@@ -106,48 +80,26 @@ namespace Unity.Platforms.Build.Classic
                     break;
             }
 
-            var sourceBuild = step.GetOptionalComponent<SourceBuildConfiguration>(context);
+            var sourceBuild = GetOptionalComponent<SourceBuildConfiguration>(context);
             if (sourceBuild.Enabled)
             {
                 buildPlayerOptions.options |= BuildOptions.InstallInBuildFolder;
             }
+
+            var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
+            var result = new BuildStepResult(this, report);
+            context.SetValue(report);
 
             if (UseAutoRunPlayer(context))
             {
                 UnityEngine.Debug.Log($"Using BuildOptions.AutoRunPlayer, since RunStep is not provided for {profile.Target}");
                 buildPlayerOptions.options |= BuildOptions.AutoRunPlayer;
             }
-
-            if (liveLink)
-            {
-                File.WriteAllText(tracker.TrackFile(k_BootstrapFilePath), BuildContextInternals.GetBuildConfigurationGUID(context));
-            }
-            else
-            {
-                // Make sure we didn't leak a bootstrap file from a previous crashed build
-                tracker.EnsureFileDoesntExist(k_BootstrapFilePath);
-            }
-
-            failure = default;
-            return true;
-        }
-
-        public override BuildStepResult RunBuildStep(BuildContext context)
-        {
-            m_TemporaryFileTracker = new TemporaryFileTracker();
-            if (!Prepare(context, this, false, m_TemporaryFileTracker, out var failure, out var options))
-                return failure;
-            else
-                m_TemporaryFileTracker.EnsureFileDoesntExist(k_BootstrapFilePath);
-
-            var report = UnityEditor.BuildPipeline.BuildPlayer(options);
-            context.SetValue(report);
-            return Success();
+            return result;
         }
 
         public override BuildStepResult CleanupBuildStep(BuildContext context)
         {
-            m_TemporaryFileTracker.Dispose();
             return Success();
         }
     }

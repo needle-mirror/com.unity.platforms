@@ -74,7 +74,11 @@ namespace Unity.Platforms.Build.Classic
             ExcludedAssemblies = new List<string>();
         }
 
-        internal string GetExecutableExtension()
+        /// <summary>
+        /// Gets the extension string for the target platform.
+        /// </summary>
+        /// <returns>The extension string.</returns>
+        public string GetExecutableExtension()
         {
 #pragma warning disable CS0618
             switch (m_Target)

@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System.Text.RegularExpressions;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Platforms.Build.Tests
@@ -88,7 +89,7 @@ namespace Unity.Platforms.Build.Tests
             });
             Assert.That(result.Succeeded, Is.True);
 
-            LogAssert.Expect(UnityEngine.LogType.Log, new Regex("Build succeeded after .*\\."));
+            LogAssert.Expect(LogType.Log, new Regex("Build succeeded after .*\\."));
             result.LogResult();
         }
 
@@ -110,8 +111,29 @@ namespace Unity.Platforms.Build.Tests
             });
             Assert.That(result.Succeeded, Is.False);
 
-            LogAssert.Expect(UnityEngine.LogType.Error, new Regex("Build failed in .* after .*\\..*"));
+            LogAssert.Expect(LogType.Error, new Regex("Build failed in .* after .*\\..*"));
             result.LogResult();
+        }
+
+        [Test]
+        public void LogResult_SupportFormattingCharacters()
+        {
+            var pipeline = BuildPipeline.CreateInstance();
+            var config = BuildConfiguration.CreateInstance();
+
+            var resultSuccess = BuildPipelineResult.Success(pipeline, config);
+            Assert.DoesNotThrow(() =>
+            {
+                LogAssert.Expect(LogType.Log, new Regex(@"Build succeeded after .+\."));
+                resultSuccess.LogResult();
+            });
+
+            var resultFailure = BuildPipelineResult.Failure(pipeline, config, @"{}{{}}{0}{s}%s%%\s±@£¢¤¬¦²³¼½¾");
+            Assert.DoesNotThrow(() =>
+            {
+                LogAssert.Expect(LogType.Error, new Regex(@"Build failed after .+\.\n.+"));
+                resultFailure.LogResult();
+            });
         }
     }
 }

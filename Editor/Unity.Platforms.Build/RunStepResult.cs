@@ -96,7 +96,7 @@ namespace Unity.Platforms.Build
             }
             else
             {
-                Debug.LogFormat(LogType.Error, LogOption.None, BuildConfiguration, ToString());
+                Debug.LogError(ToString(), BuildConfiguration);
             }
         }
 
