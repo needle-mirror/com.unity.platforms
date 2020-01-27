@@ -4,6 +4,11 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.1-preview.1] - 2020-01-28
+
+### Changed
+- Revert namespace `Unity.Platforms.Build*` change back to `Unity.Build*`.
+
 ## [0.2.1-preview] - 2020-01-24
 
 ### Changed
@@ -35,7 +40,7 @@ The package `com.unity.build` has been merged in the `com.unity.platforms` packa
 - Updated `com.unity.properties` to version `0.10.4-preview`.
 - Updated `com.unity.serialization` to version `0.6.4-preview`.
 - All classes that should not be derived from are now properly marked as `sealed`.
-- All UI related code has been moved into assembly `Unity.Platforms.Build.Editor`.
+- All UI related code has been moved into assembly `Unity.Build.Editor`.
 - Added support for `[HideInInspector]` attribute for build components, build steps and run steps. Using that attribute will hide the corresponding type from the inspector view.
 - Field `BuildStepAttribute.flags` is now obsolete. The attribute `[HideInInspector]` should now be used to hide build steps in inspector or searcher menu.
 - Field `BuildStepAttribute.description` is now obsolete: it has been renamed to `BuildStepAttribute.Description`.
