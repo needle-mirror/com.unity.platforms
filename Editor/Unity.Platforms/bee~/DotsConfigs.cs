@@ -41,19 +41,10 @@ public static class DotsConfigs
 
                     var dotsCfg = DotsConfigForSettings(settingsObject, out var codegen);
                     var enableUnityCollectionsChecks = dotsCfg != DotsConfiguration.Release;
-
-                    /* dotnet reorders struct layout when there are managed components in the job struct,
-                     * most notably DisposeSentinel. Mono does not. So disable burst on windows dotnet when
-                     * collections checks are enabled. 
-                     */
-                    var canUseBurst = target.CanUseBurst &&
-                                      !(target is DotsWindowsDotNetTarget &&
-                                        target.ScriptingBackend == ScriptingBackend.Dotnet &&
-                                        enableUnityCollectionsChecks);
-                    if (!canUseBurst && targetShouldUseBurst)
+                    if (!target.CanUseBurst && targetShouldUseBurst)
                     {
-                        Console.WriteLine(
-                            "Warning: UseBurst specified, but target does not support burst yet. Not using burst.");
+                        Console.WriteLine($"Warning: BuildConfiguration '{settingsFile.FileNameWithoutExtension}' " +
+                            $"specified 'UseBurst', but target ({target.Identifier}) does not support burst yet. Not using burst.");
                         targetShouldUseBurst = false;
                     }
 
