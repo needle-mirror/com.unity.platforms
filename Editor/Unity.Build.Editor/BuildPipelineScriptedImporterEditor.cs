@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Unity.Properties;
 using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
@@ -13,29 +14,38 @@ namespace Unity.Build.Editor
     [CustomEditor(typeof(BuildPipelineScriptedImporter))]
     sealed class BuildPipelineScriptedImporterEditor : ScriptedImporterEditor
     {
+        Label m_HeaderLabel;
         ReorderableList m_BuildStepsList;
-        bool m_IsModified;
         TextField m_RunStepTextInput;
-        Label m_CustomInspectorHeader;
 
         public override bool showImportedObject { get; } = false;
 
-        public override void OnEnable()
-        {
-            BuildPipeline.AssetChanged += OnBuildPipelineImported;
-            Refresh();
-            base.OnEnable();
-        }
+        protected override Type extraDataType => typeof(BuildPipeline);
 
-        void OnBuildPipelineImported(BuildPipeline pipeline)
+        protected override void InitializeExtraDataInstance(UnityEngine.Object extraData, int targetIndex)
         {
-            Refresh();
-        }
+            var target = targets[targetIndex];
+            if (target == null || !target)
+            {
+                return;
+            }
 
-        public override void OnDisable()
-        {
-            BuildPipeline.AssetChanged -= OnBuildPipelineImported;
-            base.OnDisable();
+            var assetImporter = target as AssetImporter;
+            if (assetImporter == null || !assetImporter)
+            {
+                return;
+            }
+
+            var pipeline = extraData as BuildPipeline;
+            if (pipeline == null || !pipeline)
+            {
+                return;
+            }
+
+            if (BuildPipeline.DeserializeFromPath(pipeline, assetImporter.assetPath))
+            {
+                pipeline.name = Path.GetFileNameWithoutExtension(assetImporter.assetPath);
+            }
         }
 
         protected override void OnHeaderGUI()
@@ -44,65 +54,91 @@ namespace Unity.Build.Editor
             //base.OnHeaderGUI();
         }
 
-        public override bool HasModified()
-        {
-            return m_IsModified;
-        }
-
         protected override void Apply()
         {
-            Save();
-            m_IsModified = false;
             base.Apply();
-            Restore();
+            for (int i = 0; i < targets.Length; ++i)
+            {
+                var target = targets[i];
+                if (target == null || !target)
+                {
+                    continue;
+                }
+
+                var assetImporter = target as AssetImporter;
+                if (assetImporter == null || !assetImporter)
+                {
+                    continue;
+                }
+
+                var pipeline = extraDataTargets[i] as BuildPipeline;
+                if (pipeline == null || !pipeline)
+                {
+                    continue;
+                }
+
+                pipeline.SerializeToPath(assetImporter.assetPath);
+            }
         }
 
         protected override void ResetValues()
         {
-            Restore();
-            m_IsModified = false;
             base.ResetValues();
+            for (int i = 0; i < targets.Length; ++i)
+            {
+                var target = targets[i];
+                if (target == null || !target)
+                {
+                    continue;
+                }
+
+                var assetImporter = target as AssetImporter;
+                if (assetImporter == null || !assetImporter)
+                {
+                    continue;
+                }
+
+                var pipeline = extraDataTargets[i] as BuildPipeline;
+                if (pipeline == null || !pipeline)
+                {
+                    continue;
+                }
+
+                BuildPipeline.DeserializeFromPath(pipeline, assetImporter.assetPath);
+            }
         }
 
-        void Save()
+        public override VisualElement CreateInspectorGUI()
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var root = Assets.LoadVisualTreeAsset("BuildPipelineCustomInspector").CloneTree();
+            root.AddStyleSheetAndVariant("BuildPipelineCustomInspector");
+            Refresh(root);
+            return root;
+        }
+
+        void Refresh(BindableElement root)
+        {
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return;
             }
 
-            pipeline.SerializeToPath(importer.assetPath);
+            RefreshHeader(root, pipeline);
+            RefreshBuildSteps(root, pipeline);
+            RefreshRunStep(root, pipeline);
         }
 
-        void Restore()
+        void RefreshHeader(BindableElement root, BuildPipeline pipeline)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
-            {
-                return;
-            }
-
-            BuildPipeline.DeserializeFromPath(pipeline, importer.assetPath);
-            SetRunStepValue(pipeline);
-            Refresh();
+            m_HeaderLabel = root.Q<Label>(className: "InspectorHeader__Label");
+            m_HeaderLabel.text = pipeline.name + " (Build Pipeline Asset)";
         }
 
-        void Refresh()
+        void RefreshBuildSteps(BindableElement root, BuildPipeline pipeline)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
-            {
-                return;
-            }
-
-            if (m_CustomInspectorHeader != null)
-                SetCustomInspectorHeader();
-
-            m_BuildStepsList = new ReorderableList(pipeline.BuildSteps, typeof(IBuildStep), true, true, true, true);
+            var elements = pipeline.BuildSteps ?? new List<IBuildStep>();
+            m_BuildStepsList = new ReorderableList(elements, typeof(IBuildStep), true, true, true, true);
             m_BuildStepsList.headerHeight = 3;
             m_BuildStepsList.onAddDropdownCallback = AddDropdownCallbackDelegate;
             m_BuildStepsList.drawElementCallback = ElementCallbackDelegate;
@@ -112,6 +148,16 @@ namespace Unity.Build.Editor
             m_BuildStepsList.drawFooterCallback = FooterCallbackDelegate;
             m_BuildStepsList.drawNoneElementCallback = DrawNoneElementCallback;
             m_BuildStepsList.elementHeightCallback = ElementHeightCallbackDelegate;
+
+            root.Q<VisualElement>("BuildSteps__IMGUIContainer").Add(new IMGUIContainer(m_BuildStepsList.DoLayoutList));
+            root.Q<VisualElement>("ApplyRevertButtons").Add(new IMGUIContainer(ApplyRevertGUI));
+        }
+
+        void RefreshRunStep(BindableElement root, BuildPipeline pipeline)
+        {
+            m_RunStepTextInput = root.Q<TextField>("RunStep__RunStepTypeName");
+            m_RunStepTextInput.value = pipeline.RunStep?.Name ?? string.Empty;
+            root.Q<Button>("RunStep__SelectButton").clickable.clickedWithEventInfo += OnRunStepSelectorClicked;
         }
 
         static string GetBuildStepDisplayName(Type type)
@@ -130,9 +176,8 @@ namespace Unity.Build.Editor
 
         bool AddStep(SearcherItem item)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return false;
             }
@@ -142,7 +187,6 @@ namespace Unity.Build.Editor
                 if (TypeConstruction.TryConstruct<IBuildStep>(typeItem.Type, out var step))
                 {
                     pipeline.BuildSteps.Add(step);
-                    m_IsModified = true;
                     return true;
                 }
             }
@@ -171,9 +215,8 @@ namespace Unity.Build.Editor
 
         void HandleDragDrop(Rect rect, int index)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return;
             }
@@ -196,7 +239,6 @@ namespace Unity.Build.Editor
                         foreach (IBuildStep step in DragAndDrop.objectReferences)
                         {
                             pipeline.BuildSteps.Insert(index, step);
-                            m_IsModified = true;
                         }
                     }
                     break;
@@ -211,9 +253,8 @@ namespace Unity.Build.Editor
 
         void FooterCallbackDelegate(Rect rect)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return;
             }
@@ -224,9 +265,8 @@ namespace Unity.Build.Editor
 
         void ElementCallbackDelegate(Rect rect, int index, bool isActive, bool isFocused)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return;
             }
@@ -256,9 +296,8 @@ namespace Unity.Build.Editor
 
         float ElementHeightCallbackDelegate(int index)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return m_BuildStepsList.elementHeight;
             }
@@ -269,40 +308,32 @@ namespace Unity.Build.Editor
 
         void ReorderCallbackDelegate(ReorderableList list)
         {
-            m_IsModified = true;
         }
 
         void HeaderCallbackDelegate(Rect rect)
         {
-            //GUI.Label(rect, new GUIContent("Build Steps"));
             HandleDragDrop(rect, 0);
         }
 
         void RemoveCallbackDelegate(ReorderableList list)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
+            {
+                return;
+            }
+
+            if (pipeline.BuildSteps == null)
+            {
+                return;
+            }
+
+            if (pipeline.BuildSteps.Count <= list.index)
             {
                 return;
             }
 
             pipeline.BuildSteps.RemoveAt(list.index);
-            m_IsModified = true;
-        }
-
-        public override VisualElement CreateInspectorGUI()
-        {
-            var root = Assets.LoadVisualTreeAsset("BuildPipelineCustomInspector").CloneTree();
-            root.AddStyleSheetAndVariant("BuildPipelineCustomInspector");
-            m_CustomInspectorHeader = root.Q<Label>(className: "InspectorHeader__Label");
-            root.Q<VisualElement>("BuildSteps__IMGUIContainer").Add(new IMGUIContainer(m_BuildStepsList.DoLayoutList));
-            root.Q<VisualElement>("ApplyRevertButtons").Add(new IMGUIContainer(ApplyRevertGUI));
-            root.Q<Button>("RunStep__SelectButton").clickable.clickedWithEventInfo += OnRunStepSelectorClicked;
-            m_RunStepTextInput = root.Q<TextField>("RunStep__RunStepTypeName");
-            SetRunStepValue();
-            SetCustomInspectorHeader();
-            return root;
         }
 
         void OnRunStepSelectorClicked(EventBase @event)
@@ -322,9 +353,8 @@ namespace Unity.Build.Editor
 
         bool UpdateRunStep(SearcherItem item)
         {
-            var pipeline = assetTarget as BuildPipeline;
-            var importer = target as BuildPipelineScriptedImporter;
-            if (null == pipeline || null == importer)
+            var pipeline = extraDataTarget as BuildPipeline;
+            if (pipeline == null || !pipeline)
             {
                 return false;
             }
@@ -334,21 +364,11 @@ namespace Unity.Build.Editor
                 if (TypeConstruction.TryConstruct<RunStep>(typeItem.Type, out var step))
                 {
                     pipeline.RunStep = step;
-                    SetRunStepValue(pipeline);
-                    m_IsModified = true;
+                    m_RunStepTextInput.value = step.Name ?? string.Empty;
                     return true;
                 }
             }
             return false;
         }
-
-        void SetRunStepValue(BuildPipeline pipeline = null)
-        {
-            var step = (pipeline ?? assetTarget as BuildPipeline)?.RunStep as RunStep;
-            m_RunStepTextInput.value = step?.Name ?? string.Empty;
-        }
-
-        void SetCustomInspectorHeader()
-            => m_CustomInspectorHeader.text = $"{(assetTarget as BuildPipeline)?.name} (Build Pipeline Asset)";
     }
 }

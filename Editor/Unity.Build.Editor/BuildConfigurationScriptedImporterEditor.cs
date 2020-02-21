@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Unity.Properties;
@@ -84,7 +85,7 @@ namespace Unity.Build.Editor
 
         const string k_CurrentActionKey = "BuildAction-CurrentAction";
 
-        bool m_IsModified, m_LastEditState;
+        bool m_LastEditState;
         BindableElement m_BuildConfigurationRoot;
         readonly DependenciesWrapper m_DependenciesWrapper = new DependenciesWrapper();
 
@@ -105,24 +106,32 @@ namespace Unity.Build.Editor
             set => EditorPrefs.SetInt(k_CurrentActionKey, value);
         }
 
-        public override void OnEnable()
-        {
-            BuildConfiguration.AssetChanged += OnBuildConfigurationImported;
-            base.OnEnable();
-        }
+        protected override Type extraDataType => typeof(BuildConfiguration);
 
-        void OnBuildConfigurationImported(BuildConfiguration obj)
+        protected override void InitializeExtraDataInstance(UnityEngine.Object extraData, int targetIndex)
         {
-            if (null != m_BuildConfigurationRoot)
+            var target = targets[targetIndex];
+            if (target == null || !target)
             {
-                Refresh(m_BuildConfigurationRoot);
+                return;
             }
-        }
 
-        public override void OnDisable()
-        {
-            BuildConfiguration.AssetChanged -= OnBuildConfigurationImported;
-            base.OnDisable();
+            var assetImporter = target as AssetImporter;
+            if (assetImporter == null || !assetImporter)
+            {
+                return;
+            }
+
+            var config = extraData as BuildConfiguration;
+            if (config == null || !config)
+            {
+                return;
+            }
+
+            if (BuildConfiguration.DeserializeFromPath(config, assetImporter.assetPath))
+            {
+                config.name = Path.GetFileNameWithoutExtension(assetImporter.assetPath);
+            }
         }
 
         protected override void OnHeaderGUI()
@@ -131,24 +140,58 @@ namespace Unity.Build.Editor
             //base.OnHeaderGUI();
         }
 
-        public override bool HasModified()
-        {
-            return m_IsModified;
-        }
-
         protected override void Apply()
         {
-            Save();
-            m_IsModified = false;
             base.Apply();
-            Revert();
+            for (int i = 0; i < targets.Length; ++i)
+            {
+                var target = targets[i];
+                if (target == null || !target)
+                {
+                    continue;
+                }
+
+                var assetImporter = target as AssetImporter;
+                if (assetImporter == null || !assetImporter)
+                {
+                    continue;
+                }
+
+                var config = extraDataTargets[i] as BuildConfiguration;
+                if (config == null || !config)
+                {
+                    continue;
+                }
+
+                config.SerializeToPath(assetImporter.assetPath);
+            }
         }
 
         protected override void ResetValues()
         {
-            Revert();
-            m_IsModified = false;
             base.ResetValues();
+            for (int i = 0; i < targets.Length; ++i)
+            {
+                var target = targets[i];
+                if (target == null || !target)
+                {
+                    continue;
+                }
+
+                var assetImporter = target as AssetImporter;
+                if (assetImporter == null || !assetImporter)
+                {
+                    continue;
+                }
+
+                var config = extraDataTargets[i] as BuildConfiguration;
+                if (config == null || !config)
+                {
+                    continue;
+                }
+
+                BuildConfiguration.DeserializeFromPath(config, assetImporter.assetPath);
+            }
         }
 
         public override VisualElement CreateInspectorGUI()
@@ -156,6 +199,7 @@ namespace Unity.Build.Editor
             var root = new VisualElement();
             m_BuildConfigurationRoot = new BindableElement();
             m_BuildConfigurationRoot.AddStyleSheetAndVariant(ClassNames.BaseClassName);
+
             Refresh(m_BuildConfigurationRoot);
 
             root.contentContainer.Add(m_BuildConfigurationRoot);
@@ -167,8 +211,8 @@ namespace Unity.Build.Editor
         {
             root.Clear();
 
-            var config = assetTarget as BuildConfiguration;
-            if (null == config)
+            var config = extraDataTarget as BuildConfiguration;
+            if (config == null)
             {
                 return;
             }
@@ -245,7 +289,7 @@ namespace Unity.Build.Editor
             // Refresh Asset Field
             var assetField = new ObjectField { objectType = typeof(BuildConfiguration) };
             assetField.Q<VisualElement>(className: "unity-object-field__selector").SetEnabled(false);
-            assetField.SetValueWithoutNotify(assetTarget);
+            assetField.SetValueWithoutNotify(config);
             headerRoot.Add(assetField);
 
             var assetUpdater = UIUpdaters.MakeBinding(config, assetField);
@@ -266,7 +310,6 @@ namespace Unity.Build.Editor
                 config.Dependencies.Clear();
                 config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies));
                 Refresh(root);
-                m_IsModified = true;
             };
             dependencyElement.SetEnabled(m_LastEditState);
             root.Add(dependencyElement);
@@ -286,9 +329,13 @@ namespace Unity.Build.Editor
             foreach (var dependency in dependencies)
             {
                 if (dependency == null || !dependency || dependency == config || dependency.HasDependency(config))
+                {
                     yield return null;
+                }
                 else
+                {
                     yield return dependency;
+                }
             }
         }
 
@@ -334,31 +381,6 @@ namespace Unity.Build.Editor
             addComponentButton.binding = addComponentButtonUpdater;
         }
 
-        void Revert()
-        {
-            var config = assetTarget as BuildConfiguration;
-            var importer = target as BuildConfigurationScriptedImporter;
-            if (null == config || null == importer)
-            {
-                return;
-            }
-
-            BuildConfiguration.DeserializeFromPath(config, importer.assetPath);
-            Refresh(m_BuildConfigurationRoot);
-        }
-
-        void Save()
-        {
-            var config = assetTarget as BuildConfiguration;
-            var importer = target as BuildConfigurationScriptedImporter;
-            if (null == config || null == importer)
-            {
-                return;
-            }
-
-            config.SerializeToPath(importer.assetPath);
-        }
-
         static bool IsShown(Type t) => t.GetCustomAttribute<HideInInspector>() == null;
 
         bool AddType(SearcherItem arg)
@@ -368,16 +390,15 @@ namespace Unity.Build.Editor
                 return false;
             }
 
-            var type = typeItem.Type;
-            var config = assetTarget as BuildConfiguration;
-            if (null == config)
+            var config = extraDataTarget as BuildConfiguration;
+            if (config == null)
             {
                 return false;
             }
 
+            var type = typeItem.Type;
             config.SetComponent(type, TypeConstruction.Construct<IBuildComponent>(type));
             Refresh(m_BuildConfigurationRoot);
-            m_IsModified = true;
             return true;
 
         }
@@ -387,12 +408,6 @@ namespace Unity.Build.Editor
             var componentType = component.GetType();
             var element = (VisualElement)Activator.CreateInstance(typeof(HierarchicalComponentContainerElement<,,>)
                 .MakeGenericType(typeof(BuildConfiguration), typeof(IBuildComponent), componentType), container, component);
-
-            if (element is IChangeHandler changeHandler)
-            {
-                changeHandler.OnChanged += () => { m_IsModified = true; };
-            }
-
             return element;
         }
     }

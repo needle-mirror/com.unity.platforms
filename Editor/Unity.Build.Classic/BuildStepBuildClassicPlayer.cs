@@ -86,15 +86,16 @@ namespace Unity.Build.Classic
                 buildPlayerOptions.options |= BuildOptions.InstallInBuildFolder;
             }
 
-            var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
-            var result = new BuildStepResult(this, report);
-            context.SetValue(report);
-
             if (UseAutoRunPlayer(context))
             {
                 UnityEngine.Debug.Log($"Using BuildOptions.AutoRunPlayer, since RunStep is not provided for {profile.Target}");
                 buildPlayerOptions.options |= BuildOptions.AutoRunPlayer;
             }
+
+            var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
+            var result = new BuildStepResult(this, report);
+            context.SetValue(report);
+    
             return result;
         }
 
