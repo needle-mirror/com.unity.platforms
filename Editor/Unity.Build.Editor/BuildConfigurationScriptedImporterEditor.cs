@@ -39,26 +39,22 @@ namespace Unity.Build.Editor
         static readonly BuildAction k_Build = new BuildAction
         {
             Name = "Build",
-            Action = bs =>
-            {
-                var result = bs.Build();
-                result.LogResult();
-            }
+            Action = config => config.Build().LogResult()
         };
 
         static readonly BuildAction k_BuildAndRun = new BuildAction
         {
             Name = "Build and Run",
-            Action = (bs) =>
+            Action = (config) =>
             {
-                var buildResult = bs.Build();
+                var buildResult = config.Build();
                 buildResult.LogResult();
                 if (buildResult.Failed)
                 {
                     return;
                 }
 
-                using (var runResult = bs.Run())
+                using (var runResult = config.Run())
                 {
                     runResult.LogResult();
                 }
@@ -68,9 +64,9 @@ namespace Unity.Build.Editor
         static readonly BuildAction k_Run = new BuildAction
         {
             Name = "Run",
-            Action = (bs) =>
+            Action = (config) =>
             {
-                using (var result = bs.Run())
+                using (var result = config.Run())
                 {
                     result.LogResult();
                 }
@@ -190,7 +186,10 @@ namespace Unity.Build.Editor
                     continue;
                 }
 
-                BuildConfiguration.DeserializeFromPath(config, assetImporter.assetPath);
+                if (BuildConfiguration.DeserializeFromPath(config, assetImporter.assetPath))
+                {
+                    config.name = Path.GetFileNameWithoutExtension(assetImporter.assetPath);
+                }
             }
         }
 
@@ -263,7 +262,8 @@ namespace Unity.Build.Editor
 
             var dropdownActionButton = new Button { text = BuildActions[CurrentActionIndex].Name };
             dropdownActionButton.AddToClassList(ClassNames.BuildAction);
-            dropdownActionButton.clickable = new Clickable(() => CurrentBuildAction.Action(config));
+            dropdownActionButton.clickable = new Clickable(() => CurrentBuildAction.Action(assetTarget as BuildConfiguration));
+
             dropdownActionButton.SetEnabled(true);
             dropdownButton.Add(dropdownActionButton);
 
@@ -282,7 +282,7 @@ namespace Unity.Build.Editor
             dropdownActionPopup.RegisterValueChangedCallback(evt =>
             {
                 CurrentActionIndex = BuildActions.IndexOf(evt.newValue);
-                dropdownActionButton.clickable = new Clickable(() => CurrentBuildAction.Action(config));
+                dropdownActionButton.clickable = new Clickable(() => CurrentBuildAction.Action(assetTarget as BuildConfiguration));
             });
             dropdownButton.Add(dropdownActionPopup);
 

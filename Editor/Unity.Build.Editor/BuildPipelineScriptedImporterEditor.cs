@@ -104,7 +104,10 @@ namespace Unity.Build.Editor
                     continue;
                 }
 
-                BuildPipeline.DeserializeFromPath(pipeline, assetImporter.assetPath);
+                if (BuildPipeline.DeserializeFromPath(pipeline, assetImporter.assetPath))
+                {
+                    pipeline.name = Path.GetFileNameWithoutExtension(assetImporter.assetPath);
+                }
             }
         }
 

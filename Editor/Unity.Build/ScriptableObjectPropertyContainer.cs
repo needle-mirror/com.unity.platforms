@@ -25,11 +25,6 @@ namespace Unity.Build
         public static event Action<JsonVisitor> JsonVisitorRegistration;
 
         /// <summary>
-        /// Event invoked when the asset changed on disk.
-        /// </summary>
-        public static event Action<TContainer> AssetChanged;
-
-        /// <summary>
         /// Reset this asset in preparation for deserialization.
         /// </summary>
         protected virtual void Reset()
@@ -233,7 +228,15 @@ namespace Unity.Build
 
         public void OnBeforeSerialize()
         {
-            m_AssetContent = SerializeToJson();
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            if (!string.IsNullOrEmpty(assetPath))
+            {
+                m_AssetContent = File.ReadAllText(assetPath);
+            }
+            else
+            {
+                m_AssetContent = SerializeToJson();
+            }
         }
 
         public void OnAfterDeserialize()
@@ -245,14 +248,13 @@ namespace Unity.Build
         {
             var container = this as TContainer;
             var assetPath = AssetDatabase.GetAssetPath(this);
-            var assetContent = m_AssetContent;
-            if ((!string.IsNullOrEmpty(assetPath) && DeserializeFromPath(container, assetPath)) ||
-                (!string.IsNullOrEmpty(assetContent) && DeserializeFromJson(container, assetContent)))
+            if (!string.IsNullOrEmpty(assetPath))
             {
-                if (assetContent != m_AssetContent)
-                {
-                    AssetChanged?.Invoke(container);
-                }
+                DeserializeFromPath(container, assetPath);
+            }
+            else if (!string.IsNullOrEmpty(m_AssetContent))
+            {
+                DeserializeFromJson(container, m_AssetContent);
             }
         }
 
@@ -261,6 +263,10 @@ namespace Unity.Build
             try
             {
                 container.Reset();
+
+                container.m_AssetContent = new StreamReader(stream).ReadToEnd();
+                stream.Seek(0, SeekOrigin.Begin);
+
                 using (var result = JsonSerialization.DeserializeFromStream(stream, ref container))
                 {
                     if (result.Succeeded)

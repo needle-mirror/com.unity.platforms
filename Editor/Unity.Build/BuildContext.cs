@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Properties;
-using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Build
 {
@@ -106,15 +106,12 @@ namespace Unity.Build
             mutator?.Invoke(this);
 
             // Work-around for assets that can be garbage collected during a build
-            BuildConfiguration.GCPin();
-            BuildPipeline.GCPin();
+            BuildConfiguration.hideFlags |= HideFlags.HideAndDontSave;
+            BuildPipeline.hideFlags |= HideFlags.HideAndDontSave;
         }
 
         public void Dispose()
         {
-            // Work-around for assets that can be garbage collected during a build
-            BuildConfiguration.GCUnPin();
-            BuildPipeline.GCUnPin();
         }
     }
 }

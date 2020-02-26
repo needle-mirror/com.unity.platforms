@@ -20,7 +20,8 @@ namespace Unity.Build.Classic
         public override Type[] OptionalComponents => new[]
         {
             typeof(OutputBuildDirectory),
-            typeof(SourceBuildConfiguration)
+            typeof(SourceBuildConfiguration),
+            typeof(TestablePlayer)
         };
 
         private bool UseAutoRunPlayer(BuildContext context)
@@ -86,6 +87,9 @@ namespace Unity.Build.Classic
                 buildPlayerOptions.options |= BuildOptions.InstallInBuildFolder;
             }
 
+            if (HasOptionalComponent<TestablePlayer>(context))
+                buildPlayerOptions.options |= BuildOptions.IncludeTestAssemblies | BuildOptions.ConnectToHost;
+
             if (UseAutoRunPlayer(context))
             {
                 UnityEngine.Debug.Log($"Using BuildOptions.AutoRunPlayer, since RunStep is not provided for {profile.Target}");
@@ -95,7 +99,7 @@ namespace Unity.Build.Classic
             var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
             var result = new BuildStepResult(this, report);
             context.SetValue(report);
-    
+
             return result;
         }
 

@@ -4,7 +4,10 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.2.1] - 2020-02-21
+## [0.2.1] - 2020-02-25
+
+### Added
+- Support for building testable players (`TestablePlayer` component) as a step towards integration with the Unity Test Framework.
 
 ### Changed
 - Enable Burst for DotNet builds on Windows
@@ -13,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 - Fix Build & Run fallback when build pipeline doesn't have a proper RunStep, BuildOption.AutoRunPlayer was being set too late, thus it didn't have any effect, this is now fixed.
 - Build configuration/pipeline assets will now properly apply changes when clicking outside inspector focus.
+- Fixed asset cannot be null exception when trying to store build result.
 
 ## [0.2.1-preview] - 2020-01-24
 
