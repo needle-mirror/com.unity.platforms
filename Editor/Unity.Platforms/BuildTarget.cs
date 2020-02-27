@@ -79,6 +79,7 @@ namespace Unity.Platforms
         public abstract string UnityPlatformName { get; }
         public abstract string ExecutableExtension { get; }
         public abstract string BeeTargetName { get; }
+        public abstract bool UsesIL2CPP { get; }
         public virtual bool HideInBuildTargetPopup => false;
         protected virtual bool IsDefaultBuildTarget => false;
 
@@ -134,6 +135,7 @@ namespace Unity.Platforms
         public override string UnityPlatformName => m_Name;
         public override string ExecutableExtension => null;
         public override string BeeTargetName => m_Name;
+        public override bool UsesIL2CPP => false;
         public override bool Run(FileInfo buildTarget) => false;
     }
 
@@ -145,6 +147,7 @@ namespace Unity.Platforms
         public override string UnityPlatformName => UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString();
         public override string ExecutableExtension => null;
         public override string BeeTargetName => null;
+        public override bool UsesIL2CPP => false;
         public override bool Run(FileInfo buildTarget) => false;
     }
 

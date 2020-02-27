@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Support for building testable players (`TestablePlayer` component) as a step towards integration with the Unity Test Framework.
+- Add a UsesIL2CPP property to BuildTarget
 
 ### Changed
 - Enable Burst for DotNet builds on Windows
