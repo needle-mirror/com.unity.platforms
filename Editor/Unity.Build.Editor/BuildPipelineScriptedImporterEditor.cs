@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor.Searcher;

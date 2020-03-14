@@ -1,19 +1,19 @@
 using Unity.Properties;
+using Unity.Serialization;
 using UnityEditor;
-using PropertyAttribute = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build.Classic
 {
-    [FormerlySerializedAs("Unity.Build.Common.ClassicScriptingSettings, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.ClassicScriptingSettings, Unity.Build.Common")]
     public sealed class ClassicScriptingSettings : IBuildComponent
     {
-        [Property]
+        [CreateProperty]
         public ScriptingImplementation ScriptingBackend { get; set; } = ScriptingImplementation.Mono2x;
 
-        [Property]
+        [CreateProperty]
         public Il2CppCompilerConfiguration Il2CppCompilerConfiguration { get; set; } = Il2CppCompilerConfiguration.Release;
 
-        [Property]
+        [CreateProperty]
         public bool UseIncrementalGC { get; set; } = false;
 
         // Note: We haven't exposed ScriptingDefineSymbols, ApiCompatibilityLevel, AllowUnsafeCode. Because those affect scripting compilation pipeline, this raises few questions:

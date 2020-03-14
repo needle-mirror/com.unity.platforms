@@ -1,5 +1,5 @@
-using JetBrains.Annotations;
-using Unity.Properties.Editor;
+﻿using JetBrains.Annotations;
+using Unity.Properties.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -8,77 +8,74 @@ using UnityEngine.UIElements;
 
 namespace Unity.Build.Editor
 {
-    abstract class AssetGuidInspectorBase<T> : IInspector<T>, IPropertyDrawer<AssetGuidAttribute>
+    abstract class AssetGuidInspectorBase<T> : PropertyDrawer<T, AssetGuidAttribute>
     {
         protected ObjectField m_Field;
 
-        public VisualElement Build(InspectorContext<T> context)
+        public override VisualElement Build()
         {
-            m_Field = new ObjectField(context.PrettyName)
+            m_Field = new ObjectField(DisplayName)
             {
                 allowSceneObjects = false
             };
 
-            var asset = context.Attributes.GetAttribute<AssetGuidAttribute>();
+            var asset = GetAttribute<AssetGuidAttribute>();
             Assert.IsTrue(typeof(UnityEngine.Object).IsAssignableFrom(asset.Type));
             m_Field.objectType = asset.Type;
 
-            m_Field.RegisterValueChangedCallback(evt => OnChanged(context, evt));
+            m_Field.RegisterValueChangedCallback(OnChanged);
             return m_Field;
         }
 
-        public void Update(InspectorContext<T> context)
+        public override void Update()
         {
-            OnUpdate(context);
+            OnUpdate();
         }
 
-        protected abstract void OnChanged(InspectorContext<T> context, ChangeEvent<UnityEngine.Object> evt);
-        protected abstract void OnUpdate(InspectorContext<T> context);
+        protected abstract void OnChanged(ChangeEvent<UnityEngine.Object> evt);
+        protected abstract void OnUpdate();
     }
 
     [UsedImplicitly]
     sealed class GuidAssetInspector : AssetGuidInspectorBase<GUID>
     {
-        protected override void OnChanged(InspectorContext<GUID> context, ChangeEvent<Object> evt)
+        protected override void OnChanged(ChangeEvent<Object> evt)
         {
             if (null != evt.newValue && evt.newValue)
             {
-                context.Data = new GUID(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(evt.newValue)));
+                Target = new GUID(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(evt.newValue)));
             }
             else
             {
-                context.Data = default;
+                Target = default;
             }
         }
 
-        protected override void OnUpdate(InspectorContext<GUID> context)
+        protected override void OnUpdate()
         {
-            m_Field.SetValueWithoutNotify(AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GUIDToAssetPath(context.Data.ToString())));
+            m_Field.SetValueWithoutNotify(AssetDatabase.LoadMainAssetAtPath(AssetDatabase.GUIDToAssetPath(Target.ToString())));
         }
     }
 
     [UsedImplicitly]
     sealed class GlobalObjectIdAssetInspector : AssetGuidInspectorBase<GlobalObjectId>
     {
-        protected override void OnChanged(InspectorContext<GlobalObjectId> context, ChangeEvent<Object> evt)
+        protected override void OnChanged(ChangeEvent<Object> evt)
         {
             if (null != evt.newValue && evt.newValue)
             {
-                context.Data = GlobalObjectId.GetGlobalObjectIdSlow(evt.newValue);
+                Target = GlobalObjectId.GetGlobalObjectIdSlow(evt.newValue);
             }
             else
             {
-                context.Data = default;
+                Target = default;
             }
         }
 
-        protected override void OnUpdate(InspectorContext<GlobalObjectId> context)
+        protected override void OnUpdate()
         {
-            var id = context.Data;
             var defaultId = new GlobalObjectId();
-            m_Field.SetValueWithoutNotify(id.assetGUID == defaultId.assetGUID
-                ? null
-                : GlobalObjectId.GlobalObjectIdentifierToObjectSlow(context.Data));
+            m_Field.SetValueWithoutNotify(Target.assetGUID == defaultId.assetGUID ? null : GlobalObjectId.GlobalObjectIdentifierToObjectSlow(Target));
         }
     }
 }

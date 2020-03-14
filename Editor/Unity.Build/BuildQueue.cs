@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties;
+using Unity.Properties.Editor;
 using Unity.Serialization.Json;
 using UnityEditor;
 using UnityEditor.Events;
@@ -124,7 +124,7 @@ namespace Unity.Build
             else
                 b.buildFinished = false;
 
-            b.buildPipelineResult = buildPipelineResult != null ? JsonSerialization.Serialize(buildPipelineResult) : string.Empty;
+            b.buildPipelineResult = buildPipelineResult != null ? JsonSerialization.ToJson(buildPipelineResult, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildPipelineResult) }) : string.Empty;
 
             m_PrepareQueueBuilds.Add(b);
         }
@@ -186,7 +186,7 @@ namespace Unity.Build
 
                 if (t == UnityEditor.BuildTarget.NoTarget || t == EditorUserBuildSettings.activeBuildTarget)
                 {
-                    currentBuild.buildPipelineResult = JsonSerialization.Serialize(b.Build());
+                    currentBuild.buildPipelineResult = JsonSerialization.ToJson(b.Build(), new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildPipelineResult) });
                     currentBuild.buildFinished = true;
                 }
                 else
@@ -222,7 +222,7 @@ namespace Unity.Build
                     m_OnAllBuildsCompletedEvent.Invoke(m_QueueBuilds.Select(m =>
                     {
                         var buildPipelineResult = TypeConstruction.Construct<BuildPipelineResult>();
-                        JsonSerialization.DeserializeFromString<BuildPipelineResult>(m.buildPipelineResult, ref buildPipelineResult);
+                        JsonSerialization.TryFromJsonOverride(m.buildPipelineResult, ref buildPipelineResult, out _, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildPipelineResult) });
                         return buildPipelineResult;
                     }).ToArray());
                     Clear();

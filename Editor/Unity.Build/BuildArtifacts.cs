@@ -19,7 +19,7 @@ namespace Unity.Build
         class ArtifactData
         {
             public BuildPipelineResult Result;
-            public IBuildArtifact[] Artifacts;
+            public List<IBuildArtifact> Artifacts = new List<IBuildArtifact>();
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace Unity.Build
             }
 
             var artifactData = GetArtifactData(config);
-            if (artifactData == null || artifactData.Artifacts == null || artifactData.Artifacts.Length == 0)
+            if (artifactData == null || artifactData.Artifacts == null || artifactData.Artifacts.Count == 0)
             {
                 return null;
             }
@@ -110,14 +110,17 @@ namespace Unity.Build
                 try
                 {
                     artifactData = new ArtifactData();
-                    using (var result = JsonSerialization.DeserializeFromPath(assetPath, ref artifactData))
+                    JsonSerialization.TryFromJsonOverride(new FileInfo(assetPath), ref artifactData, out var result, new JsonSerializationParameters
                     {
-                        if (!result.Succeeded)
-                        {
-                            var errors = result.AllEvents.Select(e => e.ToString());
-                            LogDeserializeError(string.Join("\n", errors), artifactData, assetPath);
-                            artifactData = null;
-                        }
+                        DisableRootAdapters = true,
+                        SerializedType = typeof(ArtifactData)
+                    });
+
+                    if (!result.DidSucceed())
+                    {
+                        var errors = result.Events.Select(e => e.ToString());
+                        LogDeserializeError(string.Join("\n", errors), artifactData, assetPath);
+                        artifactData = null;
                     }
                 }
                 catch (Exception e)
@@ -163,17 +166,15 @@ namespace Unity.Build
             }
 
             artifactData.Result = result;
-            artifactData.Artifacts = artifacts;
+            artifactData.Artifacts = artifacts.ToList();
 
             var assetPath = GetArtifactsPath(name);
-            var assetDir = Path.GetDirectoryName(assetPath);
-            if (!Directory.Exists(assetDir))
+            var file = new FileInfo(assetPath);
+            file.WriteAllText(JsonSerialization.ToJson(artifactData, new JsonSerializationParameters
             {
-                Directory.CreateDirectory(assetDir);
-            }
-
-            var json = JsonSerialization.Serialize(artifactData, new BuildJsonVisitor());
-            File.WriteAllText(assetPath, json);
+                DisableRootAdapters = true,
+                SerializedType = typeof(ArtifactData)
+            }));
         }
     }
 }

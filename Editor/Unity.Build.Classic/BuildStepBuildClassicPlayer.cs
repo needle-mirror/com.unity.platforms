@@ -1,13 +1,13 @@
 ﻿using System;
 using System.IO;
-using UnityEditor;
-using Unity.Properties;
 using Unity.Build.Common;
+using Unity.Serialization;
+using UnityEditor;
 
 namespace Unity.Build.Classic
 {
     [BuildStep(Name = "Build Player", Description = "Building Player", Category = "Classic")]
-    [FormerlySerializedAs("Unity.Build.Common.BuildStepBuildClassicPlayer, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.BuildStepBuildClassicPlayer, Unity.Build.Common")]
     sealed class BuildStepBuildClassicPlayer : BuildStep
     {
         public override Type[] RequiredComponents => new[]
@@ -26,7 +26,11 @@ namespace Unity.Build.Classic
 
         private bool UseAutoRunPlayer(BuildContext context)
         {
+#if UNITY_2020_1_OR_NEWER
+            var pipeline = GetRequiredComponent<ClassicBuildProfile>(context).Pipeline.asset;
+#else
             var pipeline = GetRequiredComponent<ClassicBuildProfile>(context).Pipeline;
+#endif
             var runStep = pipeline.RunStep;
 
             // RunStep is provided no need to use AutoRunPlayer

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEngine;
-using PropertyAttribute = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build
 {
@@ -17,7 +17,7 @@ namespace Unity.Build
         /// <summary>
         /// Determine if the execution of the <see cref="Build.BuildPipeline"/> succeeded.
         /// </summary>
-        [Property] public bool Succeeded { get; internal set; }
+        [CreateProperty] public bool Succeeded { get; internal set; }
 
         /// <summary>
         /// Determine if the execution of the <see cref="Build.BuildPipeline"/> failed.
@@ -27,27 +27,27 @@ namespace Unity.Build
         /// <summary>
         /// The message resulting from the execution of this <see cref="Build.BuildPipeline"/>.
         /// </summary>
-        [Property] public string Message { get; internal set; }
+        [CreateProperty] public string Message { get; internal set; }
 
         /// <summary>
         /// The total duration of the <see cref="Build.BuildPipeline"/> execution.
         /// </summary>
-        [Property] public TimeSpan Duration { get; internal set; }
+        [CreateProperty] public TimeSpan Duration { get; internal set; }
 
         /// <summary>
         /// The <see cref="Build.BuildPipeline"/> that was run.
         /// </summary>
-        [Property] public BuildPipeline BuildPipeline { get; internal set; }
+        [CreateProperty] public BuildPipeline BuildPipeline { get; internal set; }
 
         /// <summary>
         /// The <see cref="Build.BuildConfiguration"/> used throughout the execution of the <see cref="Build.BuildPipeline"/>.
         /// </summary>
-        [Property] public BuildConfiguration BuildConfiguration { get; internal set; }
+        [CreateProperty] public BuildConfiguration BuildConfiguration { get; internal set; }
 
         /// <summary>
         /// A list of <see cref="BuildStepResult"/> collected during the <see cref="Build.BuildPipeline"/> execution for each <see cref="IBuildStep"/>.
         /// </summary>
-        [Property] public List<BuildStepResult> BuildStepsResults { get; internal set; } = new List<BuildStepResult>();
+        [CreateProperty] public List<BuildStepResult> BuildStepsResults { get; internal set; } = new List<BuildStepResult>();
 
         /// <summary>
         /// Get the <see cref="BuildStepResult"/> for the specified <see cref="IBuildStep"/>.
@@ -144,13 +144,7 @@ namespace Unity.Build
             }
         }
 
-        [InitializeOnLoadMethod]
-        static void Initialize()
-        {
-            TypeConstruction.SetExplicitConstructionMethod(() => { return new BuildPipelineResult(); });
-        }
-
-        internal BuildPipelineResult() { }
+        public BuildPipelineResult() { }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("BuildSettings has been renamed to BuildConfiguration. (RemovedAfter 2020-05-01) (UnityUpgradable) -> BuildConfiguration")]

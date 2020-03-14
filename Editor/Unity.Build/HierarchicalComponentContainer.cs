@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEngine;
-using Property = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build
 {
@@ -17,8 +17,12 @@ namespace Unity.Build
     public abstract class HierarchicalComponentContainer<TContainer, TComponent> : ScriptableObjectPropertyContainer<TContainer>
         where TContainer : HierarchicalComponentContainer<TContainer, TComponent>
     {
-        [Property] internal readonly List<TContainer> Dependencies = new List<TContainer>();
-        [Property] internal readonly List<TComponent> Components = new List<TComponent>();
+#if UNITY_2020_1_OR_NEWER
+        [CreateProperty] internal readonly List<LazyLoadReference<TContainer>> Dependencies = new List<LazyLoadReference<TContainer>>();
+#else
+        [CreateProperty] internal readonly List<TContainer> Dependencies = new List<TContainer>();
+#endif
+        [CreateProperty] internal readonly List<TComponent> Components = new List<TComponent>();
 
         /// <summary>
         /// Determine if a <see cref="Type"/> component is stored in this container or its dependencies.
@@ -105,7 +109,11 @@ namespace Unity.Build
 
             for (var i = 0; i < Dependencies.Count; ++i)
             {
+#if UNITY_2020_1_OR_NEWER
+                var dependency = Dependencies[i].asset;
+#else
                 var dependency = Dependencies[i];
+#endif
                 if (dependency == null || !dependency)
                 {
                     continue;
@@ -277,8 +285,13 @@ namespace Unity.Build
                 return false;
             }
 
-            foreach (var dep in Dependencies)
+            for (var i = 0; i < Dependencies.Count; ++i)
             {
+#if UNITY_2020_1_OR_NEWER
+                var dep = Dependencies[i].asset;
+#else
+                var dep = Dependencies[i];
+#endif
                 if (dep == null || !dep)
                 {
                     continue;
@@ -311,7 +324,11 @@ namespace Unity.Build
                 return false;
             }
 
+#if UNITY_2020_1_OR_NEWER
+            Dependencies.Add(new LazyLoadReference<TContainer> { instanceID = dependency.GetInstanceID() });
+#else
             Dependencies.Add(dependency);
+#endif
             return true;
         }
 
@@ -322,8 +339,13 @@ namespace Unity.Build
         public IEnumerable<TContainer> GetDependencies()
         {
             var dependencies = new HashSet<TContainer>();
-            foreach (var dependency in Dependencies)
+            for (var i = 0; i < Dependencies.Count; ++i)
             {
+#if UNITY_2020_1_OR_NEWER
+                var dependency = Dependencies[i].asset;
+#else
+                var dependency = Dependencies[i];
+#endif
                 if (dependency == null || !dependency || dependency == this)
                 {
                     continue;
@@ -348,7 +370,11 @@ namespace Unity.Build
             {
                 throw new ArgumentNullException(nameof(dependency));
             }
+#if UNITY_2020_1_OR_NEWER
+            return Dependencies.Remove(new LazyLoadReference<TContainer> { instanceID = dependency.GetInstanceID() });
+#else
             return Dependencies.Remove(dependency);
+#endif
         }
 
         /// <summary>
@@ -423,8 +449,13 @@ namespace Unity.Build
                 return true;
             }
 
-            foreach (var dependency in Dependencies)
+            for (var i = 0; i < Dependencies.Count; ++i)
             {
+#if UNITY_2020_1_OR_NEWER
+                var dependency = Dependencies[i].asset;
+#else
+                var dependency = Dependencies[i];
+#endif
                 if (null == dependency && !dependency)
                 {
                     continue;
@@ -449,18 +480,35 @@ namespace Unity.Build
             return true;
         }
 
-        T CopyComponent<T>(T value) where T : TComponent
+        TComponent CopyComponent(TComponent value)
         {
-            var result = TypeConstruction.Construct<T>(value.GetType());
-            PropertyContainer.Construct(ref result, ref value).Dispose();
-            PropertyContainer.Transfer(ref result, ref value).Dispose();
-            return result;
+            var visitor = new CopyVisitor<TComponent>(ref value);
+            PropertyContainer.Visit(ref value, visitor);
+            return visitor.Result;
         }
 
-        void CopyComponent(ref TComponent dst, ref TComponent src)
+        void CopyComponent(ref TComponent result, ref TComponent value)
         {
-            PropertyContainer.Construct(ref dst, ref src).Dispose();
-            PropertyContainer.Transfer(ref dst, ref src).Dispose();
+            var visitor = new CopyVisitor<TComponent>(ref value);
+            PropertyContainer.Visit(ref value, visitor);
+            result = visitor.Result;
+        }
+
+        class CopyVisitor<T> : PropertyVisitor
+        {
+            T m_DstContainer;
+
+            public T Result => m_DstContainer;
+
+            public CopyVisitor(ref T srcContainer)
+            {
+                m_DstContainer = TypeConstruction.Construct<T>(srcContainer.GetType());
+            }
+
+            protected override void VisitProperty<TSrcContainer, TSrcValue>(Property<TSrcContainer, TSrcValue> srcProperty, ref TSrcContainer srcContainer, ref TSrcValue srcValue)
+            {
+                PropertyContainer.TrySetValue(ref m_DstContainer, srcProperty.Name, srcValue);
+            }
         }
     }
 }

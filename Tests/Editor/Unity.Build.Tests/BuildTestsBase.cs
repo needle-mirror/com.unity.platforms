@@ -2,10 +2,9 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using Unity.Properties;
 using UnityEngine;
-using PropertyAttribute = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build.Tests
 {
@@ -14,7 +13,11 @@ namespace Unity.Build.Tests
         [HideInInspector]
         protected class TestPipelineComponent : IBuildPipelineComponent
         {
-            [Property] public BuildPipeline Pipeline { get; set; }
+#if UNITY_2020_1_OR_NEWER
+            [CreateProperty] public LazyLoadReference<BuildPipeline> Pipeline { get; set; }
+#else
+            [CreateProperty] public BuildPipeline Pipeline { get; set; }
+#endif
             public int SortingIndex => 0;
             public bool SetupEnvironment() => false;
         }
@@ -231,31 +234,23 @@ namespace Unity.Build.Tests
 
         protected class TestInvalidArtifact { }
 
-        string[] m_LastArtifactFiles;
-
         [SetUp]
         public void SetUp()
         {
             if (Directory.Exists(BuildArtifacts.BaseDirectory))
             {
-                m_LastArtifactFiles = Directory.GetFiles(BuildArtifacts.BaseDirectory, "*.json", SearchOption.TopDirectoryOnly);
+                Directory.Delete(BuildArtifacts.BaseDirectory, true);
             }
+            BuildArtifacts.Clear();
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (!Directory.Exists(BuildArtifacts.BaseDirectory))
+            if (Directory.Exists(BuildArtifacts.BaseDirectory))
             {
-                return;
+                Directory.Delete(BuildArtifacts.BaseDirectory, true);
             }
-
-            var currentArtifactFiles = Directory.GetFiles(BuildArtifacts.BaseDirectory, "*.json", SearchOption.TopDirectoryOnly);
-            foreach (var file in currentArtifactFiles.Except(m_LastArtifactFiles ?? Enumerable.Empty<string>()))
-            {
-                File.Delete(file);
-            }
-
             BuildArtifacts.Clear();
         }
 

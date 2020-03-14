@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEditor.Searcher;
 
@@ -178,7 +178,7 @@ namespace Unity.Build.Editor
                     continue;
                 }
 
-                if (!TypeConstruction.HasParameterLessConstructor(type))
+                if (!TypeConstruction.CanBeConstructed(type))
                 {
                     continue;
                 }

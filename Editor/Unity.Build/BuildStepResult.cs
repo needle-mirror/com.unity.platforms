@@ -1,5 +1,6 @@
 using System;
 using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 
 namespace Unity.Build
@@ -12,7 +13,7 @@ namespace Unity.Build
         /// <summary>
         /// Determine if the execution of the <see cref="Build.BuildStep"/> succeeded.
         /// </summary>
-        [Property] public bool Succeeded { get; internal set; }
+        [CreateProperty] public bool Succeeded { get; internal set; }
 
         /// <summary>
         /// Determine if the execution of the <see cref="Build.BuildStep"/> failed.
@@ -22,22 +23,22 @@ namespace Unity.Build
         /// <summary>
         /// The message resulting from the execution of this <see cref="Build.BuildStep"/>.
         /// </summary>
-        [Property] public string Message { get; internal set; }
+        [CreateProperty] public string Message { get; internal set; }
 
         /// <summary>
         /// Duration of the execution of this <see cref="Build.BuildStep"/>.
         /// </summary>
-        [Property] public TimeSpan Duration { get; internal set; }
+        [CreateProperty] public TimeSpan Duration { get; internal set; }
 
         /// <summary>
         /// The <see cref="Build.BuildStep"/> that was executed.
         /// </summary>
-        [Property] public BuildStep BuildStep { get; internal set; }
+        [CreateProperty] public BuildStep BuildStep { get; internal set; }
 
         /// <summary>
         /// Description of the <see cref="Build.BuildStep"/>.
         /// </summary>
-        [Property] public string Description => BuildStep.Description;
+        [CreateProperty] public string Description => BuildStep.Description;
 
         /// <summary>
         /// Implicit conversion to <see cref="bool"/>.
@@ -88,12 +89,6 @@ namespace Unity.Build
             BuildStep = step
         };
 
-        [InitializeOnLoadMethod]
-        static void Initialize()
-        {
-            TypeConstruction.SetExplicitConstructionMethod(() => { return new BuildStepResult(); });
-        }
-
-        internal BuildStepResult() { }
+        public BuildStepResult() { }
     }
 }

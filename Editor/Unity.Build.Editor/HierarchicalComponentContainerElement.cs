@@ -1,5 +1,6 @@
-using System;
-using Unity.Properties.Editor;
+﻿using System;
+using Unity.Properties;
+using Unity.Properties.UI;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -26,7 +27,6 @@ namespace Unity.Build.Editor
         }
 
         readonly HierarchicalComponentContainer<TContainer, TComponent> m_Container;
-        readonly Type m_Type;
         readonly PropertyElement m_Element;
         readonly Button m_RemoveButton;
         readonly Label m_MissingComponentLabel;
@@ -38,11 +38,10 @@ namespace Unity.Build.Editor
             this.AddStyleSheetAndVariant(ClassNames.BaseClassName);
 
             m_Container = container;
-            m_Type = component.GetType();
 
             AddToClassList(ClassNames.BaseClassName);
 
-            var componentContainerName = m_Type.Name;
+            var componentContainerName = component.GetType().Name;
             var foldout = new Foldout { text = ObjectNames.NicifyVariableName(componentContainerName) };
             foldout.AddToClassList(ClassNames.Component);
             foldout.AddToClassList(componentContainerName);
@@ -70,8 +69,8 @@ namespace Unity.Build.Editor
 
         void RemoveComponent()
         {
-            m_Container.RemoveComponent(m_Type);
-            if (m_Container.HasComponent(m_Type))
+            m_Container.RemoveComponent<T>();
+            if (m_Container.HasComponent<T>())
             {
                 m_Element?.SetTarget(m_Container.GetComponent<T>());
                 SetBorderColor();
@@ -86,18 +85,17 @@ namespace Unity.Build.Editor
 
         void SetBorderColor()
         {
-            if (m_Container.IsComponentInherited(m_Type))
+            if (m_Container.IsComponentInherited<T>())
             {
                 AddToClassList(ClassNames.Inherited);
                 m_RemoveButton.style.display = DisplayStyle.None;
-
             }
             else
             {
                 RemoveFromClassList(ClassNames.Inherited);
             }
 
-            if (m_Container.IsComponentOverridden(m_Type))
+            if (m_Container.IsComponentOverridden<T>())
             {
                 AddToClassList(ClassNames.Overridden);
                 m_RemoveButton.style.display = DisplayStyle.Flex;
@@ -108,7 +106,7 @@ namespace Unity.Build.Editor
             }
         }
 
-        void ElementOnOnChanged(PropertyElement element)
+        void ElementOnOnChanged(PropertyElement element, PropertyPath path)
         {
             m_Container.SetComponent(element.GetTarget<T>());
             element.SetTarget(m_Container.GetComponent<T>());
@@ -118,7 +116,6 @@ namespace Unity.Build.Editor
 
         public void PreUpdate()
         {
-
         }
 
         public void Update()

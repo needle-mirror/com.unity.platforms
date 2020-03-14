@@ -1,5 +1,5 @@
-using System.IO;
 using NUnit.Framework;
+using System.IO;
 using UnityEditor;
 
 namespace Unity.Build.Tests

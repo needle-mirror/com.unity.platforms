@@ -1,12 +1,12 @@
 ﻿using System;
 using Unity.Build.Common;
-using Unity.Properties;
+using Unity.Serialization;
 using UnityEditor;
 
 namespace Unity.Build.Classic
 {
     [BuildStep(Name = "Apply Player Settings", Description = "Applying Player Settings", Category = "Classic")]
-    [FormerlySerializedAs("Unity.Build.Common.BuildStepApplyPlayerSettings, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.BuildStepApplyPlayerSettings, Unity.Build.Common")]
     public sealed class BuildStepApplyPlayerSettings : BuildStep
     {
         public override Type[] RequiredComponents => new[]

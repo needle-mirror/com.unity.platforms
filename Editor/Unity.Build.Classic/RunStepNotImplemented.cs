@@ -1,6 +1,3 @@
-using System.Diagnostics;
-using System.IO;
-
 namespace Unity.Build.Classic
 {
     /// <summary>

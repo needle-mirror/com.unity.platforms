@@ -1,7 +1,8 @@
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -298,7 +299,7 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidJson_DoesNotThrow()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-            LogAssert.Expect(LogType.Error, $"Failed to deserialize memory container of type '{typeof(TestHierarchicalComponentContainer).FullName}':\nInput json was invalid. ExpectedType=[Value] ActualType=[EndObject] ActualChar=['}}'] at Line=[1] at Character=[47]");
+            LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
             TestHierarchicalComponentContainer.DeserializeFromJson(container, "{\"Dependencies\": [], \"Components\": [{\"$type\": }, {\"$type\": }]}");
         }
 
@@ -306,7 +307,7 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidComponents_OtherComponentsArePreserved()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-            LogAssert.Expect(LogType.Error, $"Failed to deserialize memory container of type '{typeof(TestHierarchicalComponentContainer).FullName}':\nSystem.InvalidOperationException: PropertyContainer.Construct failed to construct DstType=[{typeof(ITestComponent).FullName}]. Could not resolve type from TypeName=[Some.InvalidComponent.Name, Unknown.Assembly].");
+            LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetFullyQualifedAssemblyTypeName().DoubleQuotes()}}}, {{\"$type\": \"Some.InvalidComponent.Name, Unknown.Assembly\"}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
@@ -324,7 +325,11 @@ namespace Unity.Build.Tests
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [null, \"GlobalObjectId_V1-0-00000000000000000000000000000000-0-0\"], \"Components\": []}}");
-            Assert.That(container.Dependencies, Is.EqualTo(new ITestComponent[] { null, null }));
+#if UNITY_2020_1_OR_NEWER
+            Assert.That(container.Dependencies.Select(d => d.asset), Is.EqualTo(new TestHierarchicalComponentContainer[] { null, null }));
+#else
+            Assert.That(container.Dependencies, Is.EqualTo(new TestHierarchicalComponentContainer[] { null, null }));
+#endif
         }
 
         [Test]
@@ -417,7 +422,11 @@ namespace Unity.Build.Tests
 
             // We cannot directly add `null` using AddDependency, so we add it to the underlying list to simulate a
             // missing dependency (either added through UI or missing asset).
+#if UNITY_2020_1_OR_NEWER
+            container.Dependencies.Add(new LazyLoadReference<TestHierarchicalComponentContainer>());
+#else
             container.Dependencies.Add(null);
+#endif
             var missingDependency = TestHierarchicalComponentContainer.CreateInstance();
             missingDependency.SetComponent(new ComplexComponent());
             container.AddDependency(missingDependency);
@@ -626,7 +635,11 @@ namespace Unity.Build.Tests
             var containerB = TestHierarchicalComponentContainer.CreateInstance();
             Assert.That(containerA.AddDependency(containerB), Is.True);
             Assert.That(containerA.AddDependency(containerB), Is.False);
+#if UNITY_2020_1_OR_NEWER
+            Assert.That(containerA.Dependencies.Select(d => d.asset), Is.EqualTo(new[] { containerB }));
+#else
             Assert.That(containerA.Dependencies, Is.EqualTo(new[] { containerB }));
+#endif
             Assert.Throws<ArgumentNullException>(() => containerA.AddDependency(null));
         }
 

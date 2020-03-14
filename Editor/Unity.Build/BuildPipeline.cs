@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using Unity.Properties;
 using UnityEditor;
 using UnityEngine;
-using PropertyAttribute = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build
 {
@@ -19,12 +19,12 @@ namespace Unity.Build
         /// <summary>
         /// The list of <see cref="BuildStep"/> (or <see cref="BuildPipeline"/>) to be executed when calling <see cref="Build"/>.
         /// </summary>
-        [Property] public List<IBuildStep> BuildSteps = new List<IBuildStep>();
+        [CreateProperty] public List<IBuildStep> BuildSteps = new List<IBuildStep>();
 
         /// <summary>
         /// The <see cref="Build.RunStep"/> to be executed when calling <see cref="Run"/>.
         /// </summary>
-        [Property] public RunStep RunStep;
+        [CreateProperty] public RunStep RunStep;
 
         /// <summary>
         /// Event fired when a <see cref="BuildPipeline"/> is about to start building.

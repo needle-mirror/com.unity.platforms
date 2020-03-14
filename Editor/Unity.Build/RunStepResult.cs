@@ -1,6 +1,6 @@
 using System;
 using System.ComponentModel;
-using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -123,13 +123,7 @@ namespace Unity.Build
             }
         }
 
-        [InitializeOnLoadMethod]
-        static void Initialize()
-        {
-            TypeConstruction.SetExplicitConstructionMethod(() => { return new RunStepResult(); });
-        }
-
-        internal RunStepResult() { }
+        public RunStepResult() { }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("BuildSettings has been renamed to BuildConfiguration. (RemovedAfter 2020-05-01) (UnityUpgradable) -> BuildConfiguration")]

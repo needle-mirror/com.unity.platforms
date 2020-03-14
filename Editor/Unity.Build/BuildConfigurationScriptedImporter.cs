@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using System.IO;
+using Unity.Serialization.Json;
+using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
 namespace Unity.Build
 {
-    [ScriptedImporter(1, new[] { BuildConfiguration.AssetExtension
+    [ScriptedImporter(2, new[] { BuildConfiguration.AssetExtension
 #pragma warning disable 618
         , BuildSettings.AssetExtension
 #pragma warning restore 618
@@ -26,6 +29,50 @@ namespace Unity.Build
                 }
 #pragma warning restore 618
             }
+        }
+
+        static string[] GatherDependenciesFromSourceFile(string assetPath)
+        {
+            var dependencies = new List<string>();
+            try
+            {
+                using (var reader = new SerializedObjectReader(assetPath))
+                {
+                    var root = reader.ReadObject();
+                    if (!root.TryGetMember(nameof(BuildConfiguration.Dependencies), out var member))
+                    {
+                        return null;
+                    }
+
+                    var valueView = member.Value();
+                    if (valueView.Type != TokenType.Array)
+                    {
+                        return null;
+                    }
+
+                    var arrayView = valueView.AsArrayView();
+                    foreach (var value in arrayView)
+                    {
+                        if (!GlobalObjectId.TryParse(value.AsStringView().ToString(), out var id))
+                        {
+                            continue;
+                        }
+
+                        var dependencyPath = AssetDatabase.GUIDToAssetPath(id.assetGUID.ToString());
+                        if (string.IsNullOrEmpty(dependencyPath))
+                        {
+                            continue;
+                        }
+
+                        dependencies.Add(dependencyPath);
+                    }
+                }
+            }
+            catch
+            {
+                return null;
+            }
+            return dependencies.ToArray();
         }
     }
 }

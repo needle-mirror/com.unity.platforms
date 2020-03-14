@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Unity.Properties;
 using Unity.Serialization.Json;
 using UnityEditor;
 using UnityEngine;
@@ -16,13 +17,7 @@ namespace Unity.Build
     public abstract class ScriptableObjectPropertyContainer<TContainer> : ScriptableObject, ISerializationCallbackReceiver
         where TContainer : ScriptableObjectPropertyContainer<TContainer>
     {
-        [SerializeField] string m_AssetContent;
-
-        /// <summary>
-        /// Event invoked when the container registers <see cref="JsonVisitor"/> used for serialization.
-        /// It provides an opportunity to register additional property visitor adapters.
-        /// </summary>
-        public static event Action<JsonVisitor> JsonVisitorRegistration;
+        [SerializeField, DontCreateProperty] string m_AssetContent;
 
         /// <summary>
         /// Reset this asset in preparation for deserialization.
@@ -156,9 +151,11 @@ namespace Unity.Build
         /// <returns>The container as a JSON <see cref="string"/> if the serialization is successful, <see langword="null"/> otherwise.</returns>
         public string SerializeToJson()
         {
-            var visitor = new BuildJsonVisitor();
-            JsonVisitorRegistration?.Invoke(visitor);
-            return JsonSerialization.Serialize(this, visitor);
+            return JsonSerialization.ToJson(this, new JsonSerializationParameters
+            {
+                DisableRootAdapters = true,
+                SerializedType = typeof(TContainer)
+            });
         }
 
         /// <summary>
@@ -169,10 +166,7 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the operation is successful, <see langword="false"/> otherwise.</returns>
         public static bool DeserializeFromJson(TContainer container, string json)
         {
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(json)))
-            {
-                return TryDeserialize(container, stream);
-            }
+            return TryDeserialize(container, json);
         }
 
         /// <summary>
@@ -197,46 +191,12 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the operation is successful, <see langword="false"/> otherwise.</returns>
         public static bool DeserializeFromPath(TContainer container, string path)
         {
-            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-                return TryDeserialize(container, stream, path);
-            }
-        }
-
-        /// <summary>
-        /// Serialize this container to a stream.
-        /// </summary>
-        /// <param name="stream">The stream the serialize into.</param>
-        public void SerializeToStream(Stream stream)
-        {
-            using (var writer = new StreamWriter(stream))
-            {
-                writer.Write(SerializeToJson());
-            }
-        }
-
-        /// <summary>
-        /// Deserialize from a stream into the container.
-        /// </summary>
-        /// <param name="container">The container to deserialize into.</param>
-        /// <param name="stream">The stream to deserialize from.</param>
-        /// <returns><see langword="true"/> if the operation is successful, <see langword="false"/> otherwise.</returns>
-        public static bool DeserializeFromStream(TContainer container, Stream stream)
-        {
-            return TryDeserialize(container, stream);
+            return TryDeserialize(container, File.ReadAllText(path), path);
         }
 
         public void OnBeforeSerialize()
         {
-            var assetPath = AssetDatabase.GetAssetPath(this);
-            if (!string.IsNullOrEmpty(assetPath))
-            {
-                m_AssetContent = File.ReadAllText(assetPath);
-            }
-            else
-            {
-                m_AssetContent = SerializeToJson();
-            }
+            m_AssetContent = SerializeToJson();
         }
 
         public void OnAfterDeserialize()
@@ -244,45 +204,36 @@ namespace Unity.Build
             // Can't deserialize here, throws: "CreateJobReflectionData is not allowed to be called during serialization, call it from OnEnable instead."
         }
 
-        public void OnEnable()
+        void OnEnable()
         {
             var container = this as TContainer;
-            var assetPath = AssetDatabase.GetAssetPath(this);
-            if (!string.IsNullOrEmpty(assetPath))
-            {
-                DeserializeFromPath(container, assetPath);
-            }
-            else if (!string.IsNullOrEmpty(m_AssetContent))
+            if (!string.IsNullOrEmpty(m_AssetContent))
             {
                 DeserializeFromJson(container, m_AssetContent);
             }
         }
 
-        static bool TryDeserialize(TContainer container, Stream stream, string assetPath = null)
+        static bool TryDeserialize(TContainer container, string json, string assetPath = null)
         {
             try
             {
                 container.Reset();
 
-                container.m_AssetContent = new StreamReader(stream).ReadToEnd();
-                stream.Seek(0, SeekOrigin.Begin);
-
-                using (var result = JsonSerialization.DeserializeFromStream(stream, ref container))
+                container.m_AssetContent = json;
+                JsonSerialization.TryFromJsonOverride(json, ref container, out var result, new JsonSerializationParameters
                 {
-                    if (result.Succeeded)
-                    {
-                        container.m_AssetContent = !string.IsNullOrEmpty(assetPath) ? File.ReadAllText(assetPath) : null;
-                        container.Sanitize();
-                        return true;
-                    }
-                    else
-                    {
-                        var errors = result.AllEvents.Select(e => e.ToString());
-                        LogDeserializeError(string.Join("\n", errors), container, assetPath);
-                        container.Sanitize();
-                        return false;
-                    }
+                    DisableRootAdapters = true,
+                    SerializedType = typeof(TContainer)
+                });
+
+                if (!result.DidSucceed())
+                {
+                    var errors = result.Events.Select(e => e.ToString());
+                    LogDeserializeError(string.Join("\n", errors), container, assetPath);
                 }
+
+                container.Sanitize();
+                return true;
             }
             catch (Exception e)
             {

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Unity.Properties;
 using Unity.Properties.Editor;
+using Unity.Properties.UI;
 using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEditor.Searcher;
@@ -39,7 +39,13 @@ namespace Unity.Build.Editor
         static readonly BuildAction k_Build = new BuildAction
         {
             Name = "Build",
-            Action = config => config.Build().LogResult()
+            Action = (config) =>
+            {
+                if (config != null && config)
+                {
+                    config.Build()?.LogResult();
+                }
+            }
         };
 
         static readonly BuildAction k_BuildAndRun = new BuildAction
@@ -47,16 +53,19 @@ namespace Unity.Build.Editor
             Name = "Build and Run",
             Action = (config) =>
             {
-                var buildResult = config.Build();
-                buildResult.LogResult();
-                if (buildResult.Failed)
+                if (config != null && config)
                 {
-                    return;
-                }
+                    var buildResult = config.Build();
+                    buildResult.LogResult();
+                    if (buildResult.Failed)
+                    {
+                        return;
+                    }
 
-                using (var runResult = config.Run())
-                {
-                    runResult.LogResult();
+                    using (var runResult = config.Run())
+                    {
+                        runResult.LogResult();
+                    }
                 }
             }
         };
@@ -66,12 +75,39 @@ namespace Unity.Build.Editor
             Name = "Run",
             Action = (config) =>
             {
-                using (var result = config.Run())
+                if (config != null && config)
                 {
-                    result.LogResult();
+                    using (var result = config.Run())
+                    {
+                        result.LogResult();
+                    }
                 }
             }
         };
+
+        void ExecuteCurrentBuildAction()
+        {
+            if (HasModified())
+            {
+                var path = AssetDatabase.GetAssetPath(assetTarget);
+                int option = EditorUtility.DisplayDialogComplex("Unapplied import settings",
+                    $"Unapplied import settings for '{path}'", "Apply", "Revert", "Cancel");
+                switch (option)
+                {
+                    case 0: // Apply
+                        Apply();
+                        break;
+
+                    case 1: // Revert
+                        ResetValues();
+                        break;
+
+                    case 2: // Cancel
+                        return;
+                }
+            }
+            EditorApplication.delayCall += () => CurrentBuildAction.Action(assetTarget as BuildConfiguration);
+        }
 
         // Needed because properties don't handle root collections well.
         class DependenciesWrapper
@@ -191,6 +227,7 @@ namespace Unity.Build.Editor
                     config.name = Path.GetFileNameWithoutExtension(assetImporter.assetPath);
                 }
             }
+            Refresh();
         }
 
         public override VisualElement CreateInspectorGUI()
@@ -204,6 +241,14 @@ namespace Unity.Build.Editor
             root.contentContainer.Add(m_BuildConfigurationRoot);
             root.contentContainer.Add(new IMGUIContainer(ApplyRevertGUI));
             return root;
+        }
+
+        void Refresh()
+        {
+            if (m_BuildConfigurationRoot != null)
+            {
+                Refresh(m_BuildConfigurationRoot);
+            }
         }
 
         void Refresh(BindableElement root)
@@ -262,8 +307,7 @@ namespace Unity.Build.Editor
 
             var dropdownActionButton = new Button { text = BuildActions[CurrentActionIndex].Name };
             dropdownActionButton.AddToClassList(ClassNames.BuildAction);
-            dropdownActionButton.clickable = new Clickable(() => CurrentBuildAction.Action(assetTarget as BuildConfiguration));
-
+            dropdownActionButton.clickable = new Clickable(ExecuteCurrentBuildAction);
             dropdownActionButton.SetEnabled(true);
             dropdownButton.Add(dropdownActionButton);
 
@@ -282,7 +326,8 @@ namespace Unity.Build.Editor
             dropdownActionPopup.RegisterValueChangedCallback(evt =>
             {
                 CurrentActionIndex = BuildActions.IndexOf(evt.newValue);
-                dropdownActionButton.clickable = new Clickable(() => CurrentBuildAction.Action(assetTarget as BuildConfiguration));
+                dropdownActionButton.clickable = new Clickable(ExecuteCurrentBuildAction);
+                actionUpdater.Update();
             });
             dropdownButton.Add(dropdownActionPopup);
 
@@ -300,16 +345,24 @@ namespace Unity.Build.Editor
 
         void RefreshDependencies(BindableElement root, BuildConfiguration config)
         {
+#if UNITY_2020_1_OR_NEWER
+            m_DependenciesWrapper.Dependencies = FilterDependencies(config, config.Dependencies.Select(d => d.asset)).ToList();
+#else
             m_DependenciesWrapper.Dependencies = FilterDependencies(config, config.Dependencies).ToList();
+#endif
 
             var dependencyElement = new PropertyElement();
             dependencyElement.AddToClassList(ClassNames.BaseClassName);
             dependencyElement.SetTarget(m_DependenciesWrapper);
-            dependencyElement.OnChanged += element =>
+            dependencyElement.OnChanged += (element, path) =>
             {
                 config.Dependencies.Clear();
+#if UNITY_2020_1_OR_NEWER
+                config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies)
+                    .Select(asset => new LazyLoadReference<BuildConfiguration>() { asset = asset }));
+#else
                 config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies));
-                Refresh(root);
+#endif
             };
             dependencyElement.SetEnabled(m_LastEditState);
             root.Add(dependencyElement);
@@ -341,7 +394,7 @@ namespace Unity.Build.Editor
 
         void RefreshComponents(BindableElement root, BuildConfiguration config)
         {
-            // Refresh Components
+            // Refresh components
             var componentRoot = new BindableElement();
             var components = config.GetComponents();
             foreach (var component in components)
@@ -355,7 +408,7 @@ namespace Unity.Build.Editor
             componentUpdater.OnUpdate += updater => updater.Element.SetEnabled(m_LastEditState);
             componentRoot.binding = componentUpdater;
 
-            // Refresh Add Component Button
+            // Refresh add component button
             var addComponentButton = new Button();
             addComponentButton.AddToClassList(ClassNames.AddComponent);
             addComponentButton.RegisterCallback<MouseUpEvent>(evt =>
@@ -400,7 +453,6 @@ namespace Unity.Build.Editor
             config.SetComponent(type, TypeConstruction.Construct<IBuildComponent>(type));
             Refresh(m_BuildConfigurationRoot);
             return true;
-
         }
 
         VisualElement GetComponentElement(BuildConfiguration container, object component)

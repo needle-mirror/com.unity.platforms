@@ -2,7 +2,8 @@
     "name": "Unity.Build.Common",
     "references": [
         "Unity.Build",
-        "Unity.Properties"
+        "Unity.Properties",
+        "Unity.Serialization"
     ],
     "includePlatforms": [
         "Editor"

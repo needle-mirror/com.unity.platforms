@@ -1,23 +1,21 @@
-using JetBrains.Annotations;
-using Unity.Properties.Editor;
+﻿using Unity.Properties.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace Unity.Build.Classic
 {
-    [UsedImplicitly]
-    sealed class ClassicScriptingSettingsInspector : IInspector<ClassicScriptingSettings>
+    sealed class ClassicScriptingSettingsInspector : Inspector<ClassicScriptingSettings>
     {
         EnumField m_ScriptingBackend;
         VisualElement m_Il2CppCompilerConfiguration;
 
-        public VisualElement Build(InspectorContext<ClassicScriptingSettings> context)
+        public override VisualElement Build()
         {
             var root = new VisualElement();
-            context.DoDefaultGui(root, nameof(ClassicScriptingSettings.ScriptingBackend));
-            context.DoDefaultGui(root, nameof(ClassicScriptingSettings.Il2CppCompilerConfiguration));
-            context.DoDefaultGui(root, nameof(ClassicScriptingSettings.UseIncrementalGC));
+            DoDefaultGui(root, nameof(ClassicScriptingSettings.ScriptingBackend));
+            DoDefaultGui(root, nameof(ClassicScriptingSettings.Il2CppCompilerConfiguration));
+            DoDefaultGui(root, nameof(ClassicScriptingSettings.UseIncrementalGC));
 
             m_ScriptingBackend = root.Q<EnumField>(nameof(ClassicScriptingSettings.ScriptingBackend));
             m_Il2CppCompilerConfiguration = root.Q<VisualElement>(nameof(ClassicScriptingSettings.Il2CppCompilerConfiguration));
@@ -25,7 +23,7 @@ namespace Unity.Build.Classic
             return root;
         }
 
-        public void Update(InspectorContext<ClassicScriptingSettings> context)
+        public override void Update()
         {
             m_Il2CppCompilerConfiguration.SetEnabled((ScriptingImplementation)m_ScriptingBackend.value == ScriptingImplementation.IL2CPP);
         }

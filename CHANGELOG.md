@@ -4,6 +4,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2020-03-14
+
+### Added
+- Added `com.unity.properties.ui` package version to `1.1.0-preview`.
+- Added support for `LazyLoadReference` for deserializing asset references without loading them (requires Unity 2020.1).
+
+### Changed
+- Updated `com.unity.properties` package version to `1.1.0-preview`. This is a major overhaul, please refer to the package documentation.
+- Updated `com.unity.serialization` package version to `1.1.0-preview`. This is a major overhaul, please refer to the package documentation.
+
+### Fixed
+- Show apply/revert/cancel dialog if build configuration is modified upon clicking Build and/or Run button.
+
 ## [0.2.1] - 2020-02-25
 
 ### Added

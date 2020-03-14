@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Unity.Properties;
 using UnityEditor;
 using UnityEngine;
 
@@ -89,26 +88,6 @@ namespace Unity.Build
         /// <typeparam name="T">The <see cref="RunStep"/> type.</typeparam>
         /// <returns><see langword="true"/> if the <see cref="RunStep"/> is shown, <see langword="false"/> otherwise.</returns>
         public static bool GetIsShown<T>() where T : RunStep => GetIsShown(typeof(T));
-
-        internal static string Serialize(RunStep step)
-        {
-            return step?.GetType().GetFullyQualifedAssemblyTypeName();
-        }
-
-        internal static RunStep Deserialize(string json)
-        {
-            if (string.IsNullOrEmpty(json))
-            {
-                return null;
-            }
-
-            if (TypeConstruction.TryConstructFromAssemblyQualifiedTypeName<RunStep>(json, out var step))
-            {
-                return step;
-            }
-
-            return null;
-        }
 
         internal static IEnumerable<Type> GetAvailableTypes(Func<Type, bool> filter = null)
         {

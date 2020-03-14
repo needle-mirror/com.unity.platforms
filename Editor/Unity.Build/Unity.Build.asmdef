@@ -2,6 +2,7 @@
     "name": "Unity.Build",
     "references": [
         "Unity.Properties",
+        "Unity.Properties.Editor",
         "Unity.Serialization",
         "Unity.Serialization.Properties"
     ],

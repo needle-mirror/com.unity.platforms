@@ -2,7 +2,7 @@ using UnityEditor.Experimental.AssetImporters;
 
 namespace Unity.Build
 {
-    [ScriptedImporter(1, new[] { BuildPipeline.AssetExtension })]
+    [ScriptedImporter(2, new[] { BuildPipeline.AssetExtension })]
     sealed class BuildPipelineScriptedImporter : ScriptedImporter
     {
         public override void OnImportAsset(AssetImportContext context)

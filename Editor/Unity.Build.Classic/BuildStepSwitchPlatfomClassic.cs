@@ -1,12 +1,12 @@
 ﻿using System;
-using Unity.Properties;
+using Unity.Serialization;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
 namespace Unity.Build.Classic
 {
     [BuildStep(Name = "Switch Active Platform", Description = "Switching Active Platform", Category = "Classic")]
-    [FormerlySerializedAs("Unity.Build.Common.BuildStepSwitchPlatfomClassic, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.BuildStepSwitchPlatfomClassic, Unity.Build.Common")]
     sealed class BuildStepSwitchPlatfomClassic : BuildStep
     {
         public override Type[] RequiredComponents => new[]
@@ -35,7 +35,7 @@ namespace Unity.Build.Classic
     }
 
     [BuildStep(Name = "Save Scenes and Assets", Description = "Saving Scenes and Assets", Category = "Common")]
-    [FormerlySerializedAs("Unity.Build.Common.SaveScenesAndAssets, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.SaveScenesAndAssets, Unity.Build.Common")]
     sealed class SaveScenesAndAssets : BuildStep
     {
         public override BuildStepResult RunBuildStep(BuildContext context)

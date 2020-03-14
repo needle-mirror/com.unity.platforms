@@ -1,7 +1,6 @@
 using NUnit.Framework;
 using System;
 using System.Linq;
-using UnityEditor;
 
 namespace Unity.Build.Tests
 {
@@ -396,57 +395,6 @@ namespace Unity.Build.Tests
             Assert.Throws<ArgumentNullException>(() => BuildStep.GetIsShown(null));
             Assert.Throws<InvalidOperationException>(() => BuildStep.GetIsShown(typeof(object)));
             Assert.Throws<InvalidOperationException>(() => BuildStep.GetIsShown(typeof(TestInvalidBuildStep)));
-        }
-
-        [Test]
-        public void Serialize_BuildStep_IsValid()
-        {
-            var step = new TestBuildStep();
-            var type = step.GetType();
-            Assert.That(BuildStep.Serialize(step), Is.EqualTo(type.GetFullyQualifedAssemblyTypeName()));
-        }
-
-        [Test]
-        public void Serialize_PipelineAsBuildStep_IsValid()
-        {
-            var assetPath = $"Assets/TestBuildPipeline{BuildPipeline.AssetExtension}";
-            var pipeline = BuildPipeline.CreateAsset(assetPath);
-            var pipelineId = GlobalObjectId.GetGlobalObjectIdSlow(pipeline);
-            Assert.That(BuildStep.Serialize(pipeline), Is.EqualTo(pipelineId.ToString()));
-            AssetDatabase.DeleteAsset(assetPath);
-        }
-
-        [Test]
-        public void Serialize_InvalidBuildStep_IsNull()
-        {
-            Assert.That(BuildStep.Serialize(null), Is.Null);
-        }
-
-        [Test]
-        public void Deserialize_BuildStep_IsValid()
-        {
-            var type = typeof(TestBuildStep);
-            var step = BuildStep.Deserialize(type.GetFullyQualifedAssemblyTypeName());
-            Assert.That(step, Is.Not.Null);
-            Assert.That(step.GetType(), Is.EqualTo(type));
-        }
-
-        [Test]
-        public void Deserialize_PipelineAsBuildStep_IsValid()
-        {
-            var assetPath = $"Assets/TestBuildPipeline{BuildPipeline.AssetExtension}";
-            var pipeline = BuildPipeline.CreateAsset(assetPath);
-            var pipelineId = GlobalObjectId.GetGlobalObjectIdSlow(pipeline);
-            Assert.That(BuildStep.Deserialize(pipelineId.ToString()), Is.EqualTo(pipeline));
-            AssetDatabase.DeleteAsset(assetPath);
-        }
-
-        [Test]
-        public void Deserialize_InvalidJson_IsNull()
-        {
-            Assert.That(BuildStep.Deserialize(null), Is.Null);
-            Assert.That(BuildStep.Deserialize(string.Empty), Is.Null);
-            Assert.That(BuildStep.Deserialize("abc"), Is.Null);
         }
 
         [Test]

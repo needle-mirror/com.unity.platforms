@@ -18,7 +18,11 @@ namespace Unity.Build
         {
             if (TryGetComponent<IBuildPipelineComponent>(out var component))
             {
+#if UNITY_2020_1_OR_NEWER
+                var pipeline = component.Pipeline.asset;
+#else
                 var pipeline = component.Pipeline;
+#endif
                 return pipeline != null && pipeline ? pipeline : null;
             }
             return null;

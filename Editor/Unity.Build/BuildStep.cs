@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Unity.Properties;
+using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEngine;
 
@@ -384,48 +384,6 @@ namespace Unity.Build
         /// <typeparam name="T">The <see cref="BuildStep"/> type.</typeparam>
         /// <returns><see langword="true"/> if the <see cref="BuildStep"/> is shown, <see langword="false"/> otherwise.</returns>
         public static bool GetIsShown<T>() where T : IBuildStep => GetIsShown(typeof(T));
-
-        internal static string Serialize(IBuildStep step)
-        {
-            if (step == null)
-            {
-                return null;
-            }
-
-            if (step is BuildPipeline pipeline)
-            {
-                return GlobalObjectId.GetGlobalObjectIdSlow(pipeline).ToString();
-            }
-            else
-            {
-                return step.GetType().GetFullyQualifedAssemblyTypeName();
-            }
-        }
-
-        internal static IBuildStep Deserialize(string json)
-        {
-            if (string.IsNullOrEmpty(json))
-            {
-                return null;
-            }
-
-            if (GlobalObjectId.TryParse(json, out var id))
-            {
-                if (GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) is BuildPipeline pipeline)
-                {
-                    return pipeline;
-                }
-            }
-            else
-            {
-                if (TypeConstruction.TryConstructFromAssemblyQualifiedTypeName<IBuildStep>(json, out var step))
-                {
-                    return step;
-                }
-            }
-
-            return null;
-        }
 
         internal static IEnumerable<Type> GetAvailableTypes(Func<Type, bool> filter = null)
         {

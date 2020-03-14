@@ -5,7 +5,10 @@
         "Unity.Build.Internals",
         "Unity.Build.Common",
         "Unity.Properties",
-        "Unity.Properties.Editor"
+        "Unity.Properties.Editor",
+        "Unity.Properties.UI",
+        "Unity.Properties.UI.Editor",
+        "Unity.Serialization"
     ],
     "includePlatforms": [
         "Editor"

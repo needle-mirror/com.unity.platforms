@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using Unity.Properties;
+using Unity.Serialization;
 using UnityEditor;
 using UnityEngine;
-using PropertyAttribute = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build.Classic
 {
-    [FormerlySerializedAs("Unity.Build.Common.ClassicBuildProfile, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.ClassicBuildProfile, Unity.Build.Common")]
     public sealed class ClassicBuildProfile : IBuildPipelineComponent
     {
-        UnityEditor.BuildTarget m_Target;
+        BuildTarget m_Target;
         List<string> m_ExcludedAssemblies;
 
         /// <summary>
@@ -22,9 +22,8 @@ namespace Unity.Build.Classic
         /// Gets or sets which <see cref="BuildTarget"/> this profile is going to use for the build.
         /// Used for building classic Unity standalone players.
         /// </summary>
-        ///
-        [Property]
-        public UnityEditor.BuildTarget Target
+        [CreateProperty]
+        public BuildTarget Target
         {
             get => m_Target;
             set
@@ -37,11 +36,14 @@ namespace Unity.Build.Classic
         /// <summary>
         /// Gets or sets which <see cref="BuildType"/> this profile is going to use for the build.
         /// </summary>
-        [Property]
+        [CreateProperty]
         public BuildType Configuration { get; set; } = BuildType.Develop;
 
-        [Property]
-        public BuildPipeline Pipeline { get; set; }
+#if UNITY_2020_1_OR_NEWER
+        [CreateProperty] public LazyLoadReference<BuildPipeline> Pipeline { get; set; }
+#else
+        [CreateProperty] public BuildPipeline Pipeline { get; set; }
+#endif
 
         public int SortingIndex => (int)m_Target;
 
@@ -57,7 +59,7 @@ namespace Unity.Build.Classic
         /// <summary>
         /// List of assemblies that should be explicitly excluded for the build.
         /// </summary>
-        [Property, HideInInspector]
+        [CreateProperty, HideInInspector]
         public List<string> ExcludedAssemblies
         {
             get => m_ExcludedAssemblies;
@@ -70,7 +72,7 @@ namespace Unity.Build.Classic
 
         public ClassicBuildProfile()
         {
-            Target = UnityEditor.BuildTarget.NoTarget;
+            Target = BuildTarget.NoTarget;
             ExcludedAssemblies = new List<string>();
         }
 
@@ -83,28 +85,28 @@ namespace Unity.Build.Classic
 #pragma warning disable CS0618
             switch (m_Target)
             {
-                case UnityEditor.BuildTarget.StandaloneOSX:
-                case UnityEditor.BuildTarget.StandaloneOSXIntel:
-                case UnityEditor.BuildTarget.StandaloneOSXIntel64:
+                case BuildTarget.StandaloneOSX:
+                case BuildTarget.StandaloneOSXIntel:
+                case BuildTarget.StandaloneOSXIntel64:
                     return ".app";
-                case UnityEditor.BuildTarget.StandaloneWindows:
-                case UnityEditor.BuildTarget.StandaloneWindows64:
+                case BuildTarget.StandaloneWindows:
+                case BuildTarget.StandaloneWindows64:
                     return ".exe";
-                case UnityEditor.BuildTarget.NoTarget:
-                case UnityEditor.BuildTarget.StandaloneLinux64:
-                case UnityEditor.BuildTarget.Stadia:
+                case BuildTarget.NoTarget:
+                case BuildTarget.StandaloneLinux64:
+                case BuildTarget.Stadia:
                     return string.Empty;
-                case UnityEditor.BuildTarget.Android:
+                case BuildTarget.Android:
                     if (EditorUserBuildSettings.exportAsGoogleAndroidProject)
                         return "";
                     else if (EditorUserBuildSettings.buildAppBundle)
                         return ".aab";
                     else
                         return ".apk";
-                case UnityEditor.BuildTarget.Lumin:
+                case BuildTarget.Lumin:
                     return ".mpk";
-                case UnityEditor.BuildTarget.iOS:
-                case UnityEditor.BuildTarget.tvOS:
+                case BuildTarget.iOS:
+                case BuildTarget.tvOS:
                 default:
                     return "";
             }

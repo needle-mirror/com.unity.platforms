@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Unity.Properties;
+using Unity.Serialization.Json;
+using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
 namespace Unity.Build.Common
 {
-    [FormerlySerializedAs("Unity.Build.Common.SceneList, Unity.Build.Common")]
     /// <summary>
     /// Contains information about the scenes for the build.
     /// </summary>
@@ -21,13 +23,13 @@ namespace Unity.Build.Common
             /// <summary>
             /// The scene asset identifier.
             /// </summary>
-            [Property, AssetGuid(typeof(SceneAsset))]
+            [CreateProperty, AssetGuid(typeof(SceneAsset))]
             public GlobalObjectId Scene { get; set; }
 
             /// <summary>
             /// If true, the scene is auto loaded in the player.  The first scene is always auto loaded.
             /// </summary>
-            [Property]
+            [CreateProperty]
             public bool AutoLoad { get; set; }
 
             /// <summary>
@@ -39,41 +41,22 @@ namespace Unity.Build.Common
         /// <summary>
         /// If selected, the scenes currently open will be returned by the GetScenesPathsToLoad & GetScenePathsForBuild.
         /// </summary>
-        [Property]
+        [CreateProperty]
         public bool BuildCurrentScene { get; set; }
 
-#pragma warning disable 618
-
-        //Note: due to lack of auto conversion of data when the internal type of a container changes, this is needed.
-        List<SceneInfo> _internalSceneInfos = new List<SceneInfo>();
         /// <summary>
         /// The list of scene infos for the build.
         /// </summary>
-        [Property]
-        public List<SceneInfo> SceneInfos
-        {
-            get
-            {
-                if (_internalSceneInfos == null || _internalSceneInfos.Count == 0 && Scenes != null && Scenes.Count > 0)
-                {
-                    for (int i = 0; i < Scenes.Count; i++)
-                        _internalSceneInfos.Add(new SceneInfo() { Scene = Scenes[i], AutoLoad = i == 0 });
-                    Scenes.Clear();
-                }
-                return _internalSceneInfos;
-            }
-            set
-            {
-                _internalSceneInfos = value;
-            }
-        }
-#pragma warning restore 618
+        [CreateProperty]
+        public List<SceneInfo> SceneInfos { get; set; } = new List<SceneInfo>();
 
-        /// <summary>
-        /// Old data format for scenes.  
-        /// </summary>
-        [Property, UnityEngine.HideInInspector, AssetGuid(typeof(SceneAsset)), Obsolete("Use SceneInfos instead.")]
-        public List<GlobalObjectId> Scenes { get; set; } = new List<GlobalObjectId>();
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Scenes has been replaced by SceneInfos. (RemovedAfter 2020-05-01)")]
+        public List<GlobalObjectId> Scenes
+        {
+            get => throw null;
+            set => throw null;
+        }
 
         /// <summary>
         /// Returns all scenes marked as auto load.  The first scene is always included.
@@ -82,11 +65,18 @@ namespace Unity.Build.Common
         public string[] GetScenePathsToLoad()
         {
             if (BuildCurrentScene)
+            {
                 return GetScenePathsForBuild();
+            }
+
             var initialScenes = new List<string>();
             for (int i = 0; i < SceneInfos.Count; i++)
+            {
                 if (i == 0 || SceneInfos[i].AutoLoad)
+                {
                     initialScenes.Add(AssetDatabase.GUIDToAssetPath(SceneInfos[i].Scene.assetGUID.ToString()));
+                }
+            }
             return initialScenes.ToArray();
         }
 
@@ -112,7 +102,6 @@ namespace Unity.Build.Common
                 for (int i = 0; i != EditorSceneManager.sceneCount; i++)
                 {
                     var scene = EditorSceneManager.GetSceneAt(i);
-
                     if (scene.isSubScene)
                         continue;
                     if (!scene.isLoaded)
@@ -130,6 +119,30 @@ namespace Unity.Build.Common
             else
             {
                 return SceneInfos.ToArray();
+            }
+        }
+
+        class SceneListMigration : IJsonMigration<SceneList>
+        {
+            [InitializeOnLoadMethod]
+            static void Register() => JsonSerialization.AddGlobalMigration(new SceneListMigration());
+
+            public int Version => 1;
+
+            public SceneList Migrate(JsonMigrationContext context)
+            {
+                context.TryRead<SceneList>(out var sceneList);
+                if (context.SerializedVersion == 0)
+                {
+                    if (context.TryRead<List<GlobalObjectId>>("Scenes", out var scenes))
+                    {
+                        for (var i = 0; i < scenes.Count; ++i)
+                        {
+                            sceneList.SceneInfos.Add(new SceneInfo() { Scene = scenes[i], AutoLoad = i == 0 });
+                        }
+                    }
+                }
+                return sceneList;
             }
         }
     }

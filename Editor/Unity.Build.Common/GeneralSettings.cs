@@ -1,8 +1,8 @@
-using Unity.Properties;
+using Unity.Serialization;
 
 namespace Unity.Build.Common
 {
-    [FormerlySerializedAs("Unity.Build.Common.GeneralSettings, Unity.Build.Common")]
+    [FormerName("Unity.Build.Common.GeneralSettings, Unity.Build.Common")]
     public sealed class GeneralSettings : IBuildComponent
     {
         public string ProductName = "Product Name";

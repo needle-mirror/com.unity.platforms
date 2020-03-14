@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Unity.Build.Common;
+using Unity.Properties;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
-using PropertyAttribute = Unity.Properties.PropertyAttribute;
 
 namespace Unity.Build.Tests
 {
@@ -481,8 +481,11 @@ namespace Unity.Build.Tests
         [HideInInspector]
         sealed class FakeClassicBuildProfile : IBuildPipelineComponent
         {
-            [Property]
-            public BuildPipeline Pipeline { get; set; }
+#if UNITY_2020_1_OR_NEWER
+            [CreateProperty] public LazyLoadReference<BuildPipeline> Pipeline { get; set; }
+#else
+            [CreateProperty] public BuildPipeline Pipeline { get; set; }
+#endif
 
             public int SortingIndex => (int)Target;
 
@@ -495,14 +498,18 @@ namespace Unity.Build.Tests
                 return true;
             }
 
-            [Property]
-            public UnityEditor.BuildTarget Target { get; set; }
+            [CreateProperty]
+            public BuildTarget Target { get; set; }
         }
 
         [HideInInspector]
         class TestBuildProfileComponent : IBuildPipelineComponent
         {
-            [Property] public BuildPipeline Pipeline { get; set; }
+#if UNITY_2020_1_OR_NEWER
+            [CreateProperty] public LazyLoadReference<BuildPipeline> Pipeline { get; set; }
+#else
+            [CreateProperty] public BuildPipeline Pipeline { get; set; }
+#endif
             public int SortingIndex => 0;
             public bool SetupEnvironment() => false;
         }
@@ -599,7 +606,11 @@ namespace Unity.Build.Tests
                 bs.SetComponent(new FakeClassicBuildProfile()
                 {
                     Target = Standalone32Target,
+#if UNITY_2020_1_OR_NEWER
+                    Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = m_BuildPipeline.GetInstanceID() }
+#else
                     Pipeline = m_BuildPipeline
+#endif
                 });
             });
 
@@ -608,7 +619,11 @@ namespace Unity.Build.Tests
                 bs.SetComponent(new FakeClassicBuildProfile()
                 {
                     Target = Standalone64Target,
+#if UNITY_2020_1_OR_NEWER
+                    Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = m_BuildPipeline.GetInstanceID() }
+#else
                     Pipeline = m_BuildPipeline
+#endif
                 });
             });
 
