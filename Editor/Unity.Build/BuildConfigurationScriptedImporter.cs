@@ -7,7 +7,11 @@ using UnityEngine;
 
 namespace Unity.Build
 {
+#if UNITY_2020_1_OR_NEWER
+    [ScriptedImporter(3, new[] { BuildConfiguration.AssetExtension
+#else
     [ScriptedImporter(2, new[] { BuildConfiguration.AssetExtension
+#endif
 #pragma warning disable 618
         , BuildSettings.AssetExtension
 #pragma warning restore 618

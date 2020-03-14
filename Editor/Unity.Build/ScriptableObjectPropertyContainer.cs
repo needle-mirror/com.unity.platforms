@@ -196,7 +196,15 @@ namespace Unity.Build
 
         public void OnBeforeSerialize()
         {
-            m_AssetContent = SerializeToJson();
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            if (!string.IsNullOrEmpty(assetPath))
+            {
+                m_AssetContent = File.ReadAllText(assetPath);
+            }
+            else
+            {
+                m_AssetContent = SerializeToJson();
+            }
         }
 
         public void OnAfterDeserialize()
@@ -207,7 +215,12 @@ namespace Unity.Build
         void OnEnable()
         {
             var container = this as TContainer;
-            if (!string.IsNullOrEmpty(m_AssetContent))
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            if (!string.IsNullOrEmpty(assetPath))
+            {
+                DeserializeFromPath(container, assetPath);
+            }
+            else if (!string.IsNullOrEmpty(m_AssetContent))
             {
                 DeserializeFromJson(container, m_AssetContent);
             }
