@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Added `com.unity.properties.ui` package version to `1.1.0-preview`.
 - Added support for `LazyLoadReference` for deserializing asset references without loading them (requires Unity 2020.1).
+- DotsBuildTarget now has an overridable TargetFramework property, which can be used to change target .NET framework.
 
 ### Changed
 - Updated `com.unity.properties` package version to `1.1.0-preview`. This is a major overhaul, please refer to the package documentation.

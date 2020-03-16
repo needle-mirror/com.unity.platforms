@@ -17,6 +17,7 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Debug,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
+                targetFramework: TargetFramework,
                 identifier: $"{Identifier}-debug",
                 enableUnityCollectionsChecks: true,
                 enableManagedDebugging: false,
@@ -31,6 +32,7 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Release,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
+                targetFramework: TargetFramework,
                 identifier: $"{Identifier}-mdb",
                 enableUnityCollectionsChecks: true,
                 enableManagedDebugging: true,
@@ -45,6 +47,7 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Release,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
+                targetFramework: TargetFramework,
                 identifier: $"{Identifier}-develop",
                 enableUnityCollectionsChecks: true,
                 enableManagedDebugging: false,
@@ -59,6 +62,7 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Release,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
+                targetFramework: TargetFramework,
                 identifier: $"{Identifier}-release",
                 enableUnityCollectionsChecks: false,
                 enableManagedDebugging: false,
@@ -79,6 +83,7 @@ namespace DotsBuildTargets
         public abstract ToolChain ToolChain { get; }
 
         public virtual ScriptingBackend ScriptingBackend { get; set; } = ScriptingBackend.TinyIl2cpp;
+        public virtual TargetFramework TargetFramework => TargetFramework.Tiny;
 
         protected virtual NativeProgramFormat GetExecutableFormatForConfig(DotsConfiguration config, bool enableManagedDebugger) => null;
 
