@@ -17,12 +17,11 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Debug,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
-                identifier: $"{Identifier}-debug",
+                dotsConfiguration: DotsConfiguration.Debug,
                 enableUnityCollectionsChecks: true,
                 enableManagedDebugging: false,
-                waitForManagedDebugger: true,
+                identifier: $"{Identifier}-debug",
                 multiThreadedJobs: CanRunMultiThreadedJobs,
-                dotsConfiguration: DotsConfiguration.Debug,
                 useBurst: CanUseBurst,
                 executableFormat: GetExecutableFormatForConfig(DotsConfiguration.Debug, enableManagedDebugger: false));
 
@@ -31,12 +30,11 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Release,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
-                identifier: $"{Identifier}-mdb",
+                dotsConfiguration: DotsConfiguration.Debug,
                 enableUnityCollectionsChecks: true,
                 enableManagedDebugging: true,
-                waitForManagedDebugger: true,
+                identifier: $"{Identifier}-mdb",
                 multiThreadedJobs: CanRunMultiThreadedJobs,
-                dotsConfiguration: DotsConfiguration.Debug,
                 useBurst: CanUseBurst,
                 executableFormat: GetExecutableFormatForConfig(DotsConfiguration.Debug, enableManagedDebugger: true));
 
@@ -45,12 +43,11 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Release,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
-                identifier: $"{Identifier}-develop",
+                dotsConfiguration: DotsConfiguration.Develop,
                 enableUnityCollectionsChecks: true,
                 enableManagedDebugging: false,
-                waitForManagedDebugger: true,
+                identifier: $"{Identifier}-develop",
                 multiThreadedJobs: CanRunMultiThreadedJobs,
-                dotsConfiguration: DotsConfiguration.Develop,
                 useBurst: CanUseBurst,
                 executableFormat: GetExecutableFormatForConfig(DotsConfiguration.Develop, enableManagedDebugger: false));
 
@@ -59,12 +56,11 @@ namespace DotsBuildTargets
                 cppCodegen: CodeGen.Release,
                 nativeToolchain: ToolChain,
                 scriptingBackend: ScriptingBackend,
-                identifier: $"{Identifier}-release",
+                dotsConfiguration: DotsConfiguration.Release,
                 enableUnityCollectionsChecks: false,
                 enableManagedDebugging: false,
-                waitForManagedDebugger: true,
+                identifier: $"{Identifier}-release",
                 multiThreadedJobs: CanRunMultiThreadedJobs,
-                dotsConfiguration: DotsConfiguration.Release,
                 useBurst: CanUseBurst,
                 executableFormat: GetExecutableFormatForConfig(DotsConfiguration.Release, enableManagedDebugger: false));
         }

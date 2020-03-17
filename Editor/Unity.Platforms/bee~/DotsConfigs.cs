@@ -19,7 +19,7 @@ public static class DotsConfigs
         var platformList = DotsBuildSystemTargets;
 
         var settingsDir = new NPath("settings");
-
+        
         if (settingsDir.Exists())
         {
             foreach (var settingsRelative in settingsDir.Files("*.json"))
@@ -36,7 +36,7 @@ public static class DotsConfigs
 
                     if (!target.ToolChain.CanBuild)
                         continue;
-
+                    
                     var targetShouldUseBurst = settingsObject.GetBool("UseBurst");
 
                     var dotsCfg = DotsConfigForSettings(settingsObject, out var codegen);
@@ -48,8 +48,7 @@ public static class DotsConfigs
                         targetShouldUseBurst = false;
                     }
 
-                    var mdb = ManagedDebuggingForSettings(settingsObject);
-                    var waitForManagedDebugger = settingsObject.GetBool("WaitForManagedDebugger", true);
+                    var mdb = settingsObject.GetBool("EnableManagedDebugging");
 
                     var rootAssembly = settingsObject.GetString("RootAssembly");
                     string finalOutputDir = null;
@@ -74,7 +73,6 @@ public static class DotsConfigs
                                 settingsFile.FileNameWithoutExtension,
                                 enableUnityCollectionsChecks,
                                 mdb,
-                                waitForManagedDebugger,
                                 multithreading,
                                 dotsCfg,
                                 targetShouldUseBurst,
@@ -114,21 +112,9 @@ public static class DotsConfigs
         return dotsCfg;
     }
 
-    public static bool ManagedDebuggingForSettings(FriendlyJObject settingsObject)
-    {
-        var managedDebuggingString = settingsObject.GetString("ManagedDebugging");
-        if (string.IsNullOrEmpty(managedDebuggingString) || managedDebuggingString == "UseBuildConfiguration")
-                return DotsConfigForSettings(settingsObject, out var unused) == DotsConfiguration.Debug;
-        if (managedDebuggingString == "Enabled")
-                return true;
-        if (managedDebuggingString == "Disabled")
-                return false;
-        throw new ArgumentException($"Error: Unrecognized managed debugging option '{managedDebuggingString}' in build json file. This is a bug.");
-    }
-
 
     private static List<DotsBuildSystemTarget> _dotsBuildSystemTargets;
-
+    
     private static List<DotsBuildSystemTarget> DotsBuildSystemTargets
     {
         get
@@ -189,7 +175,6 @@ public static class DotsConfigs
                 ScriptingBackend.Dotnet,
                 "HostDotNet",
                 true,
-                false,
                 false,
                 false,
                 DotsConfiguration.Develop,
