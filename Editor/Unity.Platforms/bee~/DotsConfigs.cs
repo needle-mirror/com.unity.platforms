@@ -67,21 +67,21 @@ public static class DotsConfigs
 
                     PerConfigBuildSettings[rootAssembly]
                         .Add(
-                            new DotsRuntimeCSharpProgramConfiguration(codegen,
-                                codegen == CSharpCodeGen.Debug ? CodeGen.Debug : CodeGen.Release,
-                                target.ToolChain,
-                                target.ScriptingBackend,
-                                target.TargetFramework,
-                                settingsFile.FileNameWithoutExtension,
-                                enableUnityCollectionsChecks,
-                                mdb,
-                                waitForManagedDebugger,
-                                multithreading,
-                                dotsCfg,
-                                targetShouldUseBurst,
-                                target.CustomizeExecutableForSettings(settingsObject),
-                                defines,
-                                finalOutputDir));
+                            new DotsRuntimeCSharpProgramConfiguration(
+                                csharpCodegen: codegen,
+                                cppCodegen: codegen == CSharpCodeGen.Debug ? CodeGen.Debug : CodeGen.Release,
+                                nativeToolchain: target.ToolChain,
+                                scriptingBackend: target.ScriptingBackend,
+                                identifier: settingsFile.FileNameWithoutExtension,
+                                enableUnityCollectionsChecks: enableUnityCollectionsChecks,
+                                enableManagedDebugging: /*mdb (temporarily disabled)*/false,
+                                waitForManagedDebugger: waitForManagedDebugger,
+                                multiThreadedJobs: multithreading,
+                                dotsConfiguration: dotsCfg,
+                                useBurst: targetShouldUseBurst,
+                                executableFormat: target.CustomizeExecutableForSettings(settingsObject),
+                                defines: defines,
+                                finalOutputDirectory: finalOutputDir));
                 }
             }
         }
@@ -184,18 +184,18 @@ public static class DotsConfigs
             var target = DotsBuildSystemTargets.First(c =>
                 c.ScriptingBackend == ScriptingBackend.Dotnet &&
                 c.ToolChain.Platform.GetType() == Platform.HostPlatform.GetType());
-            return new DotsRuntimeCSharpProgramConfiguration(CSharpCodeGen.Release,
-                CodeGen.Release,
-                target.ToolChain,
-                ScriptingBackend.Dotnet,
-                TargetFramework.Tiny,
-                "HostDotNet",
-                true,
-                false,
-                false,
-                false,
-                DotsConfiguration.Develop,
-                true);
+            return new DotsRuntimeCSharpProgramConfiguration(
+                csharpCodegen: CSharpCodeGen.Release,
+                cppCodegen: CodeGen.Release,
+                nativeToolchain: target.ToolChain,
+                scriptingBackend: ScriptingBackend.Dotnet,
+                identifier: "HostDotNet",
+                enableUnityCollectionsChecks: true,
+                enableManagedDebugging: false,
+                waitForManagedDebugger: false,
+                multiThreadedJobs: false,
+                dotsConfiguration: DotsConfiguration.Develop,
+                useBurst: true);
         }
     }
 }
