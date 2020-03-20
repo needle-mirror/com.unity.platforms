@@ -1,11 +1,34 @@
 ﻿using System;
 using System.IO;
 using Unity.Build.Common;
+using System.Collections.Generic;
 using Unity.Serialization;
 using UnityEditor;
 
 namespace Unity.Build.Classic
 {
+    internal class ScenePathsState : List<string>
+    {
+        public ScenePathsState()
+            : base() { }
+
+        public ScenePathsState(int capacity)
+            : base(capacity) { }
+
+        public ScenePathsState(IEnumerable<string> collection)
+            : base(collection) { }
+    }
+
+    internal class BuildOptionsState
+    {
+        public BuildOptionsState()
+        {
+            BuildOptions = BuildOptions.None;
+        }
+
+        public BuildOptions BuildOptions;
+    }
+
     [BuildStep(Name = "Build Player", Description = "Building Player", Category = "Classic")]
     [FormerName("Unity.Build.Common.BuildStepBuildClassicPlayer, Unity.Build.Common")]
     sealed class BuildStepBuildClassicPlayer : BuildStep
@@ -56,10 +79,20 @@ namespace Unity.Build.Classic
 
             if (profile.Target != EditorUserBuildSettings.activeBuildTarget)
                 return BuildStepResult.Failure(this, $"{nameof(EditorUserBuildSettings.activeBuildTarget)} must be switched before {nameof(BuildStepBuildClassicPlayer)} step.");
-            var sceneList = GetRequiredComponent<SceneList>(context);
 
-            var scenePaths = sceneList.GetScenePathsForBuild();
-            if (scenePaths.Length == 0)
+            // Check for incoming scene list from build context
+            string[] scenePaths = default;
+            if (context.HasValue<ScenePathsState>())
+            {
+                scenePaths = context.GetValue<ScenePathsState>().ToArray();
+            }
+            else
+            {
+                var sceneList = GetRequiredComponent<SceneList>(context);
+                scenePaths = sceneList.GetScenePathsForBuild();
+            }
+
+            if(scenePaths.Length == 0)
                 return BuildStepResult.Failure(this, "There are no scenes to build.");
 
             var outputPath = this.GetOutputBuildDirectory(context);
@@ -74,7 +107,8 @@ namespace Unity.Build.Classic
                 targetGroup = UnityEditor.BuildPipeline.GetBuildTargetGroup(profile.Target),
             };
 
-            buildPlayerOptions.options = BuildOptions.None;
+            buildPlayerOptions.options = context.GetOrCreateValue<BuildOptionsState>().BuildOptions;
+
             switch (profile.Configuration)
             {
                 case BuildType.Debug:

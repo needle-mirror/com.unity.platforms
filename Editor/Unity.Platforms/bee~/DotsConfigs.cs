@@ -75,7 +75,7 @@ public static class DotsConfigs
                                 targetFramework: target.TargetFramework,
                                 identifier: settingsFile.FileNameWithoutExtension,
                                 enableUnityCollectionsChecks: enableUnityCollectionsChecks,
-                                enableManagedDebugging: /*mdb (temporarily disabled)*/false,
+                                enableManagedDebugging: mdb,
                                 waitForManagedDebugger: waitForManagedDebugger,
                                 multiThreadedJobs: multithreading,
                                 dotsConfiguration: dotsCfg,

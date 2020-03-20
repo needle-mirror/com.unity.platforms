@@ -5,11 +5,13 @@ namespace Unity.Platforms
     public static class DebuggerAttachDialog
     {
         [DllImport("lib_unity_platforms_common")]
-        private static extern void ShowDebuggerAttachDialog(string message);
+        private static extern void ShowDebuggerAttachDialog(string message, BroadcastFunction broadcast);
 
-        public static void Show()
+        public delegate void BroadcastFunction();
+
+        public static void Show(BroadcastFunction broadcast)
         {
-            ShowDebuggerAttachDialog("You can attach a managed debugger now if you want");
+            ShowDebuggerAttachDialog("You can attach a managed debugger now if you want", broadcast);
         }
     }
 }
