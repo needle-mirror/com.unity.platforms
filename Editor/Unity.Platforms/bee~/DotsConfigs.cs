@@ -49,7 +49,9 @@ public static class DotsConfigs
                     }
 
                     var mdb = ManagedDebuggingForSettings(settingsObject);
-                    var waitForManagedDebugger = settingsObject.GetBool("WaitForManagedDebugger", true);
+                    if (target.Identifier == "asmjs" || target.Identifier == "wasm")
+                        mdb = false;
+                    var waitForManagedDebugger = settingsObject.GetBool("WaitForManagedDebugger");
 
                     var rootAssembly = settingsObject.GetString("RootAssembly");
                     string finalOutputDir = null;
