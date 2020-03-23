@@ -1,35 +1,13 @@
 using System;
 using Unity.Properties;
-using Unity.Properties.Editor;
-using UnityEditor;
 
 namespace Unity.Build
 {
     /// <summary>
     /// Holds the result of the execution of a <see cref="Build.BuildStep"/>.
     /// </summary>
-    public sealed class BuildStepResult
+    public sealed class BuildStepResult : ResultBase
     {
-        /// <summary>
-        /// Determine if the execution of the <see cref="Build.BuildStep"/> succeeded.
-        /// </summary>
-        [CreateProperty] public bool Succeeded { get; internal set; }
-
-        /// <summary>
-        /// Determine if the execution of the <see cref="Build.BuildStep"/> failed.
-        /// </summary>
-        public bool Failed { get => !Succeeded; }
-
-        /// <summary>
-        /// The message resulting from the execution of this <see cref="Build.BuildStep"/>.
-        /// </summary>
-        [CreateProperty] public string Message { get; internal set; }
-
-        /// <summary>
-        /// Duration of the execution of this <see cref="Build.BuildStep"/>.
-        /// </summary>
-        [CreateProperty] public TimeSpan Duration { get; internal set; }
-
         /// <summary>
         /// The <see cref="Build.BuildStep"/> that was executed.
         /// </summary>
@@ -82,12 +60,20 @@ namespace Unity.Build
             BuildStep = step
         };
 
-        internal static BuildStepResult Exception(BuildStep step, Exception exception) => new BuildStepResult
+        /// <summary>
+        /// Create a new instance of <see cref="BuildStepResult"/> that represent a failed execution.
+        /// </summary>
+        /// <param name="step">The <see cref="Build.BuildStep"/> that was executed.</param>
+        /// <param name="exception">The exception.</param>
+        /// <returns>A new <see cref="BuildStepResult"/> instance.</returns>
+        public static BuildStepResult Failure(BuildStep step, Exception exception) => new BuildStepResult
         {
             Succeeded = false,
-            Message = exception.Message + "\n" + exception.StackTrace,
-            BuildStep = step
+            BuildStep = step,
+            Exception = exception
         };
+
+        public override string ToString() => $"Build {base.ToString()}";
 
         public BuildStepResult() { }
     }

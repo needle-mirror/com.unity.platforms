@@ -111,7 +111,7 @@ namespace Unity.Build.Tests
             });
             Assert.That(result.Succeeded, Is.False);
 
-            LogAssert.Expect(LogType.Error, new Regex("Build failed in .* after .*\\..*"));
+            LogAssert.Expect(LogType.Exception, "NullReferenceException: Object reference not set to an instance of an object");
             result.LogResult();
         }
 

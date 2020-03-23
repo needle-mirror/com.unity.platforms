@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Unity.Properties;
 using Unity.Serialization.Json;
 using UnityEditor;
@@ -33,15 +32,15 @@ namespace Unity.Build
         protected virtual void Sanitize() { }
 
         /// <summary>
-        /// Create a new asset instance.
+        /// Create a new instance.
         /// </summary>
         /// <param name="mutator">Optional mutator that can be used to modify the asset.</param>
         /// <returns>The new asset instance.</returns>
         public static TContainer CreateInstance(Action<TContainer> mutator = null)
         {
-            var asset = CreateInstance<TContainer>();
-            mutator?.Invoke(asset);
-            return asset;
+            var instance = CreateInstance<TContainer>();
+            mutator?.Invoke(instance);
+            return instance;
         }
 
         /// <summary>
@@ -143,6 +142,20 @@ namespace Unity.Build
                 return false;
             }
             return DeserializeFromPath(this as TContainer, assetPath);
+        }
+
+        /// <summary>
+        /// Determine if there is unsaved modifications.
+        /// </summary>
+        /// <returns><see langword="true"/> if there is unsaved modifications, <see langword="false"/> otherwise.</returns>
+        public bool IsModified()
+        {
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                return false;
+            }
+            return SerializeToJson() != File.ReadAllText(assetPath);
         }
 
         /// <summary>

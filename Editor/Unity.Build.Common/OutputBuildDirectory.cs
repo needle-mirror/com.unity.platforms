@@ -14,7 +14,7 @@ namespace Unity.Build.Common
     public static class BuildConfigurationExtensions
     {
         /// <summary>
-        /// Get the output build directory for this <see cref="BuildConfiguration"/>.
+        /// Get the output build directory override for this build configuration.
         /// The output build directory can be overridden using a <see cref="OutputBuildDirectory"/> component.
         /// </summary>
         /// <param name="config">This build config.</param>
@@ -32,7 +32,7 @@ namespace Unity.Build.Common
     public static class BuildStepExtensions
     {
         /// <summary>
-        /// Get the output build directory for this <see cref="BuildStep"/>.
+        /// Get the output build directory override used in this build context.
         /// The output build directory can be overridden using a <see cref="OutputBuildDirectory"/> component.
         /// </summary>
         /// <param name="step">This build step.</param>

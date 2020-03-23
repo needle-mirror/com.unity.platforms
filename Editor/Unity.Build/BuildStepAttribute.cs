@@ -4,23 +4,23 @@ using System.ComponentModel;
 namespace Unity.Build
 {
     /// <summary>
-    /// Attribute to configure various properties of a <see cref="BuildStep"/> type.
+    /// Attribute to configure various properties of a <see cref="BuildStep"/> derived type.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class)]
     public sealed class BuildStepAttribute : Attribute
     {
         /// <summary>
-        /// Name of the <see cref="BuildStep"/> displayed in <see cref="BuildPipeline"/> inspector, searcher menu and log console.
+        /// Display name of the build step.
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// Description of the <see cref="BuildStep"/> displayed in the <see cref="BuildProgress"/> during a build.
+        /// Display description of the build step.
         /// </summary>
         public string Description { get; set; }
 
         /// <summary>
-        /// Category name of the <see cref="BuildStep"/> displayed in the searcher menu.
+        /// Display category name of the build step.
         /// </summary>
         public string Category { get; set; }
 
@@ -40,16 +40,16 @@ namespace Unity.Build
         [Obsolete("description has been renamed to Description. (RemovedAfter 2020-05-01) (UnityUpgradable) -> Description")]
         public string description
         {
-            get => Description;
-            set => Description = value;
+            get => throw null;
+            set => throw null;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("category has been renamed to Category. (RemovedAfter 2020-05-01) (UnityUpgradable) -> Category")]
         public string category
         {
-            get => Category;
-            set => Category = value;
+            get => throw null;
+            set => throw null;
         }
     }
 }

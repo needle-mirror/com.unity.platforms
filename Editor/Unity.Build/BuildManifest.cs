@@ -6,7 +6,7 @@ using System.Linq;
 namespace Unity.Build
 {
     /// <summary>
-    /// Holds information about exported assets throughout a <see cref="BuildPipeline"/> execution.
+    /// Holds information about exported assets throughout a build pipeline execution.
     /// All exported assets listed in the build manifest will also be installed in the build data directory.
     /// </summary>
     public sealed class BuildManifest
@@ -15,17 +15,17 @@ namespace Unity.Build
         readonly List<FileInfo> m_ExportedFiles = new List<FileInfo>();
 
         /// <summary>
-        /// A dictionary of all assets exported during the <see cref="BuildPipeline"/> execution.
+        /// A dictionary of all assets exported during the build pipeline execution.
         /// </summary>
         public IReadOnlyDictionary<Guid, string> Assets => m_Assets;
 
         /// <summary>
-        /// The list of exported files during the <see cref="BuildPipeline"/> execution.
+        /// The list of exported files during the build pipeline execution.
         /// </summary>
         public IEnumerable<FileInfo> ExportedFiles => m_ExportedFiles;
 
         /// <summary>
-        /// Add an asset and its exported files to the <see cref="BuildManifest"/>.
+        /// Add an asset and its exported files to the build manifest.
         /// </summary>
         /// <param name="assetGuid">The asset <see cref="Guid"/>.</param>
         /// <param name="assetPath">The asset path.</param>

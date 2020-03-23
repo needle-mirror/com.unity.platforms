@@ -15,42 +15,29 @@ namespace Unity.Build.Editor
         [SerializeField]
         bool m_Run;
         [SerializeField]
-        string m_BuildConfigurationGuid;
+        GUID m_BuildConfigurationGuid;
 
         internal bool Build
         {
-            set
-            {
-                m_Build = value;
-            }
-            get
-            {
-                return m_Build;
-            }
+            get => m_Build;
+            set => m_Build = value;
         }
 
         internal bool Run
         {
-            set
-            {
-                m_Run = value;
-            }
-            get
-            {
-                return m_Run;
-            }
+            get => m_Run;
+            set => m_Run = value;
         }
 
         internal BuildConfiguration BuildConfiguration
         {
-            set
-            {
-                m_BuildConfigurationGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value));
-            }
-            get
-            {
-                return AssetDatabase.LoadAssetAtPath<BuildConfiguration>(AssetDatabase.GUIDToAssetPath(m_BuildConfigurationGuid));
-            }
+            get => BuildConfiguration.LoadAsset(m_BuildConfigurationGuid);
+            set => m_BuildConfigurationGuid = new GUID(AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(value)));
+        }
+
+        internal bool Valid
+        {
+            get => BuildConfiguration.LoadAsset(m_BuildConfigurationGuid) != null;
         }
     }
 

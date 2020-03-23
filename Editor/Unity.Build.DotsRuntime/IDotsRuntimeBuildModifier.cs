@@ -1,9 +1,9 @@
-using Newtonsoft.Json.Linq;
+using Unity.Serialization.Json;
 
 namespace Unity.Build.DotsRuntime
 {
     public interface IDotsRuntimeBuildModifier : IBuildComponent
     {
-        void Modify(JObject settingsJObject);
+        void Modify(JsonObject jsonObject);
     }
 }

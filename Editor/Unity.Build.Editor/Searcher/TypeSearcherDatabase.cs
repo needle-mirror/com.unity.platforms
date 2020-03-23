@@ -150,28 +150,13 @@ namespace Unity.Build.Editor
             }
         }
 
-        public static SearcherDatabase GetBuildConfigurationDatabase(HashSet<Type> excludes)
-        {
-            return Populate<IBuildComponent>(excludes, null);
-        }
-
-        public static SearcherDatabase GetBuildStepsDatabase(HashSet<Type> excludes, Func<Type, string> displayNameResolver)
-        {
-            return Populate<IBuildStep>(excludes, displayNameResolver);
-        }
-
-        public static SearcherDatabase GetRunStepDatabase(HashSet<Type> excludes, Func<Type, string> displayNameResolver)
-        {
-            return Populate<RunStep>(excludes, displayNameResolver);
-        }
-
-        static SearcherDatabase Populate<T>(HashSet<Type> excludes, Func<Type, string> displayNameResolver)
+        internal static SearcherDatabase Populate<T>(Func<Type, bool> filter = null, Func<Type, string> nameResolver = null, Func<Type, string> categoryResolver = null)
         {
             var list = new List<SearcherItem>();
             var dict = new Dictionary<string, SearcherItem>();
 
-            var collection = TypeCache.GetTypesDerivedFrom<T>();
-            foreach (var type in collection)
+            var types = TypeCache.GetTypesDerivedFrom<T>();
+            foreach (var type in types)
             {
                 if (type.IsGenericType || type.IsAbstract || type.ContainsGenericParameters || type.IsInterface)
                 {
@@ -183,39 +168,28 @@ namespace Unity.Build.Editor
                     continue;
                 }
 
+                if (filter != null && !filter(type))
+                {
+                    continue;
+                }
+
                 try
                 {
-                    if (excludes.Contains(type))
+                    var typeItem = new TypeSearcherItem(type, nameResolver != null ? nameResolver(type) : string.Empty);
+                    var category = categoryResolver != null ? categoryResolver(type) : type.Namespace ?? "Global";
+                    if (!string.IsNullOrEmpty(category))
                     {
-                        continue;
+                        if (!dict.TryGetValue(category, out var item))
+                        {
+                            dict[category] = item = new SearcherItem(category);
+                            list.Add(item);
+                        }
+                        item.AddChild(typeItem);
                     }
-
-                    var category = string.Empty;
-                    TypeSearcherItem typeItem = null;
-
-                    // Fully type-based
-                    if (null == displayNameResolver)
-                    {
-                        typeItem = new TypeSearcherItem(type);
-                        category = type.Namespace ?? "Global";
-                    }
-                    // We control the naming
                     else
                     {
-                        var displayName = displayNameResolver.Invoke(type);
-                        var prefixIndex = displayName.IndexOf("/", StringComparison.InvariantCultureIgnoreCase);
-                        category = prefixIndex >= 0 ? displayName.Substring(0, prefixIndex) : "Other";
-                        var name = displayName.Substring(prefixIndex >= 0 ? prefixIndex + 1 : 0);
-                        typeItem = new TypeSearcherItem(type, name);
+                        list.Add(typeItem);
                     }
-
-                    if (!dict.TryGetValue(category, out var item))
-                    {
-                        dict[category] = item = new SearcherItem(category);
-                        list.Add(item);
-                    }
-
-                    item.AddChild(typeItem);
                 }
                 catch (Exception)
                 {

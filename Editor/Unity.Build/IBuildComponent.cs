@@ -1,8 +1,7 @@
 namespace Unity.Build
 {
     /// <summary>
-    /// Defines the configuration used throughout a <see cref="BuildPipeline"/>.
-    /// Base interface for all <see cref="BuildConfiguration"/> components.
+    /// Base interface for all build configuration components.
     /// </summary>
     public interface IBuildComponent
     {

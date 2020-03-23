@@ -57,7 +57,7 @@ namespace Unity.Build.Tests
             var resultFailure = RunStepResult.Failure(config, step, @"{}{{}}{0}{s}%s%%\s±@£¢¤¬¦²³¼½¾");
             Assert.DoesNotThrow(() =>
             {
-                LogAssert.Expect(LogType.Error, new Regex(@"Run.* failed\.\n.+"));
+                LogAssert.Expect(LogType.Error, new Regex(@"Run.*failed after .*"));
                 resultFailure.LogResult();
             });
         }

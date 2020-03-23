@@ -2,6 +2,12 @@ namespace Unity.Build
 {
     internal static class StringExtensions
     {
+        public static string TrimStart(this string str, string value)
+        {
+            var index = str.IndexOf(value);
+            return index >= 0 ? str.Substring(index + value.Length) : str;
+        }
+
         public static string ToForwardSlash(this string value)
         {
             return value.Replace('\\', '/');

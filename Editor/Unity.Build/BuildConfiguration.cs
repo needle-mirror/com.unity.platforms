@@ -1,3 +1,5 @@
+using System;
+
 namespace Unity.Build
 {
     /// <summary>
@@ -6,14 +8,14 @@ namespace Unity.Build
     public sealed class BuildConfiguration : HierarchicalComponentContainer<BuildConfiguration, IBuildComponent>
     {
         /// <summary>
-        /// File extension for <see cref="BuildConfiguration"/> assets.
+        /// File extension for build configuration assets.
         /// </summary>
         public const string AssetExtension = ".buildconfiguration";
 
         /// <summary>
-        /// Retrieve the <see cref="BuildPipeline"/> of this <see cref="BuildConfiguration"/>.
+        /// Retrieve the build pipeline of this build configuration.
         /// </summary>
-        /// <returns>The <see cref="BuildPipeline"/> if found, otherwise <see langword="null"/>.</returns>
+        /// <returns>The build pipeline if found, otherwise <see langword="null"/>.</returns>
         public BuildPipeline GetBuildPipeline()
         {
             if (TryGetComponent<IBuildPipelineComponent>(out var component))
@@ -29,10 +31,10 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Determine if the <see cref="BuildPipeline"/> of this <see cref="BuildConfiguration"/> can build.
+        /// Determine if the build pipeline of this build configuration can build.
         /// </summary>
         /// <param name="reason">If <see cref="CanBuild"/> returns <see langword="false"/>, the reason why it fails.</param>
-        /// <returns>Whether or not the <see cref="BuildPipeline"/> can build.</returns>
+        /// <returns>Whether or not the build pipeline can build.</returns>
         public bool CanBuild(out string reason)
         {
             var pipeline = GetBuildPipeline();
@@ -45,9 +47,9 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Run the <see cref="BuildPipeline"/> of this <see cref="BuildConfiguration"/> to build the target.
+        /// Run the build pipeline of this build configuration to build the target.
         /// </summary>
-        /// <returns>The result of the <see cref="BuildPipeline"/> build.</returns>
+        /// <returns>The result of the build pipeline build.</returns>
         public BuildPipelineResult Build()
         {
             var pipeline = GetBuildPipeline();
@@ -64,10 +66,10 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Determine if the <see cref="BuildPipeline"/> of this <see cref="BuildConfiguration"/> can run.
+        /// Determine if the build pipeline of this build configuration can run.
         /// </summary>
         /// <param name="reason">If <see cref="CanRun"/> returns <see langword="false"/>, the reason why it fails.</param>
-        /// <returns>Whether or not the <see cref="BuildPipeline"/> can run.</returns>
+        /// <returns>Whether or not the build pipeline can run.</returns>
         public bool CanRun(out string reason)
         {
             var pipeline = GetBuildPipeline();
@@ -80,7 +82,7 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Run the resulting target from building the <see cref="BuildPipeline"/> of this <see cref="BuildConfiguration"/>.
+        /// Run the resulting target from building the build pipeline of this build configuration.
         /// </summary>
         /// <returns></returns>
         public RunStepResult Run()
@@ -92,5 +94,28 @@ namespace Unity.Build
             }
             return pipeline.Run(this);
         }
+
+        /// <summary>
+        /// Get the value of the first build artifact that is assignable to type <see cref="Type"/>.
+        /// </summary>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        /// <param name="type">The type of the build artifact.</param>
+        /// <returns>The build artifact if found, otherwise <see langword="null"/>.</returns>
+        public IBuildArtifact GetLastBuildArtifact(Type type) => BuildArtifacts.GetBuildArtifact(this, type);
+
+        /// <summary>
+        /// Get the value of the first build artifact that is assignable to type <typeparamref name="T"/>.
+        /// </summary>
+        /// <typeparam name="T">The type of the build artifact.</typeparam>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        /// <returns>The build artifact if found, otherwise <see langword="null"/>.</returns>
+        public T GetLastBuildArtifact<T>() where T : class, IBuildArtifact => BuildArtifacts.GetBuildArtifact<T>(this);
+
+        /// <summary>
+        /// Get the last build result for this build configuration.
+        /// </summary>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        /// <returns>The build result if found, otherwise <see langword="null"/>.</returns>
+        public BuildPipelineResult GetLastBuildResult() => BuildArtifacts.GetBuildResult(this);
     }
 }

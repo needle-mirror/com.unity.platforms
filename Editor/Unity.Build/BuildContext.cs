@@ -1,117 +1,55 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using Unity.Properties.Editor;
-using UnityEngine;
 
 namespace Unity.Build
 {
     /// <summary>
-    /// Holds contextual information while a <see cref="Build.BuildPipeline"/> is executing.
+    /// Holds contextual information when building a build pipeline.
     /// </summary>
-    public sealed class BuildContext : IDisposable
+    public sealed class BuildContext : ContextBase
     {
-        readonly Dictionary<Type, object> m_Values = new Dictionary<Type, object>();
-
-        internal BuildPipeline BuildPipeline { get; }
-        internal BuildConfiguration BuildConfiguration { get; }
-
         /// <summary>
-        /// List of all values stored.
-        /// </summary>
-        public object[] Values => m_Values.Values.ToArray();
-
-        /// <summary>
-        /// Current <see cref="Build.BuildPipeline"/> execution status.
+        /// Current build pipeline execution status.
         /// </summary>
         public BuildPipelineResult BuildPipelineStatus { get; }
 
         /// <summary>
-        /// The <see cref="BuildProgress"/> object used througout the build.
+        /// The build progress object used througout the build.
         /// </summary>
         public BuildProgress BuildProgress { get; }
 
         /// <summary>
-        /// Quick access to <see cref="Build.BuildManifest"/> value.
+        /// Quick access to build manifest value.
         /// </summary>
         public BuildManifest BuildManifest => GetOrCreateValue<BuildManifest>();
 
         /// <summary>
-        /// Determine if the value of type <typeparamref name="T"/> exists.
+        /// Get a build result representing a success.
         /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <returns><see langword="true"/> if value is found, <see langword="false"/> otherwise.</returns>
-        public bool HasValue<T>() where T : class => m_Values.Keys.Any(type => typeof(T).IsAssignableFrom(type));
+        /// <returns>A new build result instance.</returns>
+        public BuildPipelineResult Success() => BuildPipelineResult.Success(BuildPipeline, BuildConfiguration);
 
         /// <summary>
-        /// Get value of type <typeparamref name="T"/> if found, otherwise <see langword="null"/>.
+        /// Get a build result representing a failure.
         /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <returns>The value of type <typeparamref name="T"/> if found, otherwise <see langword="null"/>.</returns>
-        public T GetValue<T>() where T : class => m_Values.FirstOrDefault(pair => typeof(T).IsAssignableFrom(pair.Key)).Value as T;
+        /// <param name="reason">The reason of the failure.</param>
+        /// <returns>A new build result instance.</returns>
+        public BuildPipelineResult Failure(string reason) => BuildPipelineResult.Failure(BuildPipeline, BuildConfiguration, reason);
 
         /// <summary>
-        /// Get value of type <typeparamref name="T"/> if found, otherwise a new instance of type <typeparamref name="T"/> constructed with <see cref="TypeConstruction"/>.
+        /// Get a build result representing a failure.
         /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <returns>The value or new instance of type <typeparamref name="T"/>.</returns>
-        public T GetOrCreateValue<T>() where T : class
-        {
-            var value = GetValue<T>();
-            if (value == null)
-            {
-                value = TypeConstruction.Construct<T>();
-                SetValue(value);
-            }
-            return value;
-        }
-
-        /// <summary>
-        /// Set value of type <typeparamref name="T"/> to this <see cref="BuildContext"/>.
-        /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <param name="value">The value to set.</param>
-        public void SetValue<T>(T value) where T : class
-        {
-            if (value == null)
-            {
-                return;
-            }
-
-            var type = value.GetType();
-            if (type == typeof(object))
-            {
-                return;
-            }
-
-            m_Values[type] = value;
-        }
-
-        /// <summary>
-        /// Remove value of type <typeparamref name="T"/> from this <see cref="BuildContext"/>.
-        /// </summary>
-        /// <typeparam name="T">The value type.</typeparam>
-        /// <returns><see langword="true"/> if the value was removed, otherwise <see langword="false"/>.</returns>
-        public bool RemoveValue<T>() where T : class => m_Values.Remove(typeof(T));
+        /// <param name="exception">The exception that was thrown.</param>
+        /// <returns>A new build result instance.</returns>
+        public BuildPipelineResult Failure(Exception exception) => BuildPipelineResult.Failure(BuildPipeline, BuildConfiguration, exception);
 
         internal BuildContext() { }
 
-        internal BuildContext(BuildPipeline pipeline, BuildConfiguration config, BuildProgress progress = null, Action<BuildContext> mutator = null)
+        internal BuildContext(BuildPipeline pipeline, BuildConfiguration config, BuildProgress progress = null, Action<BuildContext> mutator = null) :
+            base(pipeline, config)
         {
-            BuildPipeline = pipeline ?? throw new NullReferenceException(nameof(pipeline));
-            BuildConfiguration = config ?? BuildConfiguration.CreateInstance();
+            BuildPipelineStatus = BuildPipelineResult.Success(pipeline, config);
             BuildProgress = progress;
-            BuildPipelineStatus = BuildPipelineResult.Success(pipeline, BuildConfiguration);
-
             mutator?.Invoke(this);
-
-            // Work-around for assets that can be garbage collected during a build
-            BuildConfiguration.hideFlags |= HideFlags.HideAndDontSave;
-            BuildPipeline.hideFlags |= HideFlags.HideAndDontSave;
-        }
-
-        public void Dispose()
-        {
         }
     }
 }

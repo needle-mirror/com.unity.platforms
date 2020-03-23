@@ -7,17 +7,19 @@ using UnityEngine;
 
 namespace Unity.Build
 {
-#if UNITY_2020_1_OR_NEWER
-    [ScriptedImporter(3, new[] { BuildConfiguration.AssetExtension
-#else
-    [ScriptedImporter(2, new[] { BuildConfiguration.AssetExtension
-#endif
+    [ScriptedImporter(Version, new[] { BuildConfiguration.AssetExtension
 #pragma warning disable 618
         , BuildSettings.AssetExtension
 #pragma warning restore 618
     })]
     sealed class BuildConfigurationScriptedImporter : ScriptedImporter
     {
+#if UNITY_2020_1_OR_NEWER
+        const int Version = 3;
+#else
+        const int Version = 2;
+#endif
+
         public override void OnImportAsset(AssetImportContext context)
         {
             var asset = BuildConfiguration.CreateInstance();

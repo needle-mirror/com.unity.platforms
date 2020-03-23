@@ -80,7 +80,7 @@ namespace Unity.Build.Tests
         public void GetBuildArtifact_NoCache_IsValid()
         {
             var file = new DirectoryInfo(BuildArtifacts.BaseDirectory).GetFile($"{m_BuildConfiguration.name}.json");
-            file.WriteAllText($"{{ \"Result\": null, \"Artifacts\": [{{ \"$type\": {typeof(TestArtifactB).GetFullyQualifedAssemblyTypeName().DoubleQuotes()} }}] }}");
+            file.WriteAllText($"{{ \"Result\": null, \"Artifacts\": [{{ \"$type\": {typeof(TestArtifactB).GetQualifedAssemblyTypeName().DoubleQuotes()} }}] }}");
             Assert.That(BuildArtifacts.GetBuildArtifact<TestArtifactB>(m_BuildConfiguration), Is.Not.Null);
         }
 

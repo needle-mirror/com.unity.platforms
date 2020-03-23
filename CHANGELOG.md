@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.2.2] - 2020-03-14
+## [0.2.2] - 2020-03-23
 
 ### Added
 - Added `com.unity.properties.ui` package version to `1.1.0-preview`.
@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Show apply/revert/cancel dialog if build configuration is modified upon clicking Build and/or Run button.
+- Fixed build configuration inspector when using Unity 2020.1 and above.
+- Build progress bar will update after elapsed time even if no values changed.
+
+### Removed
+- Removed dependency on newtonsoft json to use serialization package API instead.
 
 ## [0.2.1] - 2020-02-25
 

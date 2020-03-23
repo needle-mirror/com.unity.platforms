@@ -1,17 +1,16 @@
 {
     "name": "Unity.Build.DotsRuntime",
     "references": [
-        "Unity.Build"
+        "Unity.Build",
+        "Unity.Serialization"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "Newtonsoft.Json.dll"
-    ],
+    "overrideReferences": false,
+    "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

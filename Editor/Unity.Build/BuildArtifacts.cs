@@ -23,11 +23,11 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Get the value of the first <see cref="IBuildArtifact"/> that is assignable to type <see cref="Type"/>.
+        /// Get the value of the first build artifact that is assignable to type <see cref="Type"/>.
         /// </summary>
-        /// <param name="config">The <see cref="BuildConfiguration"/> that was used to store the <see cref="IBuildArtifact"/>.</param>
-        /// <param name="type">The type of the <see cref="IBuildArtifact"/>.</param>
-        /// <returns>The <see cref="IBuildArtifact"/> if found, <see langword="null"/> otherwise.</returns>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        /// <param name="type">The type of the build artifact.</param>
+        /// <returns>The build artifact if found, <see langword="null"/> otherwise.</returns>
         public static IBuildArtifact GetBuildArtifact(BuildConfiguration config, Type type)
         {
             if (config == null || !config)
@@ -55,18 +55,18 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Get the value of the first <see cref="IBuildArtifact"/> that is assignable to type <typeparamref name="T"/>.
+        /// Get the value of the first build artifact that is assignable to type <typeparamref name="T"/>.
         /// </summary>
-        /// <typeparam name="T">The type of the <see cref="IBuildArtifact"/>.</typeparam>
-        /// <param name="config">The <see cref="BuildConfiguration"/> that was used to store the <see cref="IBuildArtifact"/>.</param>
-        /// <returns>The <see cref="IBuildArtifact"/> if found, <see langword="null"/> otherwise.</returns>
+        /// <typeparam name="T">The type of the build artifact.</typeparam>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        /// <returns>The build artifact if found, <see langword="null"/> otherwise.</returns>
         public static T GetBuildArtifact<T>(BuildConfiguration config) where T : class, IBuildArtifact => (T)GetBuildArtifact(config, typeof(T));
 
         /// <summary>
-        /// Get the last <see cref="BuildPipelineResult"/> from building the <see cref="BuildConfiguration"/> specified.
+        /// Get the last build result from building the build configuration specified.
         /// </summary>
-        /// <param name="config">The <see cref="BuildConfiguration"/> that was used to store the <see cref="IBuildArtifact"/>.</param>
-        /// <returns>The <see cref="BuildPipelineResult"/> if found, <see langword="null"/> otherwise.</returns>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        /// <returns>The build result if found, <see langword="null"/> otherwise.</returns>
         public static BuildPipelineResult GetBuildResult(BuildConfiguration config) => GetArtifactData(config)?.Result;
 
         internal static void Store(BuildPipelineResult result, IBuildArtifact[] artifacts) => SetArtifactData(result, artifacts);

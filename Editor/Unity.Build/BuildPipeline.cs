@@ -91,6 +91,7 @@ namespace Unity.Build
                 {
                     result.Succeeded = false;
                     result.Message = firstFailedBuildStep.Message;
+                    result.Exception = firstFailedBuildStep.Exception;
                 }
 
                 BuildArtifacts.Store(result, context.Values.OfType<IBuildArtifact>().ToArray());
@@ -154,7 +155,7 @@ namespace Unity.Build
             }
             catch (Exception exception)
             {
-                return RunStepResult.Exception(config, RunStep, exception);
+                return RunStepResult.Failure(config, RunStep, exception);
             }
         }
 
@@ -266,7 +267,7 @@ namespace Unity.Build
                 catch (Exception exception)
                 {
                     // Add build step exception to pipeline status, and stop executing build steps
-                    status.BuildStepsResults.Add(BuildStepResult.Exception(step, exception));
+                    status.BuildStepsResults.Add(BuildStepResult.Failure(step, exception));
                     break;
                 }
             }
@@ -295,7 +296,7 @@ namespace Unity.Build
                 catch (Exception exception)
                 {
                     // Add cleanup step exception to pipeline status (not stopping execution)
-                    status.BuildStepsResults.Add(BuildStepResult.Exception(step, exception));
+                    status.BuildStepsResults.Add(BuildStepResult.Failure(step, exception));
                 }
             }
 

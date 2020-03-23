@@ -45,7 +45,7 @@ namespace Unity.Build
                 }
                 else
                 {
-                    json = value.GetType().GetFullyQualifedAssemblyTypeName();
+                    json = value.GetType().GetQualifedAssemblyTypeName();
                 }
             }
             writer.WriteEncodedJsonString(json);

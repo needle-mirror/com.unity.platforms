@@ -9,10 +9,13 @@ namespace Unity.Build
     public sealed class BuildProgress : IDisposable
     {
         static int s_Depth;
+        static TimeSpan s_UpdateFrequency = TimeSpan.FromMilliseconds(250);
+
         string m_Title;
         string m_Info;
         float m_Percent;
         bool m_Cancelled;
+        DateTime m_LastUpdateTime;
 
         /// <summary>
         /// Update or get the title of the progress indicator.
@@ -28,7 +31,7 @@ namespace Unity.Build
                 }
 
                 m_Title = value;
-                m_Cancelled = EditorUtility.DisplayCancelableProgressBar(m_Title, m_Info, m_Percent);
+                Update();
             }
         }
 
@@ -46,7 +49,7 @@ namespace Unity.Build
                 }
 
                 m_Info = value;
-                m_Cancelled = EditorUtility.DisplayCancelableProgressBar(m_Title, m_Info, m_Percent);
+                Update();
             }
         }
 
@@ -65,7 +68,7 @@ namespace Unity.Build
                 }
 
                 m_Percent = percent;
-                m_Cancelled = EditorUtility.DisplayCancelableProgressBar(m_Title, m_Info, m_Percent);
+                Update();
             }
         }
 
@@ -78,30 +81,30 @@ namespace Unity.Build
         public BuildProgress(string title, string info, float percent = 0f)
         {
             s_Depth++;
-            m_Title = title ?? string.Empty;
-            m_Info = info ?? string.Empty;
-            m_Percent = Clamp(percent, 0f, 1f);
-            m_Cancelled = EditorUtility.DisplayCancelableProgressBar(m_Title, m_Info, m_Percent);
+            Update(title, info, percent);
         }
 
         /// <summary>
-        /// Update the progress indicator.
+        /// Update the progress indicator. Returns <see langword="true"/> if user cancelled.
         /// </summary>
         /// <param name="title">Title of the progress indicator.</param>
         /// <param name="info">Information of the progress indicator.</param>
         /// <param name="percent">Completion percent of the progress indicator.</param>
-        /// <returns>Whether or not the user had pressed the cancel button.</returns>
+        /// <returns><see langword="true"/> if the user cancelled, <see langword="false"/> otherwise.</returns>
         public bool Update(string title, string info, float percent)
         {
             title = title ?? m_Title ?? string.Empty;
             info = info ?? m_Info ?? string.Empty;
             percent = Clamp(percent, 0f, 1f);
 
-            if (title != m_Title || info != m_Info || percent != m_Percent)
+            var now = DateTime.Now;
+            var elapsed = now - m_LastUpdateTime;
+            if (elapsed >= s_UpdateFrequency || title != m_Title || info != m_Info || percent != m_Percent)
             {
                 m_Title = title;
                 m_Info = info;
                 m_Percent = percent;
+                m_LastUpdateTime = now;
                 m_Cancelled = EditorUtility.DisplayCancelableProgressBar(m_Title, m_Info, m_Percent);
             }
 
@@ -109,11 +112,26 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Update the progress indicator.
+        /// Update the progress indicator. Returns <see langword="true"/> if user cancelled.
         /// </summary>
         /// <param name="info">Information of the progress indicator.</param>
         /// <param name="percent">Completion percent of the progress indicator.</param>
+        /// <returns><see langword="true"/> if the user cancelled, <see langword="false"/> otherwise.</returns>
         public bool Update(string info, float percent) => Update(m_Title, info, percent);
+
+        /// <summary>
+        /// Update the progress indicator. Returns <see langword="true"/> if user cancelled.
+        /// </summary>
+        /// <param name="info">Information of the progress indicator.</param>
+        /// <param name="percent">Completion percent of the progress indicator.</param>
+        /// <returns><see langword="true"/> if the user cancelled, <see langword="false"/> otherwise.</returns>
+        public bool Update(float percent) => Update(m_Title, m_Info, percent);
+
+        /// <summary>
+        /// Update the progress indicator. Returns <see langword="true"/> if user cancelled.
+        /// </summary>
+        /// <returns><see langword="true"/> if the user cancelled, <see langword="false"/> otherwise.</returns>
+        public bool Update() => Update(m_Title, m_Info, m_Percent);
 
         public void Dispose()
         {

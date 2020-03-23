@@ -413,12 +413,11 @@ namespace Unity.Build.Editor
             addComponentButton.AddToClassList(ClassNames.AddComponent);
             addComponentButton.RegisterCallback<MouseUpEvent>(evt =>
             {
-                var databases = new[]
+                var database = TypeSearcherDatabase.Populate<IBuildComponent>((type) =>
                 {
-                    TypeSearcherDatabase.GetBuildConfigurationDatabase(new HashSet<Type>(BuildConfiguration.GetAvailableTypes(type => !IsShown(type)).Concat(components.Select(c => c.GetType()))))
-                };
-
-                var searcher = new Searcher(databases, new AddTypeSearcherAdapter("Add Component"));
+                    return !type.HasAttribute<HideInInspector>() && !config.GetComponentTypes().Contains(type);
+                });
+                var searcher = new Searcher(database, new AddTypeSearcherAdapter("Add Component"));
                 var editorWindow = EditorWindow.focusedWindow;
                 var button = evt.target as Button;
 
@@ -433,8 +432,6 @@ namespace Unity.Build.Editor
             addComponentButtonUpdater.OnPreUpdate += updater => updater.Element.SetEnabled(m_LastEditState);
             addComponentButton.binding = addComponentButtonUpdater;
         }
-
-        static bool IsShown(Type t) => t.GetCustomAttribute<HideInInspector>() == null;
 
         bool AddType(SearcherItem arg)
         {

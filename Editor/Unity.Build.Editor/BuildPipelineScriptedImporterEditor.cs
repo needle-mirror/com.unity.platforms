@@ -163,20 +163,6 @@ namespace Unity.Build.Editor
             root.Q<Button>("RunStep__SelectButton").clickable.clickedWithEventInfo += OnRunStepSelectorClicked;
         }
 
-        static string GetBuildStepDisplayName(Type type)
-        {
-            var name = BuildStep.GetName(type);
-            var category = BuildStep.GetCategory(type);
-            return !string.IsNullOrEmpty(category) ? $"{category}/{name}" : name;
-        }
-
-        static string GetRunStepDisplayName(Type type)
-        {
-            var name = RunStep.GetName(type);
-            var category = RunStep.GetCategory(type);
-            return !string.IsNullOrEmpty(category) ? $"{category}/{name}" : name;
-        }
-
         bool AddStep(SearcherItem item)
         {
             var pipeline = extraDataTarget as BuildPipeline;
@@ -198,12 +184,11 @@ namespace Unity.Build.Editor
 
         void AddDropdownCallbackDelegate(Rect buttonRect, ReorderableList list)
         {
-            var databases = new[]
-            {
-                TypeSearcherDatabase.GetBuildStepsDatabase(new HashSet<Type>(BuildStep.GetAvailableTypes(type => !BuildStep.GetIsShown(type))), GetBuildStepDisplayName),
-            };
-
-            var searcher = new Searcher(databases, new AddTypeSearcherAdapter("Add Build Step"));
+            var database = TypeSearcherDatabase.Populate<IBuildStep>(
+                type => !type.HasAttribute<HideInInspector>(),
+                type => BuildStep.GetName(type),
+                type => BuildStep.GetCategory(type));
+            var searcher = new Searcher(database, new AddTypeSearcherAdapter("Add Build Step"));
             var editorWindow = EditorWindow.focusedWindow;
             SearcherWindow.Show(
                 editorWindow,
@@ -341,11 +326,13 @@ namespace Unity.Build.Editor
 
         void OnRunStepSelectorClicked(EventBase @event)
         {
+            var database = TypeSearcherDatabase.Populate<RunStep>(
+                type => !type.HasAttribute<HideInInspector>(),
+                type => RunStep.GetName(type),
+                type => RunStep.GetCategory(type));
             SearcherWindow.Show(
                 EditorWindow.focusedWindow,
-                new Searcher(
-                    TypeSearcherDatabase.GetRunStepDatabase(new HashSet<Type>(RunStep.GetAvailableTypes(type => !RunStep.GetIsShown(type))), GetRunStepDisplayName),
-                    new AddTypeSearcherAdapter("Select Run Script")),
+                new Searcher(database, new AddTypeSearcherAdapter("Select Run Script")),
                 UpdateRunStep,
                 @event.originalMousePosition + Vector2.up * 35.0f,
                 a => { },

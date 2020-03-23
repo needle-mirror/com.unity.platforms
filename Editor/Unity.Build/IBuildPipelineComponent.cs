@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Unity.Build
 {
     /// <summary>
-    /// Base interface for <see cref="BuildConfiguration"/> components that provides the <see cref="BuildPipeline"/>.
+    /// Base interface for build configuration components that provides a build pipeline.
     /// </summary>
     public interface IBuildPipelineComponent : IBuildComponent
     {

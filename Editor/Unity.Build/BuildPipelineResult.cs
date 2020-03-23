@@ -3,47 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Unity.Properties;
-using Unity.Properties.Editor;
-using UnityEditor;
-using UnityEngine;
 
 namespace Unity.Build
 {
     /// <summary>
     /// Holds the results of the execution of a <see cref="Build.BuildPipeline"/>.
     /// </summary>
-    public sealed class BuildPipelineResult
+    public sealed class BuildPipelineResult : ResultBase
     {
-        /// <summary>
-        /// Determine if the execution of the <see cref="Build.BuildPipeline"/> succeeded.
-        /// </summary>
-        [CreateProperty] public bool Succeeded { get; internal set; }
-
-        /// <summary>
-        /// Determine if the execution of the <see cref="Build.BuildPipeline"/> failed.
-        /// </summary>
-        public bool Failed { get => !Succeeded; }
-
-        /// <summary>
-        /// The message resulting from the execution of this <see cref="Build.BuildPipeline"/>.
-        /// </summary>
-        [CreateProperty] public string Message { get; internal set; }
-
-        /// <summary>
-        /// The total duration of the <see cref="Build.BuildPipeline"/> execution.
-        /// </summary>
-        [CreateProperty] public TimeSpan Duration { get; internal set; }
-
-        /// <summary>
-        /// The <see cref="Build.BuildPipeline"/> that was run.
-        /// </summary>
-        [CreateProperty] public BuildPipeline BuildPipeline { get; internal set; }
-
-        /// <summary>
-        /// The <see cref="Build.BuildConfiguration"/> used throughout the execution of the <see cref="Build.BuildPipeline"/>.
-        /// </summary>
-        [CreateProperty] public BuildConfiguration BuildConfiguration { get; internal set; }
-
         /// <summary>
         /// A list of <see cref="BuildStepResult"/> collected during the <see cref="Build.BuildPipeline"/> execution for each <see cref="IBuildStep"/>.
         /// </summary>
@@ -97,35 +64,29 @@ namespace Unity.Build
         public static BuildPipelineResult Failure(BuildPipeline pipeline, BuildConfiguration config, string message) => new BuildPipelineResult
         {
             Succeeded = false,
-            Message = message,
             BuildPipeline = pipeline,
-            BuildConfiguration = config
+            BuildConfiguration = config,
+            Message = message
         };
 
         /// <summary>
-        /// Output the log result to developer debug console.
+        /// Create a new instance of <see cref="BuildPipelineResult"/> that represent a failed execution.
         /// </summary>
-        public void LogResult()
+        /// <param name="config">The <see cref="Build.BuildConfiguration"/> used throughout this <see cref="Build.BuildPipeline"/> execution.</param>
+        /// <param name="message">The failure message.</param>
+        /// <returns>A new <see cref="BuildPipelineResult"/> instance.</returns>
+        public static BuildPipelineResult Failure(BuildPipeline pipeline, BuildConfiguration config, Exception exception) => new BuildPipelineResult
         {
-            if (Succeeded)
-            {
-                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, BuildConfiguration, ToString());
-            }
-            else
-            {
-                Debug.LogError(ToString(), BuildConfiguration);
-            }
-        }
+            Succeeded = false,
+            BuildPipeline = pipeline,
+            BuildConfiguration = config,
+            Exception = exception
+        };
 
-        /// <summary>
-        /// Get the <see cref="BuildPipelineResult"/> as a string that can be used for logging.
-        /// </summary>
-        /// <returns>The <see cref="BuildPipelineResult"/> as a string.</returns>
         public override string ToString()
         {
             var name = BuildConfiguration.name;
             var what = !string.IsNullOrEmpty(name) ? $" {name.ToHyperLink()}" : string.Empty;
-
             if (Succeeded)
             {
                 return $"Build{what} succeeded after {Duration.ToShortString()}.";
@@ -135,7 +96,7 @@ namespace Unity.Build
                 var result = BuildStepsResults.FirstOrDefault(r => r.Failed);
                 if (result != null && result.Failed)
                 {
-                    return $"Build{what} failed in {result.BuildStep.Name} after {Duration.ToShortString()}.\n{Message}";
+                    return $"Build{what} failed in step '{result.BuildStep.Name}' after {Duration.ToShortString()}.\n{Message}";
                 }
                 else
                 {

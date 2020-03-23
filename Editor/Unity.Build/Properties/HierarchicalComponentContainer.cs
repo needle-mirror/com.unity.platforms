@@ -25,12 +25,31 @@ namespace Unity.Build
         [CreateProperty] internal readonly List<TComponent> Components = new List<TComponent>();
 
         /// <summary>
+        /// Create a new instance that duplicates the specified container.
+        /// </summary>
+        /// <param name="mutator">Optional mutator that can be used to modify the asset.</param>
+        /// <returns>The new asset instance.</returns>
+        public static TContainer CreateInstance(TContainer container)
+        {
+            var instance = CreateInstance<TContainer>();
+            foreach (var component in container.Components)
+            {
+                instance.SetComponent(component.GetType(), component);
+            }
+            foreach (var dependency in container.Dependencies)
+            {
+                instance.Dependencies.Add(dependency);
+            }
+            return instance;
+        }
+
+        /// <summary>
         /// Determine if a <see cref="Type"/> component is stored in this container or its dependencies.
         /// </summary>
         /// <param name="type"><see cref="Type"/> of the component.</param>
         public bool HasComponent(Type type)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
             return HasComponentOnSelf(type) || HasComponentOnDependency(type);
         }
 
@@ -46,7 +65,7 @@ namespace Unity.Build
         /// <param name="type"><see cref="Type"/> of the component.</param>
         public bool IsComponentInherited(Type type)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
             return !HasComponentOnSelf(type) && HasComponentOnDependency(type);
         }
 
@@ -62,7 +81,7 @@ namespace Unity.Build
         /// <param name="type"><see cref="Type"/> of the component.</param>
         public bool IsComponentOverridden(Type type)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
             return HasComponentOnSelf(type) && HasComponentOnDependency(type);
         }
 
@@ -78,7 +97,7 @@ namespace Unity.Build
         /// <param name="type"><see cref="Type"/> of the component.</param>
         public TComponent GetComponent(Type type)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
             if (!TryGetComponent(type, out var value))
             {
                 throw new InvalidOperationException($"Component type '{type.FullName}' not found.");
@@ -157,6 +176,32 @@ namespace Unity.Build
         }
 
         /// <summary>
+        /// Get the value of a <see cref="Type"/> component if found.
+        /// Otherwise an instance created using <see cref="TypeConstruction"/> utility.
+        /// The container is not modified.
+        /// </summary>
+        /// <param name="type"><see cref="Type"/> of the component.</param>
+        /// <returns>The component value.</returns>
+        public TComponent GetComponentOrDefault(Type type)
+        {
+            CheckComponentTypeAndThrowIfInvalid(type);
+            if (!TryGetComponent(type, out var value))
+            {
+                return TypeConstruction.Construct<TComponent>(type);
+            }
+            return value;
+        }
+
+        /// <summary>
+        /// Get the value of a <typeparamref name="T"/> component if found.
+        /// Otherwise an instance created using <see cref="TypeConstruction"/> utility.
+        /// The container is not modified.
+        /// </summary>
+        /// <typeparam name="T">Type of the component.</typeparam>
+        /// <returns>The component value.</returns>
+        public T GetComponentOrDefault<T>() where T : TComponent => (T)GetComponentOrDefault(typeof(T));
+
+        /// <summary>
         /// Get a flatten list of all components recursively from this container and its dependencies.
         /// </summary>
         /// <returns>List of components.</returns>
@@ -186,7 +231,7 @@ namespace Unity.Build
         /// <returns>List of components.</returns>
         public IEnumerable<TComponent> GetComponents(Type type)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
 
             var lookup = new Dictionary<Type, TComponent>();
             foreach (var dependency in GetDependencies())
@@ -221,13 +266,36 @@ namespace Unity.Build
         public IEnumerable<T> GetComponents<T>() where T : TComponent => GetComponents(typeof(T)).Cast<T>();
 
         /// <summary>
+        /// Get a flatten list of all component types from this container and its dependencies.
+        /// </summary>
+        /// <returns>List of component types.</returns>
+        public IEnumerable<Type> GetComponentTypes()
+        {
+            var types = new HashSet<Type>();
+            foreach (var dependency in GetDependencies())
+            {
+                foreach (var component in dependency.Components)
+                {
+                    types.Add(component.GetType());
+                }
+            }
+
+            foreach (var component in Components)
+            {
+                types.Add(component.GetType());
+            }
+
+            return types;
+        }
+
+        /// <summary>
         /// Set the value of a <see cref="Type"/> component on this container.
         /// </summary>
         /// <param name="type"><see cref="Type"/> of the component.</param>
         /// <param name="value">Value of the component to set.</param>
         public void SetComponent(Type type, TComponent value)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
             if (type.IsInterface || type.IsAbstract)
             {
                 throw new InvalidOperationException($"{nameof(type)} cannot be interface or abstract.");
@@ -253,12 +321,33 @@ namespace Unity.Build
         public void SetComponent<T>(T value) where T : TComponent => SetComponent(typeof(T), value);
 
         /// <summary>
+        /// Set the value of a <see cref="Type"/> component on this container using an instance created using <see cref="TypeConstruction"/> utility.
+        /// </summary>
+        /// <param name="type">Type of the component.</param>
+        public void SetComponent(Type type)
+        {
+            CheckComponentTypeAndThrowIfInvalid(type);
+            if (type.IsInterface || type.IsAbstract)
+            {
+                throw new InvalidOperationException($"{nameof(type)} cannot be interface or abstract.");
+            }
+
+            SetComponent(type, TypeConstruction.Construct<TComponent>(type));
+        }
+
+        /// <summary>
+        /// Set the value of a <typeparamref name="T"/> component on this container using an instance created using <see cref="TypeConstruction"/> utility.
+        /// </summary>
+        /// <typeparam name="T">Type of the component.</typeparam>
+        public void SetComponent<T>() where T : TComponent => SetComponent(typeof(T));
+
+        /// <summary>
         /// Remove a <see cref="Type"/> component from this container.
         /// </summary>
         /// <param name="type"><see cref="Type"/> of the component.</param>
         public bool RemoveComponent(Type type)
         {
-            CheckTypeAndThrowIfInvalid(type);
+            CheckComponentTypeAndThrowIfInvalid(type);
             return Components.RemoveAll(c => type.IsAssignableFrom(c.GetType())) > 0;
         }
 
@@ -414,7 +503,7 @@ namespace Unity.Build
             }
         }
 
-        void CheckTypeAndThrowIfInvalid(Type type)
+        internal static void CheckComponentTypeAndThrowIfInvalid(Type type)
         {
             if (type == null)
             {
