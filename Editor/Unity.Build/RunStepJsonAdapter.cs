@@ -1,3 +1,4 @@
+using System;
 using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters.Contravariant;
 using UnityEditor;
@@ -11,12 +12,23 @@ namespace Unity.Build
 
         public object Deserialize(SerializedValueView view)
         {
-            var json = view.ToString();
+            if (view.Type != TokenType.String)
+            {
+                return null;
+            }
+
+            var json = view.AsStringView().ToString();
             if (string.IsNullOrEmpty(json))
             {
                 return null;
             }
-            return TypeConstructionHelper.TryConstructFromAssemblyQualifiedTypeName<RunStep>(json, out var step) ? step : null;
+
+            if (TypeConstructionHelper.TryConstructFromAssemblyQualifiedTypeName<RunStep>(json, out var step))
+            {
+                return step;
+            }
+
+            throw new ArgumentException($"Failed to construct type. Could not resolve type from TypeName=[{json}].");
         }
 
         public void Serialize(JsonStringBuffer writer, RunStep value)

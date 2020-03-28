@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Unity.Build.Common;
-using System.Collections.Generic;
 using Unity.Serialization;
 using UnityEditor;
 
@@ -92,7 +92,7 @@ namespace Unity.Build.Classic
                 scenePaths = sceneList.GetScenePathsForBuild();
             }
 
-            if(scenePaths.Length == 0)
+            if (scenePaths.Length == 0)
                 return BuildStepResult.Failure(this, "There are no scenes to build.");
 
             var outputPath = this.GetOutputBuildDirectory(context);

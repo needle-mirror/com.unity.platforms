@@ -1,3 +1,4 @@
+using System;
 using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters.Contravariant;
 using UnityEditor;
@@ -6,23 +7,49 @@ namespace Unity.Build
 {
     sealed class BuildStepJsonAdapter : IJsonAdapter<IBuildStep>
     {
+        static readonly string s_EmptyGlobalObjectId = new GlobalObjectId().ToString();
+
         [InitializeOnLoadMethod]
         static void Register() => JsonSerialization.AddGlobalAdapter(new BuildStepJsonAdapter());
 
         public object Deserialize(SerializedValueView view)
         {
-            var json = view.ToString();
+            if (view.Type != TokenType.String)
+            {
+                return null;
+            }
+
+            var json = view.AsStringView().ToString();
             if (string.IsNullOrEmpty(json))
+            {
+                return null;
+            }
+
+            // Workaround issue where GlobalObjectId.TryParse returns false for empty GlobalObjectId
+            if (json == s_EmptyGlobalObjectId)
             {
                 return null;
             }
 
             if (GlobalObjectId.TryParse(json, out var id))
             {
-                if (GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) is BuildPipeline pipeline)
+                if (id.assetGUID.Empty())
+                {
+                    return null;
+                }
+
+                var obj = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id);
+                if (obj == null || !obj)
+                {
+                    throw new InvalidOperationException($"An error occured while deserializing asset reference GUID=[{id.assetGUID.ToString()}]. Asset is not yet loaded and will result in a null reference.");
+                }
+
+                if (obj is BuildPipeline pipeline)
                 {
                     return pipeline;
                 }
+
+                throw new InvalidOperationException($"An error occured while deserializing asset reference GUID=[{id.assetGUID.ToString()}]. Asset is not a {nameof(BuildPipeline)}.");
             }
             else
             {
@@ -30,8 +57,9 @@ namespace Unity.Build
                 {
                     return step;
                 }
+
+                throw new ArgumentException($"Failed to construct type. Could not resolve type from TypeName=[{json}].");
             }
-            return null;
         }
 
         public void Serialize(JsonStringBuffer writer, IBuildStep value)

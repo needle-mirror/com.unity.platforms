@@ -8,6 +8,11 @@ namespace Unity.Build
     {
         public static T ConstructFromAssemblyQualifiedTypeName<T>(string assemblyQualifiedTypeName)
         {
+            if (string.IsNullOrEmpty(assemblyQualifiedTypeName))
+            {
+                throw new ArgumentException(nameof(assemblyQualifiedTypeName));
+            }
+
             var type = Type.GetType(assemblyQualifiedTypeName);
             if (null == type && FormerNameAttribute.TryGetCurrentTypeName(assemblyQualifiedTypeName, out var currentTypeName))
             {
@@ -18,12 +23,26 @@ namespace Unity.Build
 
         public static bool TryConstructFromAssemblyQualifiedTypeName<T>(string assemblyQualifiedTypeName, out T value)
         {
-            var type = Type.GetType(assemblyQualifiedTypeName);
-            if (null == type && FormerNameAttribute.TryGetCurrentTypeName(assemblyQualifiedTypeName, out var currentTypeName))
+            if (string.IsNullOrEmpty(assemblyQualifiedTypeName))
             {
-                type = Type.GetType(currentTypeName);
+                value = default;
+                return false;
             }
-            return TypeConstruction.TryConstruct(type, out value);
+
+            try
+            {
+                var type = Type.GetType(assemblyQualifiedTypeName);
+                if (null == type && FormerNameAttribute.TryGetCurrentTypeName(assemblyQualifiedTypeName, out var currentTypeName))
+                {
+                    type = Type.GetType(currentTypeName);
+                }
+                return TypeConstruction.TryConstruct(type, out value);
+            }
+            catch
+            {
+                value = default;
+                return false;
+            }
         }
     }
 }

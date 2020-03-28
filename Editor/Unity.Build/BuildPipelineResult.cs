@@ -85,24 +85,8 @@ namespace Unity.Build
 
         public override string ToString()
         {
-            var name = BuildConfiguration.name;
-            var what = !string.IsNullOrEmpty(name) ? $" {name.ToHyperLink()}" : string.Empty;
-            if (Succeeded)
-            {
-                return $"Build{what} succeeded after {Duration.ToShortString()}.";
-            }
-            else
-            {
-                var result = BuildStepsResults.FirstOrDefault(r => r.Failed);
-                if (result != null && result.Failed)
-                {
-                    return $"Build{what} failed in step '{result.BuildStep.Name}' after {Duration.ToShortString()}.\n{Message}";
-                }
-                else
-                {
-                    return $"Build{what} failed after {Duration.ToShortString()}.\n{Message}";
-                }
-            }
+            var result = BuildStepsResults.FirstOrDefault(r => r.Failed);
+            return result != null ? result.ToString() : $"Build {base.ToString()}";
         }
 
         public BuildPipelineResult() { }

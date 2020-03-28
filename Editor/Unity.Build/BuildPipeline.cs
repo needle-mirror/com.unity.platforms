@@ -252,7 +252,9 @@ namespace Unity.Build
                     var result = step.RunBuildStep(context);
                     timer.Stop();
 
-                    // Update build step duration
+                    // Update build step
+                    result.BuildConfiguration = status.BuildConfiguration;
+                    result.BuildPipeline = status.BuildPipeline;
                     result.Duration = timer.Elapsed;
 
                     // Add build step result to pipeline status

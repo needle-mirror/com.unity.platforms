@@ -7,16 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.2.2] - 2020-03-23
 
 ### Added
-- Added `com.unity.properties.ui` package version to `1.1.0-preview`.
+- Added `com.unity.properties.ui` package version to `1.1.1-preview`.
 - Added support for `LazyLoadReference` for deserializing asset references without loading them (requires Unity 2020.1).
 - DotsBuildTarget now has an overridable TargetFramework property, which can be used to change target .NET framework.
 
 ### Removed
 - Removed `DotsConfig` as it now lives in `com.unity.dots.runtime-0.24.0`.
+- Removed unused dependency on `com.unity.dots.runtime'.
 
 ### Changed
-- Updated `com.unity.properties` package version to `1.1.0-preview`. This is a major overhaul, please refer to the package documentation.
-- Updated `com.unity.serialization` package version to `1.1.0-preview`. This is a major overhaul, please refer to the package documentation.
+- Updated `com.unity.properties` package version to `1.1.1-preview`. This is a major overhaul, please refer to the package documentation.
+- Updated `com.unity.serialization` package version to `1.1.1-preview`. This is a major overhaul, please refer to the package documentation.
 
 ### Fixed
 - Show apply/revert/cancel dialog if build configuration is modified upon clicking Build and/or Run button.

@@ -32,7 +32,7 @@ namespace Unity.Build
         public BuildStepResult(BuildStep step, UnityEditor.Build.Reporting.BuildReport report)
         {
             Succeeded = report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded;
-            Message = Failed ? report.summary.ToString() : null;
+            Message = "See previous console error(s) for more details.";
             BuildStep = step;
         }
 
@@ -73,7 +73,17 @@ namespace Unity.Build
             Exception = exception
         };
 
-        public override string ToString() => $"Build {base.ToString()}";
+        public override string ToString()
+        {
+            if (Failed && BuildStep != null)
+            {
+                var name = BuildConfiguration.name;
+                var what = !string.IsNullOrEmpty(name) ? name.ToHyperLink() : string.Empty;
+                var message = !string.IsNullOrEmpty(Message) ? "\n" + Message : string.Empty;
+                return $"{what} failed in step '{BuildStep.Name}' after {Duration.ToShortString()}.{message}".Trim(' ');
+            }
+            return $"Build {base.ToString()}";
+        }
 
         public BuildStepResult() { }
     }
