@@ -1,2 +1,11 @@
 ﻿using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Unity.Build.Classic.Private")]
 [assembly: InternalsVisibleTo("Unity.Scenes.Editor")]
+[assembly: InternalsVisibleTo("Unity.Entities.Editor")]
+[assembly: InternalsVisibleTo("Unity.Entities.Editor.Tests")]
+[assembly: InternalsVisibleTo("Unity.Platforms.Android.Build")]
+[assembly: InternalsVisibleTo("Unity.Platforms.Windows.Build")]
+[assembly: InternalsVisibleTo("Unity.Platforms.macOS.Build")]
+[assembly: InternalsVisibleTo("Unity.Platforms.Web.Build")]
+[assembly: InternalsVisibleTo("Unity.Platforms.iOS.Build")]

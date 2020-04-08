@@ -203,8 +203,7 @@ namespace Unity.Build.Editor
             {
                 case BuildManagerTreeState.Columns.BuildConfiguration:
                     var pipeline = props.BuildConfiguration.GetBuildPipeline();
-                    var pipelineName = pipeline == null ? "<No pipeline>" : pipeline.name;
-                    if (GUI.Button(rc, props.BuildConfiguration.name + " with " + pipelineName, Styles.buildConfigurationButton))
+                    if (GUI.Button(rc, props.BuildConfiguration.name + " with " + pipeline.GetType().Name, Styles.buildConfigurationButton))
                     {
                         EditorGUIUtility.PingObject(props.BuildConfiguration);
                     }

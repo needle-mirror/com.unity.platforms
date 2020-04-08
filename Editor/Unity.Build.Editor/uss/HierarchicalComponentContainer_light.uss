@@ -3,6 +3,11 @@
     background-color: #DFDFDF;
 }
 
+.HierarchicalComponentContainer__add-component-button
+{
+    background-image: resource("Icons/CreateAddNew.png");
+}
+
 .HierarchicalComponentContainer__remove-component-button
 {
     background-image: resource("Icons/winbtn_win_close@2x.png");

@@ -18,7 +18,7 @@ namespace Unity.Build
 
         class ArtifactData
         {
-            public BuildPipelineResult Result;
+            public BuildResult Result;
             public List<IBuildArtifact> Artifacts = new List<IBuildArtifact>();
         }
 
@@ -67,9 +67,9 @@ namespace Unity.Build
         /// </summary>
         /// <param name="config">The build configuration that was used to store the build artifact.</param>
         /// <returns>The build result if found, <see langword="null"/> otherwise.</returns>
-        public static BuildPipelineResult GetBuildResult(BuildConfiguration config) => GetArtifactData(config)?.Result;
+        public static BuildResult GetBuildResult(BuildConfiguration config) => GetArtifactData(config)?.Result;
 
-        internal static void Store(BuildPipelineResult result, IBuildArtifact[] artifacts) => SetArtifactData(result, artifacts);
+        internal static void Store(BuildResult result, IBuildArtifact[] artifacts) => SetArtifactData(result, artifacts);
 
         internal static string GetArtifactPath(BuildConfiguration config) => GetArtifactsPath(GetBuildConfigurationName(config));
 
@@ -141,7 +141,7 @@ namespace Unity.Build
             Debug.LogError($"Failed to deserialize {what}:\n{message}");
         }
 
-        static void SetArtifactData(BuildPipelineResult result, IBuildArtifact[] artifacts)
+        static void SetArtifactData(BuildResult result, IBuildArtifact[] artifacts)
         {
             if (result == null)
             {

@@ -8,11 +8,5 @@ namespace Unity.Build.Internals
         {
             return context.BuildConfiguration;
         }
-
-        internal static string GetBuildConfigurationGUID(BuildContext context)
-        {
-            var assetPath = AssetDatabase.GetAssetPath(context.BuildConfiguration);
-            return AssetDatabase.AssetPathToGUID(assetPath);
-        }
     }
 }

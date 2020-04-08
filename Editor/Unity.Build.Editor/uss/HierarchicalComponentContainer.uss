@@ -39,6 +39,15 @@
     padding-left: 18px;
 }
 
+.HierarchicalComponentContainer__add-component-button
+{
+    align-self: flex-end;
+    width: 20px;
+    height: 20px;
+    background-color: transparent;
+    border-width: 0;
+}
+
 .HierarchicalComponentContainer__remove-component-button
 {
     align-self: flex-end;

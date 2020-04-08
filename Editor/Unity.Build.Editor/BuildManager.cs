@@ -42,7 +42,7 @@ namespace Unity.Build.Editor
     }
 
     [Serializable]
-    public class BuildManager : EditorWindow
+    internal class BuildManager : EditorWindow
     {
         static readonly string kSettingsPath = "UserSettings/BuildManagerSettings.asset";
 
@@ -73,12 +73,16 @@ namespace Unity.Build.Editor
                 m_BuildInstructions = new List<BuildInstructions>();
             }
 
+            // Remove configs which are no longer in the project
+            m_BuildInstructions = new List<BuildInstructions>(m_BuildInstructions.Where(m => m.Valid));
+
             m_TreeState = BuildManagerTreeState.CreateOrInitializeTreeState(m_TreeState);
             m_TreeView = new BuildManagerTreeView(m_TreeState, RegenerateBuildItems);
         }
 
         private void OnDisable()
         {
+            Directory.CreateDirectory(Path.GetDirectoryName(kSettingsPath));
             File.WriteAllText(kSettingsPath, EditorJsonUtility.ToJson(this));
         }
 
@@ -138,7 +142,7 @@ namespace Unity.Build.Editor
             m_TreeView.OnGUI(rc);
             if (GUILayout.Button("Batch Build"))
             {
-                BuildPipeline.BuildAsync(new BuildBatchDescription()
+                BuildPipelineBase.BuildAsync(new BuildBatchDescription()
                 {
                     BuildItems = m_BuildInstructions.Where(m => m.Build).Select(m => new BuildBatchItem() { BuildConfiguration = m.BuildConfiguration }).ToArray(),
                     OnBuildCompleted = OnBuildCompleted
@@ -147,7 +151,7 @@ namespace Unity.Build.Editor
             GUILayout.EndHorizontal();
         }
 
-        void OnBuildCompleted(BuildPipelineResult[] results)
+        void OnBuildCompleted(BuildResult[] results)
         {
             foreach (var r in results)
             {

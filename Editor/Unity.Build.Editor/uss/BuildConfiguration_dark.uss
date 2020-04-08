@@ -15,3 +15,8 @@
     border-top-color: #303030;
     border-left-color: #303030;
 }
+
+.BuildConfiguration__optional-components
+{
+    background-color: #222222;
+}

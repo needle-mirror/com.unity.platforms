@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Unity.Serialization.Json;
@@ -47,13 +48,13 @@ namespace Unity.Build
                     var root = reader.ReadObject();
                     if (!root.TryGetMember(nameof(BuildConfiguration.Dependencies), out var member))
                     {
-                        return null;
+                        return Array.Empty<string>();
                     }
 
                     var valueView = member.Value();
                     if (valueView.Type != TokenType.Array)
                     {
-                        return null;
+                        return Array.Empty<string>();
                     }
 
                     var arrayView = valueView.AsArrayView();
@@ -76,7 +77,7 @@ namespace Unity.Build
             }
             catch
             {
-                return null;
+                return Array.Empty<string>();
             }
             return dependencies.ToArray();
         }

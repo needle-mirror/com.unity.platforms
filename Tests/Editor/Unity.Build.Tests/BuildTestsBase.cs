@@ -2,7 +2,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
+using System.Linq;
 using Unity.Properties;
 using UnityEngine;
 
@@ -11,177 +11,160 @@ namespace Unity.Build.Tests
     class BuildTestsBase
     {
         [HideInInspector]
-        protected class TestPipelineComponent : IBuildPipelineComponent
+        protected class TestBuildPipelineComponent : IBuildPipelineComponent
         {
-#if UNITY_2020_1_OR_NEWER
-            [CreateProperty] public LazyLoadReference<BuildPipeline> Pipeline { get; set; }
-#else
-            [CreateProperty] public BuildPipeline Pipeline { get; set; }
-#endif
+            [CreateProperty] public BuildPipelineBase Pipeline { get; set; }
             public int SortingIndex => 0;
             public bool SetupEnvironment() => false;
         }
 
         [HideInInspector]
-        protected class TestRequiredComponentA : IBuildComponent { }
+        protected class TestBuildComponentA : IBuildComponent { }
 
         [HideInInspector]
-        protected class TestRequiredComponentB : IBuildComponent { }
+        protected class TestBuildComponentB : IBuildComponent { }
 
         [HideInInspector]
-        protected class TestOptionalComponentA : IBuildComponent { }
+        protected class TestBuildComponentC : IBuildComponent { }
+
+        protected class TestBuildComponentInvalid { }
 
         [HideInInspector]
-        protected class TestOptionalComponentB : IBuildComponent { }
-
-        protected class TestInvalidComponent { }
-
-        [HideInInspector, BuildStep(Name = "this is a name", Description = "this is a description", Category = "this is a category")]
-        protected class TestBuildStep : BuildStep
+        protected class TestBuildPipeline : BuildPipelineBase
         {
-            public override BuildStepResult RunBuildStep(BuildContext context) => Success();
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildStepFailure : BuildStep
+        protected class TestBuildPipelineCantBuild : BuildPipelineBase
         {
-            public override BuildStepResult RunBuildStep(BuildContext context) => Failure(nameof(TestBuildStepFailure));
+            protected override BoolResult OnCanBuild(BuildContext context) => BoolResult.False(nameof(TestBuildPipelineCantBuild));
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildStepThrows : BuildStep
+        protected class TestBuildPipelineBuildFails : BuildPipelineBase
         {
-            public override BuildStepResult RunBuildStep(BuildContext context) => throw new InvalidOperationException();
+            protected override BuildResult OnBuild(BuildContext context) => context.Failure(nameof(TestBuildPipelineBuildFails));
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildStepWithRequirements : BuildStep
+        protected class TestBuildPipelineBuildThrows : BuildPipelineBase
         {
-            public override Type[] RequiredComponents => new[] { typeof(TestRequiredComponentA), typeof(TestRequiredComponentB) };
-            public override Type[] OptionalComponents => new[] { typeof(TestOptionalComponentA), typeof(TestOptionalComponentB) };
-            public override BuildStepResult RunBuildStep(BuildContext context) => throw new NotImplementedException();
-        }
-
-        protected class TestInvalidBuildStep { }
-
-        [HideInInspector]
-        [BuildStepRunBefore(typeof(TestBuildStep2))]
-        protected class TestBuildStep1 : BuildStep
-        {
-            readonly bool m_IsEnabled;
-
-            public class Data
-            {
-                public string Value;
-            }
-
-            public TestBuildStep1(bool enabled = true)
-            {
-                m_IsEnabled = enabled;
-            }
-
-            public override Type[] RequiredComponents => new[] { typeof(TestRequiredComponentA) };
-
-            public override Type[] OptionalComponents => new[] { typeof(TestOptionalComponentA) };
-
-            public override bool IsEnabled(BuildContext context) => m_IsEnabled;
-
-            public override BuildStepResult RunBuildStep(BuildContext context)
-            {
-                context.GetOrCreateValue<TestArtifactA>().BuildStepsRan.Add(nameof(TestBuildStep1));
-                return context.GetValue<Data>().Value == nameof(TestBuildStep1) ? Success() : Failure(nameof(TestBuildStep1));
-            }
-
-            public override BuildStepResult CleanupBuildStep(BuildContext context)
-            {
-                context.GetOrCreateValue<TestArtifactA>().CleanupStepsRan.Add(nameof(TestBuildStep1));
-                return context.GetValue<Data>().Value == nameof(TestBuildStep1) ? Success() : Failure(nameof(TestBuildStep1));
-            }
+            protected override BuildResult OnBuild(BuildContext context) => throw new InvalidOperationException(nameof(TestBuildPipelineBuildThrows));
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        [BuildStepRunAfter(typeof(TestBuildStep1))]
-        protected class TestBuildStep2 : BuildStep
+        protected class TestBuildPipelineNullBuildResult : BuildPipelineBase
         {
-            readonly bool m_IsEnabled;
+            protected override BuildResult OnBuild(BuildContext context) => null;
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
+        }
 
-            public class Data
+        [HideInInspector]
+        protected class TestBuildPipelineCantRun : BuildPipelineBase
+        {
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override BoolResult OnCanRun(RunContext context) => BoolResult.False(nameof(TestBuildPipelineCantRun));
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
+        }
+
+        [HideInInspector]
+        protected class TestBuildPipelineRunFails : BuildPipelineBase
+        {
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override RunResult OnRun(RunContext context) => context.Failure(nameof(TestBuildPipelineCantRun));
+        }
+
+        [HideInInspector]
+        protected class TestBuildPipelineRunThrows : BuildPipelineBase
+        {
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override RunResult OnRun(RunContext context) => throw new InvalidOperationException(nameof(TestBuildPipelineRunThrows));
+        }
+
+        [HideInInspector]
+        protected class TestBuildPipelineNullRunResult : BuildPipelineBase
+        {
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override RunResult OnRun(RunContext context) => null;
+        }
+
+        [HideInInspector]
+        protected class TestBuildPipelineWithComponents : BuildPipelineBase
+        {
+            public override Type[] UsedComponents { get; } =
             {
-                public string Value;
+                typeof(TestBuildComponentA),
+                typeof(TestBuildComponentB)
+            };
+
+            protected override BuildResult OnBuild(BuildContext context)
+            {
+                context.GetComponentOrDefault<TestBuildComponentA>();
+                context.GetComponentOrDefault<TestBuildComponentB>();
+                return context.Success();
             }
 
-            public TestBuildStep2(bool enabled = true)
+            protected override RunResult OnRun(RunContext context)
             {
-                m_IsEnabled = enabled;
-            }
-
-            public override Type[] RequiredComponents => new[] { typeof(TestRequiredComponentA) };
-
-            public override Type[] OptionalComponents => new[] { typeof(TestOptionalComponentA) };
-
-            public override bool IsEnabled(BuildContext context) => m_IsEnabled;
-
-            public override BuildStepResult RunBuildStep(BuildContext context)
-            {
-                context.GetOrCreateValue<TestArtifactA>().BuildStepsRan.Add(nameof(TestBuildStep2));
-                return context.GetValue<Data>().Value == nameof(TestBuildStep2) ? Success() : Failure(nameof(TestBuildStep2));
-            }
-
-            public override BuildStepResult CleanupBuildStep(BuildContext context)
-            {
-                context.GetOrCreateValue<TestArtifactA>().CleanupStepsRan.Add(nameof(TestBuildStep2));
-                return context.GetValue<Data>().Value == nameof(TestBuildStep2) ? Success() : Failure(nameof(TestBuildStep2));
+                context.GetComponentOrDefault<TestBuildComponentA>();
+                context.GetComponentOrDefault<TestBuildComponentB>();
+                return context.Success(new TestRunInstance());
             }
         }
 
         [HideInInspector]
-        [BuildStepRunAfter(typeof(TestBuildStep2))]
-        protected class TestBuildStep3 : BuildStep
+        protected class TestBuildPipelineWithMissingComponents : BuildPipelineBase
         {
-            readonly bool m_IsEnabled;
-
-            public class Data
+            protected override BuildResult OnBuild(BuildContext context)
             {
-                public string Value;
+                context.GetComponentOrDefault<TestBuildComponentA>();
+                context.GetComponentOrDefault<TestBuildComponentB>();
+                return context.Success();
             }
 
-            public TestBuildStep3(bool enabled = true)
+            protected override RunResult OnRun(RunContext context)
             {
-                m_IsEnabled = enabled;
-            }
-
-            public override bool IsEnabled(BuildContext context) => m_IsEnabled;
-
-            public override Type[] RequiredComponents => new[] { typeof(TestRequiredComponentA) };
-
-            public override Type[] OptionalComponents => new[] { typeof(TestOptionalComponentA) };
-
-            public override BuildStepResult RunBuildStep(BuildContext context)
-            {
-                context.GetOrCreateValue<TestArtifactA>().BuildStepsRan.Add(nameof(TestBuildStep3));
-                return context.GetValue<Data>().Value == nameof(TestBuildStep3) ? Success() : Failure(nameof(TestBuildStep3));
-            }
-
-            public override BuildStepResult CleanupBuildStep(BuildContext context)
-            {
-                context.GetOrCreateValue<TestArtifactA>().CleanupStepsRan.Add(nameof(TestBuildStep3));
-                return context.GetValue<Data>().Value == nameof(TestBuildStep3) ? Success() : Failure(nameof(TestBuildStep3));
+                context.GetComponentOrDefault<TestBuildComponentA>();
+                context.GetComponentOrDefault<TestBuildComponentB>();
+                return context.Success(new TestRunInstance());
             }
         }
 
         [HideInInspector]
-        protected class TestBuildStepWithInvalidRequiredComponent : BuildStep
+        protected class TestBuildPipelineWithInvalidComponents : BuildPipelineBase
         {
-            public override Type[] RequiredComponents => new[] { typeof(TestInvalidComponent) };
-            public override BuildStepResult RunBuildStep(BuildContext context) => Success();
+            public override Type[] UsedComponents { get; } = { typeof(TestBuildComponentInvalid) };
+            protected override BuildResult OnBuild(BuildContext context) => context.Success();
+            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
-        [HideInInspector]
-        protected class TestBuildStepWithInvalidOptionalComponent : BuildStep
+        protected class TestBuildStepA : BuildStepBase
         {
-            public override Type[] OptionalComponents => new[] { typeof(TestInvalidComponent) };
-            public override BuildStepResult RunBuildStep(BuildContext context) => Success();
+            public override BuildResult Run(BuildContext context) => context.Success();
         }
+
+        protected class TestBuildStepB : BuildStepBase
+        {
+            public override BuildResult Run(BuildContext context) => context.Success();
+        }
+
+        protected class TestBuildStepFails : BuildStepBase
+        {
+            public override BuildResult Run(BuildContext context) => context.Failure(nameof(TestBuildStepFails));
+        }
+
+        protected class TestBuildStepThrows : BuildStepBase
+        {
+            public override BuildResult Run(BuildContext context) => throw new InvalidOperationException(nameof(TestBuildStepThrows));
+        }
+
+        protected class TestBuildStepInvalid { }
 
         protected class TestRunInstance : IRunInstance
         {
@@ -194,99 +177,38 @@ namespace Unity.Build.Tests
             public void Dispose() { IsRunning = false; }
         }
 
-        [HideInInspector]
-        protected class TestRunStep : RunStep
-        {
-            public override RunStepResult Start(BuildConfiguration config) => Success(config, new TestRunInstance());
-        }
+        protected class TestBuildArtifactA : IBuildArtifact { }
 
-        [HideInInspector]
-        protected class TestRunStepFailure : RunStep
-        {
-            public override RunStepResult Start(BuildConfiguration config) => Failure(config, nameof(TestRunStepFailure));
-        }
+        protected class TestBuildArtifactB : IBuildArtifact { }
 
-        [HideInInspector]
-        protected class TestRunStepCannotRun : RunStep
-        {
-            public override bool CanRun(BuildConfiguration config, out string reason)
-            {
-                reason = nameof(TestRunStepCannotRun);
-                return false;
-            }
+        protected class TestBuildArtifactInvalid { }
 
-            public override RunStepResult Start(BuildConfiguration config) => Success(config, new TestRunInstance());
-        }
-
-        [HideInInspector]
-        protected class TestRunStepThrows : RunStep
-        {
-            public override RunStepResult Start(BuildConfiguration config) => throw new InvalidOperationException();
-        }
-
-        protected class TestArtifactA : IBuildArtifact
-        {
-            public List<string> BuildStepsRan = new List<string>();
-            public List<string> CleanupStepsRan = new List<string>();
-        }
-
-        protected class TestArtifactB : IBuildArtifact { }
-
-        protected class TestInvalidArtifact { }
+        string[] m_LastArtifactFiles;
 
         [SetUp]
         public void SetUp()
         {
             if (Directory.Exists(BuildArtifacts.BaseDirectory))
             {
-                Directory.Delete(BuildArtifacts.BaseDirectory, true);
+                m_LastArtifactFiles = Directory.GetFiles(BuildArtifacts.BaseDirectory, "*.json", SearchOption.TopDirectoryOnly);
             }
-            BuildArtifacts.Clear();
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (Directory.Exists(BuildArtifacts.BaseDirectory))
+            if (!Directory.Exists(BuildArtifacts.BaseDirectory))
             {
-                Directory.Delete(BuildArtifacts.BaseDirectory, true);
+                return;
             }
+
+            var currentArtifactFiles = Directory.GetFiles(BuildArtifacts.BaseDirectory, "*.json", SearchOption.TopDirectoryOnly);
+            foreach (var file in currentArtifactFiles.Except(m_LastArtifactFiles ?? Enumerable.Empty<string>()))
+            {
+                File.Delete(file);
+            }
+
             BuildArtifacts.Clear();
-        }
-
-        protected static IEnumerable<Type> FindAllDerivedTypes<T>()
-        {
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                foreach (var type in FindAllDerivedTypes<T>(assembly))
-                {
-                    yield return type;
-                }
-            }
-        }
-
-        protected static IEnumerable<Type> FindAllDerivedTypes<T>(Assembly assembly)
-        {
-            var derivedType = typeof(T);
-            foreach (var type in assembly.GetTypes())
-            {
-                if (type.IsAbstract || type.IsInterface)
-                {
-                    continue;
-                }
-
-                if (type == derivedType)
-                {
-                    continue;
-                }
-
-                if (!derivedType.IsAssignableFrom(type))
-                {
-                    continue;
-                }
-
-                yield return type;
-            }
         }
     }
 }

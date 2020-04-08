@@ -4,6 +4,39 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2020-04-01
+
+Build pipeline major overhaul: build pipelines are no longer asset based, and instead must be implemented in code by deriving from `BuildPipelineBase` class. Build steps are no longer mandatory but can still be used by deriving from `BuildStepBase`.
+
+### Added
+- New class `BuildPipelineBase` which is a class based replacement for `BuildPipeline` assets. Build steps can be used to organize build code, but is not mandatory anymore.
+- New class `BuildStepBase` which is an optional replacement for now obsolete `BuildStep`.
+- New class `BuildStepCollection` which represent a list of build steps that can be enumerated and executed.
+- New class `BuildResult` and `RunResult` that derives from new base class `ResultBase`.
+- New class `BuildProcess` which describe the state of an incremental build process.
+- New class `RunContext` which holds the context when a pipeline is ran.
+- Methods for querying build component values have been added to `ContextBase`.
+- Methods for setting build component values are now available on `ContextBase`. Note that those values are only stored in memory; the build configuration asset is unchanged.
+- New method `GetComponentOrDefault` on `BuildConfiguration` which returns the component value if found, otherwise a default instance of the component type without modifying the configuration.
+- New method `GetComponentTypes` on `BuildConfiguration` which returns the flatten list of all component types from the configuration and its dependencies.
+- New method `SetComponent` on `BuildConfiguration` that only takes a type and sets the component value to a default instance of the component type.
+- New method `BuildIncremental` on `BuildPipelineBase` which can be used to implement build pipelines that run in background.
+
+### Changed
+- Class `BuildContext` now derives from new base class `ContextBase`.
+- The `RequiredComponents` and `OptionalComponents` lists previously available on `BuildStep` have been replaced with the merged list `UsedComponents` on `BuildStepBase`.
+- Methods `CanBuild` and `CanRun` on `BuildConfiguration` no longer expect an out string parameter, and instead return a `BoolResult` that contains the result and the reason.
+
+### Deprecated
+- Class `BuildPipeline` is now obsolete. It has been replaced by `BuildPipelineBase` which is no longer asset based. All build pipeline assets must be converted into a corresponding build pipeline class that derives from `BuildPipelineBase`.
+- Class `BuildPipelineResult` is now obsolete. It has been replaced by `BuildResult`.
+- Class `BuildStep` and `RunStep` are now obsolete. Class based build pipelines no longer enforce the use of build/run steps. Most interfaces and attributes related to `BuildStep` and `RunStep` are also obsolete.
+- Class `BuildStepResult` and `RunStepResult` are now obsolete. They have been replaced by `BuildResult` and `RunResult` respectively.
+- Property `BuildPipelineStatus` on `BuildContext` is now obsolete. `BuildPipelineResult` and `BuildStepResult` have been combined into `BuildResult`, removing the need for this intermediate status.
+
+### Removed
+- Removed optional mutator parameter on `BuildContext` class.
+
 ## [0.2.2] - 2020-03-23
 
 ### Added
@@ -14,6 +47,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Removed
 - Removed `DotsConfig` as it now lives in `com.unity.dots.runtime-0.24.0`.
 - Removed unused dependency on `com.unity.dots.runtime'.
+- Removed dependency on newtonsoft json to use serialization package API instead.
 
 ### Changed
 - Updated `com.unity.properties` package version to `1.1.1-preview`. This is a major overhaul, please refer to the package documentation.
@@ -23,9 +57,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Show apply/revert/cancel dialog if build configuration is modified upon clicking Build and/or Run button.
 - Fixed build configuration inspector when using Unity 2020.1 and above.
 - Build progress bar will update after elapsed time even if no values changed.
-
-### Removed
-- Removed dependency on newtonsoft json to use serialization package API instead.
 
 ## [0.2.1] - 2020-02-25
 
@@ -48,11 +79,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Modfied data format for SceneList to contain additional flags to support LiveLink.
 - `BuildStepBuildClassicLiveLink` was moved into the `Unity.Scenes.Editor` assembly in `com.unity.entities` package due to dependencies on Entities.
 - Refactored `BuildStepBuildClassicPlayer` since it no longer shares its implementation with `BuildStepBuildClassicLiveLink`
-- ClassicBuildProfile.GetExecutableExtension made public so that it can be used from other packages.
+- `ClassicBuildProfile.GetExecutableExtension` made public so that it can be used from other packages.
 
 ## [0.2.0-preview.2] - 2020-01-17
 
-## Fixed
+### Fixed
 - Fix `BuildStepBuildClassicLiveLink` build step to re-generate Live Link player required metadata file.
 
 ## [0.2.0-preview.1] - 2020-01-15
@@ -64,12 +95,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 The package `com.unity.build` has been merged in the `com.unity.platforms` package, and includes the following changes since the release of `com.unity.build@0.1.0-preview`:
 
-## Added
+### Added
 - New `BuildStepRunBefore` and `BuildStepRunAfter` attributes which can be optionally added to a `BuildStep` to declare which other steps must be run before or after that step.
 - `BuildStep` attribute now support `Name`, `Description` and `Category` properties.
 - Added new `RunStep` attribute to configure run step types various properties.
 
-## Changed
+### Changed
 - Updated `com.unity.properties` to version `0.10.4-preview`.
 - Updated `com.unity.serialization` to version `0.6.4-preview`.
 - All classes that should not be derived from are now properly marked as `sealed`.
@@ -90,7 +121,7 @@ The package `com.unity.build` has been merged in the `com.unity.platforms` packa
 - Class `ComponentContainer` should not be instantiated directly and thus has been properly marked as `abstract`.
 - Class `ComponentContainer` is now obsolete: it has been renamed to `HierarchicalComponentContainer`.
 
-## Fixed
+### Fixed
 - Empty dependencies in inspector are now properly supported again.
 - Dependencies label in inspector will now as "Dependencies" again.
 

@@ -22,22 +22,26 @@ namespace Unity.Build.Editor
             public const string Header = BaseClassName + "__component-header";
             public const string Inherited = BaseClassName + "__inherited-component";
             public const string Overridden = BaseClassName + "__overridden-component";
+            public const string AddComponent = BaseClassName + "__add-component-button";
             public const string RemoveComponent = BaseClassName + "__remove-component-button";
             public const string Fields = BaseClassName + "__component-fields";
         }
 
         readonly HierarchicalComponentContainer<TContainer, TComponent> m_Container;
+        readonly bool m_IsOptional;
         readonly PropertyElement m_Element;
+        readonly Button m_AddButton;
         readonly Button m_RemoveButton;
         readonly Label m_MissingComponentLabel;
 
         public event Action OnChanged = delegate { };
 
-        public HierarchicalComponentContainerElement(HierarchicalComponentContainer<TContainer, TComponent> container, T component)
+        public HierarchicalComponentContainerElement(HierarchicalComponentContainer<TContainer, TComponent> container, T component, bool optional)
         {
             this.AddStyleSheetAndVariant(ClassNames.BaseClassName);
 
             m_Container = container;
+            m_IsOptional = optional;
 
             AddToClassList(ClassNames.BaseClassName);
 
@@ -46,8 +50,13 @@ namespace Unity.Build.Editor
             foldout.AddToClassList(ClassNames.Component);
             foldout.AddToClassList(componentContainerName);
             Add(foldout);
+
             var toggle = foldout.Q<Toggle>();
             toggle.AddToClassList(ClassNames.Header);
+
+            m_AddButton = new Button(AddComponent);
+            m_AddButton.AddToClassList(ClassNames.AddComponent);
+            toggle.Add(m_AddButton);
 
             m_RemoveButton = new Button(RemoveComponent);
             m_RemoveButton.AddToClassList(ClassNames.RemoveComponent);
@@ -64,53 +73,54 @@ namespace Unity.Build.Editor
             m_MissingComponentLabel.style.display = DisplayStyle.None;
             foldout.contentContainer.Add(m_MissingComponentLabel);
 
-            SetBorderColor();
+            SetStyle();
+        }
+
+        void AddComponent()
+        {
+            m_Container.SetComponent<T>();
+            OnChanged();
         }
 
         void RemoveComponent()
         {
             m_Container.RemoveComponent<T>();
-            if (m_Container.HasComponent<T>())
-            {
-                m_Element?.SetTarget(m_Container.GetComponent<T>());
-                SetBorderColor();
-            }
-            else
-            {
-                RemoveFromHierarchy();
-            }
-
             OnChanged();
         }
 
-        void SetBorderColor()
+        void SetStyle()
         {
-            if (m_Container.IsComponentInherited<T>())
+            var inherited = m_Container.IsComponentInherited<T>();
+            var overridden = m_Container.IsComponentOverridden<T>();
+            var optional = m_IsOptional;
+
+            if (inherited || optional)
             {
                 AddToClassList(ClassNames.Inherited);
-                m_RemoveButton.style.display = DisplayStyle.None;
             }
             else
             {
                 RemoveFromClassList(ClassNames.Inherited);
             }
 
-            if (m_Container.IsComponentOverridden<T>())
+            if (overridden)
             {
                 AddToClassList(ClassNames.Overridden);
-                m_RemoveButton.style.display = DisplayStyle.Flex;
             }
             else
             {
                 RemoveFromClassList(ClassNames.Overridden);
             }
+
+            m_AddButton.style.display = optional ? DisplayStyle.Flex : DisplayStyle.None;
+            m_RemoveButton.style.display = (overridden || (!inherited && !optional)) ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
         void ElementOnOnChanged(PropertyElement element, PropertyPath path)
         {
             m_Container.SetComponent(element.GetTarget<T>());
             element.SetTarget(m_Container.GetComponent<T>());
-            SetBorderColor();
+            SetStyle();
             OnChanged();
         }
 
@@ -120,11 +130,11 @@ namespace Unity.Build.Editor
 
         public void Update()
         {
-            if (m_Container.HasComponent<T>())
+            if (m_Container.HasComponent<T>() || m_IsOptional)
             {
                 m_Element.style.display = DisplayStyle.Flex;
                 m_MissingComponentLabel.style.display = DisplayStyle.None;
-                m_Element.SetTarget(m_Container.GetComponent<T>());
+                m_Element.SetTarget(m_Container.GetComponentOrDefault<T>());
             }
             else
             {

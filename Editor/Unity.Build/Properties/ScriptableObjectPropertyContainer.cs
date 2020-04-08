@@ -18,6 +18,10 @@ namespace Unity.Build
     {
         [SerializeField, DontCreateProperty] string m_AssetContent;
 
+        //@TODO: replace with deserialization context object when its available
+        internal static string CurrentDeserializationAssetPath { get; private set; }
+        internal static TContainer CurrentDeserializationAsset { get; private set; }
+
         /// <summary>
         /// Reset this asset in preparation for deserialization.
         /// </summary>
@@ -122,7 +126,7 @@ namespace Unity.Build
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to serialize {name.ToHyperLink()} to '{assetPath}'.\n{e.Message}");
+                Debug.LogError($"Failed to serialize {this.ToHyperLink()} to '{assetPath}'.\n{e.Message}");
                 return false;
             }
 
@@ -179,7 +183,7 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the operation is successful, <see langword="false"/> otherwise.</returns>
         public static bool DeserializeFromJson(TContainer container, string json)
         {
-            return TryDeserialize(container, json);
+            return TryDeserialize(container, json, null);
         }
 
         /// <summary>
@@ -239,8 +243,10 @@ namespace Unity.Build
             }
         }
 
-        static bool TryDeserialize(TContainer container, string json, string assetPath = null)
+        static bool TryDeserialize(TContainer container, string json, string assetPath)
         {
+            CurrentDeserializationAsset = container;
+            CurrentDeserializationAssetPath = assetPath;
             try
             {
                 container.Reset();
@@ -255,7 +261,7 @@ namespace Unity.Build
                 if (!result.DidSucceed())
                 {
                     var errors = result.Events.Select(e => e.ToString());
-                    LogDeserializeError(string.Join("\n", errors), container, assetPath);
+                    LogDeserializeError(string.Join("\n", errors), container);
                 }
 
                 container.Sanitize();
@@ -263,15 +269,22 @@ namespace Unity.Build
             }
             catch (Exception e)
             {
-                LogDeserializeError(e.Message, container, assetPath);
+                LogDeserializeError(e.Message, container);
                 container.Sanitize();
                 return false;
             }
+            finally
+            {
+                CurrentDeserializationAsset = null;
+                CurrentDeserializationAssetPath = null;
+            }
         }
 
-        static void LogDeserializeError(string message, TContainer container, string assetPath)
+        static void LogDeserializeError(string message, TContainer container)
         {
-            var what = !string.IsNullOrEmpty(assetPath) ? assetPath.ToHyperLink() : $"memory container of type '{container.GetType().FullName}'";
+            var what = !string.IsNullOrEmpty(CurrentDeserializationAssetPath) ?
+                CurrentDeserializationAssetPath.ToHyperLink() :
+                $"memory container of type '{container.GetType().FullName}'";
             Debug.LogError($"Failed to deserialize {what}:\n{message}");
         }
     }

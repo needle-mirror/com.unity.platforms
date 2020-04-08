@@ -32,7 +32,7 @@ namespace Unity.Build
         /// <summary>
         /// The build pipeline used in the operation.
         /// </summary>
-        [CreateProperty] public BuildPipeline BuildPipeline { get; internal set; }
+        [CreateProperty] public BuildPipelineBase BuildPipeline { get; internal set; }
 
         /// <summary>
         /// The build configuration used in the operation.
@@ -68,8 +68,7 @@ namespace Unity.Build
 
         public override string ToString()
         {
-            var name = BuildConfiguration.name;
-            var what = !string.IsNullOrEmpty(name) ? name.ToHyperLink() : string.Empty;
+            var what = BuildConfiguration.ToHyperLink();
             var result = Succeeded ? "succeeded" : "failed";
             var message = Failed && !string.IsNullOrEmpty(Message) ? "\n" + Message : string.Empty;
             return $"{what} {result} after {Duration.ToShortString()}.{message}".Trim(' ');

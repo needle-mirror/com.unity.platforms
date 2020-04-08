@@ -422,11 +422,8 @@ namespace Unity.Build.Tests
 
             // We cannot directly add `null` using AddDependency, so we add it to the underlying list to simulate a
             // missing dependency (either added through UI or missing asset).
-#if UNITY_2020_1_OR_NEWER
-            container.Dependencies.Add(new LazyLoadReference<TestHierarchicalComponentContainer>());
-#else
             container.Dependencies.Add(null);
-#endif
+
             var missingDependency = TestHierarchicalComponentContainer.CreateInstance();
             missingDependency.SetComponent(new ComplexComponent());
             container.AddDependency(missingDependency);

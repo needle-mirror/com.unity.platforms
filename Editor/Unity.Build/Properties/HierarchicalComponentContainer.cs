@@ -4,7 +4,10 @@ using System.Linq;
 using Unity.Properties;
 using Unity.Properties.Editor;
 using UnityEditor;
+
+#if UNITY_2020_1_OR_NEWER
 using UnityEngine;
+#endif
 
 namespace Unity.Build
 {
@@ -414,7 +417,7 @@ namespace Unity.Build
             }
 
 #if UNITY_2020_1_OR_NEWER
-            Dependencies.Add(new LazyLoadReference<TContainer> { instanceID = dependency.GetInstanceID() });
+            Dependencies.Add(dependency.GetInstanceID());
 #else
             Dependencies.Add(dependency);
 #endif
@@ -460,7 +463,7 @@ namespace Unity.Build
                 throw new ArgumentNullException(nameof(dependency));
             }
 #if UNITY_2020_1_OR_NEWER
-            return Dependencies.Remove(new LazyLoadReference<TContainer> { instanceID = dependency.GetInstanceID() });
+            return Dependencies.Remove(dependency.GetInstanceID());
 #else
             return Dependencies.Remove(dependency);
 #endif

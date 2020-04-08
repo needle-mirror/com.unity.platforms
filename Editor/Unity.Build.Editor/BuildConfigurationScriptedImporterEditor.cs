@@ -16,7 +16,7 @@ namespace Unity.Build.Editor
     using BuildConfigurationElement = HierarchicalComponentContainerElement<BuildConfiguration, IBuildComponent, IBuildComponent>;
 
     [CustomEditor(typeof(BuildConfigurationScriptedImporter))]
-    sealed class BuildConfigurationScriptedImporterEditor : ScriptedImporterEditor
+    internal sealed class BuildConfigurationScriptedImporterEditor : ScriptedImporterEditor
     {
         static class ClassNames
         {
@@ -27,15 +27,21 @@ namespace Unity.Build.Editor
             public const string BuildAction = BaseClassName + "__build-action";
             public const string BuildDropdown = BaseClassName + "__build-dropdown";
             public const string AddComponent = BaseClassName + "__add-component-button";
+            public const string OptionalComponents = BaseClassName + "__optional-components";
         }
 
-        struct BuildAction
+        internal struct BuildAction : IEquatable<BuildAction>
         {
             public string Name;
             public Action<BuildConfiguration> Action;
+
+            public bool Equals(BuildAction other)
+            {
+                return Name == other.Name;
+            }
         }
 
-        static readonly BuildAction k_Build = new BuildAction
+        internal static readonly BuildAction s_BuildAction = new BuildAction
         {
             Name = "Build",
             Action = (config) =>
@@ -47,7 +53,7 @@ namespace Unity.Build.Editor
             }
         };
 
-        static readonly BuildAction k_BuildAndRun = new BuildAction
+        internal static readonly BuildAction s_BuildAndRunAction = new BuildAction
         {
             Name = "Build and Run",
             Action = (config) =>
@@ -69,7 +75,7 @@ namespace Unity.Build.Editor
             }
         };
 
-        static readonly BuildAction k_Run = new BuildAction
+        internal static readonly BuildAction s_RunAction = new BuildAction
         {
             Name = "Run",
             Action = (config) =>
@@ -122,18 +128,18 @@ namespace Unity.Build.Editor
 
         protected override bool needsApplyRevert { get; } = true;
         public override bool showImportedObject { get; } = false;
-        BuildAction CurrentBuildAction => BuildActions[CurrentActionIndex];
+        internal static BuildAction CurrentBuildAction => s_BuildActions[CurrentActionIndex];
 
-        static List<BuildAction> BuildActions { get; } = new List<BuildAction>
+        static List<BuildAction> s_BuildActions { get; } = new List<BuildAction>
         {
-            k_Build,
-            k_BuildAndRun,
-            k_Run,
+            s_BuildAction,
+            s_BuildAndRunAction,
+            s_RunAction,
         };
 
         static int CurrentActionIndex
         {
-            get => EditorPrefs.HasKey(k_CurrentActionKey) ? EditorPrefs.GetInt(k_CurrentActionKey) : BuildActions.IndexOf(k_BuildAndRun);
+            get => EditorPrefs.HasKey(k_CurrentActionKey) ? EditorPrefs.GetInt(k_CurrentActionKey) : s_BuildActions.IndexOf(s_BuildAndRunAction);
             set => EditorPrefs.SetInt(k_CurrentActionKey, value);
         }
 
@@ -304,7 +310,7 @@ namespace Unity.Build.Editor
             dropdownButton.style.justifyContent = Justify.FlexEnd;
             nameLabel.Add(dropdownButton);
 
-            var dropdownActionButton = new Button { text = BuildActions[CurrentActionIndex].Name };
+            var dropdownActionButton = new Button { text = s_BuildActions[CurrentActionIndex].Name };
             dropdownActionButton.AddToClassList(ClassNames.BuildAction);
             dropdownActionButton.clickable = new Clickable(ExecuteCurrentBuildAction);
             dropdownActionButton.SetEnabled(true);
@@ -320,11 +326,11 @@ namespace Unity.Build.Editor
             };
             dropdownActionButton.binding = actionUpdater;
 
-            var dropdownActionPopup = new PopupField<BuildAction>(BuildActions, CurrentActionIndex, a => string.Empty, a => a.Name);
+            var dropdownActionPopup = new PopupField<BuildAction>(s_BuildActions, CurrentActionIndex, a => string.Empty, a => a.Name);
             dropdownActionPopup.AddToClassList(ClassNames.BuildDropdown);
             dropdownActionPopup.RegisterValueChangedCallback(evt =>
             {
-                CurrentActionIndex = BuildActions.IndexOf(evt.newValue);
+                CurrentActionIndex = s_BuildActions.IndexOf(evt.newValue);
                 dropdownActionButton.clickable = new Clickable(ExecuteCurrentBuildAction);
                 actionUpdater.Update();
             });
@@ -358,7 +364,7 @@ namespace Unity.Build.Editor
                 config.Dependencies.Clear();
 #if UNITY_2020_1_OR_NEWER
                 config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies)
-                    .Select(asset => new LazyLoadReference<BuildConfiguration>() { asset = asset }));
+                    .Select(asset => new LazyLoadReference<BuildConfiguration>(asset)));
 #else
                 config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies));
 #endif
@@ -393,13 +399,7 @@ namespace Unity.Build.Editor
 
         void RefreshComponents(BindableElement root, BuildConfiguration config)
         {
-            // Refresh components
             var componentRoot = new BindableElement();
-            var components = config.GetComponents();
-            foreach (var component in components)
-            {
-                componentRoot.Add(GetComponentElement(config, component));
-            }
             componentRoot.SetEnabled(m_LastEditState);
             root.Add(componentRoot);
 
@@ -407,15 +407,49 @@ namespace Unity.Build.Editor
             componentUpdater.OnUpdate += updater => updater.Element.SetEnabled(m_LastEditState);
             componentRoot.binding = componentUpdater;
 
+            // Refresh components
+            var components = config.GetComponents();
+            foreach (var component in components)
+            {
+                var componentType = component.GetType();
+                if (componentType.HasAttribute<HideInInspector>())
+                {
+                    continue;
+                }
+                componentRoot.Add(GetComponentElement(config, component, false));
+            }
+
+            // Refresh optional components
+            var pipeline = config.GetBuildPipeline();
+            if (pipeline != null)
+            {
+                var optionalComponentsRoot = new Foldout();
+                optionalComponentsRoot.AddToClassList(ClassNames.OptionalComponents);
+                optionalComponentsRoot.text = "Suggested Components";
+                optionalComponentsRoot.value = false;
+                optionalComponentsRoot.Q<VisualElement>("unity-content").style.marginLeft = 0;
+                componentRoot.Add(optionalComponentsRoot);
+
+                foreach (var type in pipeline.UsedComponents)
+                {
+                    if (type.IsAbstract || type.IsGenericType || type.IsInterface ||
+                        type.HasAttribute<HideInInspector>() || config.HasComponent(type))
+                    {
+                        continue;
+                    }
+                    optionalComponentsRoot.Add(GetComponentElement(config, config.GetComponentOrDefault(type), true));
+                }
+            }
+
             // Refresh add component button
             var addComponentButton = new Button();
             addComponentButton.AddToClassList(ClassNames.AddComponent);
             addComponentButton.RegisterCallback<MouseUpEvent>(evt =>
             {
                 var database = TypeSearcherDatabase.Populate<IBuildComponent>((type) =>
-                {
-                    return !type.HasAttribute<HideInInspector>() && !config.GetComponentTypes().Contains(type);
-                });
+                    !type.HasAttribute<ObsoleteAttribute>() &&
+                    !type.HasAttribute<HideInInspector>() &&
+                    !config.GetComponentTypes().Contains(type));
                 var searcher = new Searcher(database, new AddTypeSearcherAdapter("Add Component"));
                 var editorWindow = EditorWindow.focusedWindow;
                 var button = evt.target as Button;
@@ -451,11 +485,12 @@ namespace Unity.Build.Editor
             return true;
         }
 
-        VisualElement GetComponentElement(BuildConfiguration container, object component)
+        VisualElement GetComponentElement(BuildConfiguration container, object component, bool optional)
         {
             var componentType = component.GetType();
             var element = (VisualElement)Activator.CreateInstance(typeof(HierarchicalComponentContainerElement<,,>)
-                .MakeGenericType(typeof(BuildConfiguration), typeof(IBuildComponent), componentType), container, component);
+                .MakeGenericType(typeof(BuildConfiguration), typeof(IBuildComponent), componentType), container, component, optional);
+            ((IChangeHandler)element).OnChanged += Refresh;
             return element;
         }
     }

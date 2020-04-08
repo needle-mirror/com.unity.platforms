@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using UnityEngine;
 
 namespace Unity.Build.Tests
 {
@@ -16,22 +15,14 @@ namespace Unity.Build.Tests
         [Test]
         public void GetBuildPipeline_IsEqualToPipeline()
         {
-            var pipeline = BuildPipeline.CreateInstance();
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.GetBuildPipeline(), Is.EqualTo(pipeline));
         }
 
         [Test]
         public void GetBuildPipeline_WithoutPipeline_IsNull()
         {
-            var pipeline = BuildPipeline.CreateInstance();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(config.GetBuildPipeline(), Is.Null);
         }
@@ -39,153 +30,115 @@ namespace Unity.Build.Tests
         [Test]
         public void CanBuild_IsTrue()
         {
-            var pipeline = BuildPipeline.CreateInstance();
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
-            Assert.That(config.CanBuild(out var _), Is.True);
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            Assert.That(config.CanBuild().Result, Is.True);
         }
 
         [Test]
         public void CanBuild_WithoutPipeline_IsFalse()
         {
-            var pipeline = BuildPipeline.CreateInstance();
             var config = BuildConfiguration.CreateInstance();
-            Assert.That(config.CanBuild(out var _), Is.False);
+            Assert.That(config.CanBuild().Result, Is.False);
+        }
+
+        [Test]
+        public void CanBuild_WhenCannotBuild_IsFalse()
+        {
+            var pipeline = new TestBuildPipelineCantBuild();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            Assert.That(config.CanBuild().Result, Is.False);
         }
 
         [Test]
         public void Build_Succeeds()
         {
-            var pipeline = BuildPipeline.CreateInstance();
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
         }
 
         [Test]
         public void Build_WithoutPipeline_Fails()
         {
-            var pipeline = BuildPipeline.CreateInstance();
             var config = BuildConfiguration.CreateInstance();
+            Assert.That(config.Build().Succeeded, Is.False);
+        }
+
+        [Test]
+        public void Build_WhenCannotBuild_IsFalse()
+        {
+            var pipeline = new TestBuildPipelineCantBuild();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            Assert.That(config.Build().Succeeded, Is.False);
+        }
+
+        [Test]
+        public void Build_WhenBuildFails_Fails()
+        {
+            var pipeline = new TestBuildPipelineBuildFails();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            Assert.That(config.Build().Succeeded, Is.False);
+        }
+
+        [Test]
+        public void Build_WhenBuildThrows_Fails()
+        {
+            var pipeline = new TestBuildPipelineBuildThrows();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.False);
         }
 
         [Test]
         public void CanRun_IsTrue()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
-            Assert.That(config.CanRun(out var _), Is.True);
+            Assert.That(config.CanRun().Result, Is.True);
         }
 
         [Test]
         public void CanRun_WithoutBuild_IsFalse()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
-            Assert.That(config.CanRun(out var _), Is.False);
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            Assert.That(config.CanRun().Result, Is.False);
         }
 
         [Test]
         public void CanRun_WithFailedBuild_IsFalse()
         {
-            var pipeline = BuildPipeline.CreateInstance();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(config.Build().Succeeded, Is.False);
-            Assert.That(config.CanRun(out var _), Is.False);
+            Assert.That(config.CanRun().Result, Is.False);
         }
 
         [Test]
         public void CanRun_WithoutPipeline_IsFalse()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
 
-            config.RemoveComponent<TestPipelineComponent>();
-            Assert.That(config.CanRun(out var _), Is.False);
+            config.RemoveComponent<TestBuildPipelineComponent>();
+            Assert.That(config.CanRun().Result, Is.False);
         }
 
         [Test]
-        public void CanRun_WithoutRunStep_IsFalse()
+        public void CanRun_WhenCannotRun_IsFalse()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipelineCantRun();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
-
-            pipeline.RunStep = null;
-            Assert.That(config.CanRun(out var _), Is.False);
-        }
-
-        [Test]
-        public void CanRun_WhenRunStepCannotRun_IsFalse()
-        {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStepCannotRun());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
-            Assert.That(config.Build().Succeeded, Is.True);
-            Assert.That(config.CanRun(out var _), Is.False);
+            Assert.That(config.CanRun().Result, Is.False);
         }
 
         [Test]
         public void Run_Succeeds()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
 
             using (var result = config.Run())
@@ -197,15 +150,8 @@ namespace Unity.Build.Tests
         [Test]
         public void Run_WithoutBuild_Fails()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             using (var result = config.Run())
             {
                 Assert.That(result.Succeeded, Is.False);
@@ -215,7 +161,7 @@ namespace Unity.Build.Tests
         [Test]
         public void Run_WithFailedBuild_Fails()
         {
-            var pipeline = BuildPipeline.CreateInstance();
+            var pipeline = new TestBuildPipeline();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(config.Build().Succeeded, Is.False);
 
@@ -228,18 +174,11 @@ namespace Unity.Build.Tests
         [Test]
         public void Run_WithoutPipeline_Fails()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
 
-            config.RemoveComponent<TestPipelineComponent>();
+            config.RemoveComponent<TestBuildPipelineComponent>();
             using (var result = config.Run())
             {
                 Assert.That(result.Succeeded, Is.False);
@@ -247,38 +186,10 @@ namespace Unity.Build.Tests
         }
 
         [Test]
-        public void Run_WithoutRunStep_Fails()
+        public void Run_WhenCannotRun_IsFalse()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStep());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
-            Assert.That(config.Build().Succeeded, Is.True);
-
-            pipeline.RunStep = null;
-            using (var result = config.Run())
-            {
-                Assert.That(result.Succeeded, Is.False);
-            }
-        }
-
-        [Test]
-        public void Run_WhenRunStepCannotRun_IsFalse()
-        {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStepCannotRun());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipelineCantRun();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
 
             using (var result = config.Run())
@@ -288,17 +199,10 @@ namespace Unity.Build.Tests
         }
 
         [Test]
-        public void Run_WhenRunStepFails_Fails()
+        public void Run_WhenRunFails_Fails()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStepFailure());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipelineRunFails();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
 
             using (var result = config.Run())
@@ -308,17 +212,10 @@ namespace Unity.Build.Tests
         }
 
         [Test]
-        public void Run_WhenRunStepThrows_Fails()
+        public void Run_WhenRunThrows_Fails()
         {
-            var pipeline = BuildPipeline.CreateInstance(p => p.RunStep = new TestRunStepThrows());
-            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestPipelineComponent
-            {
-#if UNITY_2020_1_OR_NEWER
-                Pipeline = new LazyLoadReference<BuildPipeline> { instanceID = pipeline.GetInstanceID() }
-#else
-                Pipeline = pipeline
-#endif
-            }));
+            var pipeline = new TestBuildPipelineRunThrows();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
 
             using (var result = config.Run())

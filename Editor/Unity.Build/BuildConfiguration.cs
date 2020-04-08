@@ -16,46 +16,30 @@ namespace Unity.Build
         /// Retrieve the build pipeline of this build configuration.
         /// </summary>
         /// <returns>The build pipeline if found, otherwise <see langword="null"/>.</returns>
-        public BuildPipeline GetBuildPipeline()
-        {
-            if (TryGetComponent<IBuildPipelineComponent>(out var component))
-            {
-#if UNITY_2020_1_OR_NEWER
-                var pipeline = component.Pipeline.asset;
-#else
-                var pipeline = component.Pipeline;
-#endif
-                return pipeline != null && pipeline ? pipeline : null;
-            }
-            return null;
-        }
+        public BuildPipelineBase GetBuildPipeline() => TryGetComponent<IBuildPipelineComponent>(out var component) ? component.Pipeline : null;
 
         /// <summary>
         /// Determine if the build pipeline of this build configuration can build.
         /// </summary>
-        /// <param name="reason">If <see cref="CanBuild"/> returns <see langword="false"/>, the reason why it fails.</param>
-        /// <returns>Whether or not the build pipeline can build.</returns>
-        public bool CanBuild(out string reason)
+        /// <returns>A result describing if the pipeline can build or not.</returns>
+        public BoolResult CanBuild()
         {
             var pipeline = GetBuildPipeline();
-            if (pipeline == null)
-            {
-                reason = $"No valid build pipeline found for {name.ToHyperLink()}. At least one component that derives from {nameof(IBuildPipelineComponent)} must be present.";
-                return false;
-            }
-            return pipeline.CanBuild(this, out reason);
+            var canBuild = CanBuildOrRun(pipeline);
+            return canBuild.Result ? pipeline.CanBuild(this) : canBuild;
         }
 
         /// <summary>
         /// Run the build pipeline of this build configuration to build the target.
         /// </summary>
         /// <returns>The result of the build pipeline build.</returns>
-        public BuildPipelineResult Build()
+        public BuildResult Build()
         {
             var pipeline = GetBuildPipeline();
-            if (!CanBuild(out var reason))
+            var canBuild = CanBuildOrRun(pipeline);
+            if (!canBuild.Result)
             {
-                return BuildPipelineResult.Failure(pipeline, this, reason);
+                return BuildResult.Failure(pipeline, this, canBuild.Reason);
             }
 
             var what = !string.IsNullOrEmpty(name) ? $" {name}" : string.Empty;
@@ -68,29 +52,25 @@ namespace Unity.Build
         /// <summary>
         /// Determine if the build pipeline of this build configuration can run.
         /// </summary>
-        /// <param name="reason">If <see cref="CanRun"/> returns <see langword="false"/>, the reason why it fails.</param>
-        /// <returns>Whether or not the build pipeline can run.</returns>
-        public bool CanRun(out string reason)
+        /// <returns>A result describing if the pipeline can run or not.</returns>
+        public BoolResult CanRun()
         {
             var pipeline = GetBuildPipeline();
-            if (pipeline == null)
-            {
-                reason = $"No valid build pipeline found for {name.ToHyperLink()}. At least one component that derives from {nameof(IBuildPipelineComponent)} must be present.";
-                return false;
-            }
-            return pipeline.CanRun(this, out reason);
+            var canRun = CanBuildOrRun(pipeline);
+            return canRun.Result ? pipeline.CanRun(this) : canRun;
         }
 
         /// <summary>
         /// Run the resulting target from building the build pipeline of this build configuration.
         /// </summary>
         /// <returns></returns>
-        public RunStepResult Run()
+        public RunResult Run()
         {
             var pipeline = GetBuildPipeline();
-            if (!CanRun(out var reason))
+            var canRun = CanBuildOrRun(pipeline);
+            if (!canRun.Result)
             {
-                return RunStepResult.Failure(this, pipeline?.RunStep, reason);
+                return RunResult.Failure(pipeline, this, canRun.Reason);
             }
             return pipeline.Run(this);
         }
@@ -116,6 +96,15 @@ namespace Unity.Build
         /// </summary>
         /// <param name="config">The build configuration that was used to store the build artifact.</param>
         /// <returns>The build result if found, otherwise <see langword="null"/>.</returns>
-        public BuildPipelineResult GetLastBuildResult() => BuildArtifacts.GetBuildResult(this);
+        public BuildResult GetLastBuildResult() => BuildArtifacts.GetBuildResult(this);
+
+        BoolResult CanBuildOrRun(BuildPipelineBase pipeline)
+        {
+            if (pipeline == null)
+            {
+                return BoolResult.False($"No valid build pipeline found for {this.ToHyperLink()}. At least one component that derives from {nameof(IBuildPipelineComponent)} must be present.");
+            }
+            return BoolResult.True();
+        }
     }
 }

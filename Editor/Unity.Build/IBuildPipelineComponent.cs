@@ -1,7 +1,3 @@
-#if UNITY_2020_1_OR_NEWER
-using UnityEngine;
-#endif
-
 namespace Unity.Build
 {
     /// <summary>
@@ -12,11 +8,7 @@ namespace Unity.Build
         /// <summary>
         /// Build pipeline used by this build configuration.
         /// </summary>
-#if UNITY_2020_1_OR_NEWER
-        LazyLoadReference<BuildPipeline> Pipeline { get; set; }
-#else
-        BuildPipeline Pipeline { get; set; }
-#endif
+        BuildPipelineBase Pipeline { get; set; }
 
         /// <summary>
         /// Returns index which is used for sorting builds when they're batch in build queue

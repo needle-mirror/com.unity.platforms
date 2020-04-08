@@ -13,7 +13,7 @@ namespace Unity.Build
     internal class BuildQueue : ScriptableSingleton<BuildQueue>
     {
         [Serializable]
-        internal class OnAllBuildsCompletedEvent : UnityEvent<BuildPipelineResult[]>
+        internal class OnAllBuildsCompletedEvent : UnityEvent<BuildResult[]>
         {
         }
 
@@ -39,9 +39,9 @@ namespace Unity.Build
         /// </summary>
         internal class BuildStorter
         {
-            readonly UnityEditor.BuildTarget m_CurrentActiveTarget;
+            readonly BuildTarget m_CurrentActiveTarget;
 
-            internal BuildStorter(UnityEditor.BuildTarget currentActiveTarget)
+            internal BuildStorter(BuildTarget currentActiveTarget)
             {
                 m_CurrentActiveTarget = currentActiveTarget;
             }
@@ -50,9 +50,9 @@ namespace Unity.Build
                 if (x.sortingIndex == y.sortingIndex)
                     return 0;
 
-                if (x.sortingIndex == (int)m_CurrentActiveTarget || x.sortingIndex == (int)UnityEditor.BuildTarget.NoTarget)
+                if (x.sortingIndex == (int)m_CurrentActiveTarget || x.sortingIndex == (int)BuildTarget.NoTarget)
                     return -1;
-                if (y.sortingIndex == (int)m_CurrentActiveTarget || y.sortingIndex == (int)UnityEditor.BuildTarget.NoTarget)
+                if (y.sortingIndex == (int)m_CurrentActiveTarget || y.sortingIndex == (int)BuildTarget.NoTarget)
                     return 1;
 
                 return x.sortingIndex.CompareTo(y.sortingIndex);
@@ -63,7 +63,7 @@ namespace Unity.Build
         List<QueuedBuild> m_QueueBuilds;
 
         [SerializeField]
-        UnityEditor.BuildTarget m_OriginalBuildTarget;
+        BuildTarget m_OriginalBuildTarget;
 
         [SerializeField]
         OnAllBuildsCompletedEvent m_OnAllBuildsCompletedEvent;
@@ -87,7 +87,7 @@ namespace Unity.Build
 
         public void Clear()
         {
-            m_OriginalBuildTarget = UnityEditor.BuildTarget.NoTarget;
+            m_OriginalBuildTarget = BuildTarget.NoTarget;
             if (m_PrepareQueueBuilds != null)
                 m_PrepareQueueBuilds.Clear();
             if (m_QueueBuilds != null)
@@ -104,7 +104,7 @@ namespace Unity.Build
             return AssetDatabase.LoadAssetAtPath<BuildConfiguration>(path);
         }
 
-        public void QueueBuild(BuildConfiguration config, BuildPipelineResult buildPipelineResult)
+        public void QueueBuild(BuildConfiguration config, BuildResult buildResult)
         {
             if (m_PrepareQueueBuilds == null)
                 m_PrepareQueueBuilds = new List<QueuedBuild>();
@@ -116,20 +116,20 @@ namespace Unity.Build
             b.buildConfigurationGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config));
 
             if (m_QueueBuilds.Count > 0)
-                buildPipelineResult = BuildPipelineResult.Failure(config.GetBuildPipeline(), config, "Can't queue builds while executing build.");
+                buildResult = BuildResult.Failure(config.GetBuildPipeline(), config, "Can't queue builds while executing build.");
 
             // If the build failed in previous step, don't execute it
-            if (buildPipelineResult != null && buildPipelineResult.Failed)
+            if (buildResult != null && buildResult.Failed)
                 b.buildFinished = true;
             else
                 b.buildFinished = false;
 
-            b.buildPipelineResult = buildPipelineResult != null ? JsonSerialization.ToJson(buildPipelineResult, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildPipelineResult) }) : string.Empty;
+            b.buildPipelineResult = buildResult != null ? JsonSerialization.ToJson(buildResult, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildResult) }) : string.Empty;
 
             m_PrepareQueueBuilds.Add(b);
         }
 
-        public void FlushBuilds(UnityAction<BuildPipelineResult[]> onAllBuildsCompleted)
+        public void FlushBuilds(UnityAction<BuildResult[]> onAllBuildsCompleted)
         {
             if (m_PrepareQueueBuilds == null || m_PrepareQueueBuilds.Count == 0)
                 return;
@@ -181,12 +181,12 @@ namespace Unity.Build
 
             while (currentBuild != null)
             {
-                var t = (UnityEditor.BuildTarget)currentBuild.sortingIndex;
+                var t = (BuildTarget)currentBuild.sortingIndex;
                 var b = ToBuildConfiguration(currentBuild.buildConfigurationGuid);
 
-                if (t == UnityEditor.BuildTarget.NoTarget || t == EditorUserBuildSettings.activeBuildTarget)
+                if (t == BuildTarget.NoTarget || t == EditorUserBuildSettings.activeBuildTarget)
                 {
-                    currentBuild.buildPipelineResult = JsonSerialization.ToJson(b.Build(), new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildPipelineResult) });
+                    currentBuild.buildPipelineResult = JsonSerialization.ToJson(b.Build(), new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildResult) });
                     currentBuild.buildFinished = true;
                 }
                 else
@@ -221,9 +221,9 @@ namespace Unity.Build
                     EditorUtility.ClearProgressBar();
                     m_OnAllBuildsCompletedEvent.Invoke(m_QueueBuilds.Select(m =>
                     {
-                        var buildPipelineResult = TypeConstruction.Construct<BuildPipelineResult>();
-                        JsonSerialization.TryFromJsonOverride(m.buildPipelineResult, ref buildPipelineResult, out _, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildPipelineResult) });
-                        return buildPipelineResult;
+                        var buildResult = TypeConstruction.Construct<BuildResult>();
+                        JsonSerialization.TryFromJsonOverride(m.buildPipelineResult, ref buildResult, out _, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildResult) });
+                        return buildResult;
                     }).ToArray());
                     Clear();
                 }

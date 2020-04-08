@@ -13,34 +13,22 @@ namespace Unity.Build.Tests
 
         public string[] Results
         {
-            set
-            {
-                m_Results = value;
-            }
-            get
-            {
-                return m_Results;
-            }
+            get => m_Results;
+            set => m_Results = value;
         }
 
         public bool Completed
         {
-            set
-            {
-                m_Completed = value;
-            }
-            get
-            {
-                return m_Completed;
-            }
+            get => m_Completed;
+            set => m_Completed = value;
         }
 
-        private string GetMessage(BuildPipelineResult result)
+        private string GetMessage(BuildResult result)
         {
             var msg = result.Succeeded ? "Success" : "Fail";
             return $"{result.BuildConfiguration.name}, {msg}";
         }
-        public void SetCompleted(BuildPipelineResult[] results)
+        public void SetCompleted(BuildResult[] results)
         {
             m_Results = results.Select(r => GetMessage(r)).ToArray();
             m_Completed = true;

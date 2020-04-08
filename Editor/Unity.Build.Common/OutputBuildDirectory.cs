@@ -1,4 +1,6 @@
-﻿using Unity.Serialization;
+﻿using System;
+using System.ComponentModel;
+using Unity.Serialization;
 
 namespace Unity.Build.Common
 {
@@ -21,15 +23,15 @@ namespace Unity.Build.Common
         /// <returns>The output build directory.</returns>
         public static string GetOutputBuildDirectory(this BuildConfiguration config)
         {
-            if (config.TryGetComponent<OutputBuildDirectory>(out var outBuildDir))
+            if (config.TryGetComponent<OutputBuildDirectory>(out var value))
             {
-                return outBuildDir.OutputDirectory;
+                return value.OutputDirectory;
             }
             return $"Builds/{config.name}";
         }
     }
 
-    public static class BuildStepExtensions
+    public static class BuildContextExtensions
     {
         /// <summary>
         /// Get the output build directory override used in this build context.
@@ -38,13 +40,20 @@ namespace Unity.Build.Common
         /// <param name="step">This build step.</param>
         /// <param name="context">The build context used throughout this build.</param>
         /// <returns>The output build directory.</returns>
-        public static string GetOutputBuildDirectory(this BuildStep step, BuildContext context)
+        public static string GetOutputBuildDirectory(this BuildContext context)
         {
-            if (step.HasOptionalComponent<OutputBuildDirectory>(context))
+            if (context.TryGetComponent<OutputBuildDirectory>(out var value))
             {
-                return step.GetOptionalComponent<OutputBuildDirectory>(context).OutputDirectory;
+                return value.OutputDirectory;
             }
-            return $"Builds/{context.BuildConfiguration.name}";
+            return $"Builds/{context.BuildConfigurationName}";
         }
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [Obsolete("Remove usage. (RemovedAfter 2020-07-01)", true)]
+    public static class BuildStepExtensions
+    {
+        public static string GetOutputBuildDirectory(this BuildStep step, BuildContext context) => throw null;
     }
 }
