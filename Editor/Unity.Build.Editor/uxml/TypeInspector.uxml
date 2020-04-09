@@ -8,4 +8,8 @@
       <VisualElement name="arrow" class="unity-enum-field__arrow"/>
     </VisualElement>
   </VisualElement>
+  <VisualElement name="helpbox" class="unity-base-field TypeInspector__helpbox">
+    <Image name="icon" class="TypeInspector__icon"/>
+    <Label name="message" class="TypeInspector__message"/>
+  </VisualElement>
 </UXML>

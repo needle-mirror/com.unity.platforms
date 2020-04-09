@@ -15,6 +15,8 @@ namespace Unity.Build.Editor
     public abstract class TypeInspector<T> : Inspector<T>
     {
         TextElement m_Text;
+        VisualElement m_HelpBox;
+        Label m_Message;
 
         /// <summary>
         /// The title displayed on the searcher window.
@@ -36,9 +38,15 @@ namespace Unity.Build.Editor
         /// </summary>
         public virtual Func<Type, string> TypeCategoryResolver { get; }
 
+        /// <summary>
+        /// Error message to display below the inspector as a help box.
+        /// </summary>
+        public string ErrorMessage { get; set; }
+
         public override VisualElement Build()
         {
             var typeField = Assets.LoadVisualTreeAsset(nameof(TypeInspector<T>)).CloneTree();
+            typeField.AddStyleSheetAndVariant(nameof(TypeInspector<T>));
 
             var label = typeField.Q<Label>("label");
             label.text = DisplayName;
@@ -52,6 +60,24 @@ namespace Unity.Build.Editor
                 var alignment = new SearcherWindow.Alignment(SearcherWindow.Alignment.Vertical.Top, SearcherWindow.Alignment.Horizontal.Left);
                 SearcherWindow.Show(EditorWindow.focusedWindow, searcher, OnTypeSelected, position, null);
             });
+
+            m_HelpBox = typeField.Q<VisualElement>("helpbox");
+
+            var icon = m_HelpBox.Q<Image>("icon");
+            icon.image = EditorGUIUtility.IconContent("d_console.erroricon.sml").image;
+            icon.scaleMode = ScaleMode.ScaleToFit;
+
+            m_Message = m_HelpBox.Q<Label>("message");
+            if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                m_HelpBox.style.display = DisplayStyle.Flex;
+                m_Message.text = ErrorMessage;
+            }
+            else
+            {
+                m_HelpBox.style.display = DisplayStyle.None;
+                m_Message.text = string.Empty;
+            }
 
             var type = Target?.GetType();
             if (type != null)
@@ -73,6 +99,20 @@ namespace Unity.Build.Editor
                 {
                     m_Text.text = TypeNameResolver?.Invoke(type) ?? type.Name;
                     NotifyChanged();
+                }
+            }
+
+            if ((m_Message.text ?? string.Empty) != (ErrorMessage ?? string.Empty))
+            {
+                if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    m_HelpBox.style.display = DisplayStyle.Flex;
+                    m_Message.text = ErrorMessage;
+                }
+                else
+                {
+                    m_HelpBox.style.display = DisplayStyle.None;
+                    m_Message.text = string.Empty;
                 }
             }
         }

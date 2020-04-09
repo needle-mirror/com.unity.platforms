@@ -206,8 +206,7 @@ namespace Unity.Build.Classic
                                 config = BuildConfiguration.CurrentDeserializationAssetPath.ToHyperLink();
                             }
                             Debug.LogWarning($"{config} uses custom build pipeline {assetPath.ToHyperLink()}. Custom build pipelines are no longer supported.\n" +
-                                $"Several options can be set using build components (like {nameof(WaitForPlayerConnection)}, {nameof(EnableHeadlessMode)}, etc). " +
-                                $"If you need to run other code before or after a build, register to {nameof(BuildProcess)}.{nameof(BuildProcess.BuildStarted)} or {nameof(BuildProcess)}.{nameof(BuildProcess.BuildCompleted)}.");
+                                $"Several options can be set using build components (like {nameof(PlayerConnectionSettings)}, {nameof(EnableHeadlessMode)}, etc).");
                         }
                     }
                 }
@@ -282,28 +281,18 @@ namespace Unity.Build.Classic
                     return;
                 }
 
-                // Legacy DOTS Hybrid LiveLink build pipeline guids
-                const string HybridLiveLink = "b08acfa97ea29e84597342a6a2afa6b2";
-                const string AndroidHybridLiveLink = "2796e060b2ae7a44f885faf3f9e933e9";
-                const string LinuxHybridLiveLink = "79829fe695c07ce638c43de9254d2cf6";
-                const string OSXHybridLiveLink = "a0e649094aaed7c45959a7d34723978a";
-                const string WindowsHybridLiveLink = "b9a325ffa9c6f024cb1086a2e1e01d42";
-                if (assetGuid == HybridLiveLink ||
-                    assetGuid == AndroidHybridLiveLink ||
-                    assetGuid == LinuxHybridLiveLink ||
-                    assetGuid == OSXHybridLiveLink ||
-                    assetGuid == WindowsHybridLiveLink)
+                var migration = TypeCacheHelper.ConstructTypeDerivedFrom<HybridBuildPipelineMigrationBase>();
+                if (migration != null)
                 {
-                    var migration = TypeCacheHelper.ConstructTypeDerivedFrom<HybridBuildPipelineMigrationBase>();
-                    if (migration != null)
-                    {
-                        migration.Migrate(BuildConfiguration.CurrentDeserializationAsset);
-                    }
+                    migration.Migrate(BuildConfiguration.CurrentDeserializationAsset, assetGuid);
                 }
             }
         }
     }
 
+    /// <summary>
+    /// For internal use only.
+    /// </summary>
     internal abstract class BuildPipelineSelectorBase
     {
         public abstract BuildPipelineBase SelectFor(Platform platform);
@@ -314,6 +303,6 @@ namespace Unity.Build.Classic
     /// </summary>
     internal abstract class HybridBuildPipelineMigrationBase
     {
-        public abstract void Migrate(BuildConfiguration config);
+        public abstract void Migrate(BuildConfiguration config, string assetGuid);
     }
 }

@@ -1,8 +1,5 @@
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Unity.Properties;
 using UnityEngine;
 
@@ -183,32 +180,16 @@ namespace Unity.Build.Tests
 
         protected class TestBuildArtifactInvalid { }
 
-        string[] m_LastArtifactFiles;
-
         [SetUp]
         public void SetUp()
         {
-            if (Directory.Exists(BuildArtifacts.BaseDirectory))
-            {
-                m_LastArtifactFiles = Directory.GetFiles(BuildArtifacts.BaseDirectory, "*.json", SearchOption.TopDirectoryOnly);
-            }
+            BuildArtifacts.Clean();
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (!Directory.Exists(BuildArtifacts.BaseDirectory))
-            {
-                return;
-            }
-
-            var currentArtifactFiles = Directory.GetFiles(BuildArtifacts.BaseDirectory, "*.json", SearchOption.TopDirectoryOnly);
-            foreach (var file in currentArtifactFiles.Except(m_LastArtifactFiles ?? Enumerable.Empty<string>()))
-            {
-                File.Delete(file);
-            }
-
-            BuildArtifacts.Clear();
+            BuildArtifacts.Clean();
         }
     }
 }

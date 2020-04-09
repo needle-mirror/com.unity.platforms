@@ -16,11 +16,6 @@ namespace Unity.Build
         readonly Stopwatch m_Timer = new Stopwatch();
 
         /// <summary>
-        /// Event fired when a build is started.
-        /// </summary>
-        public static event Action<BuildContext> BuildStarted;
-
-        /// <summary>
         /// Event fired when a build is completed.
         /// </summary>
         public static event Action<BuildResult> BuildCompleted;
@@ -84,7 +79,6 @@ namespace Unity.Build
         {
             m_Context = context ?? throw new ArgumentNullException(nameof(context));
             m_OnBuild = onBuild ?? throw new ArgumentNullException(nameof(onBuild));
-            BuildStarted?.Invoke(context);
         }
 
         internal static BuildProcess Success(BuildPipelineBase pipeline, BuildConfiguration config) => new BuildProcess

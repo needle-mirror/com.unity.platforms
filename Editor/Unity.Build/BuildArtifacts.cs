@@ -69,11 +69,21 @@ namespace Unity.Build
         /// <returns>The build result if found, <see langword="null"/> otherwise.</returns>
         public static BuildResult GetBuildResult(BuildConfiguration config) => GetArtifactData(config)?.Result;
 
+        /// <summary>
+        /// Clean all build artifact files.
+        /// </summary>
+        public static void Clean()
+        {
+            s_ArtifactDataCache.Clear();
+            if (Directory.Exists(BaseDirectory))
+            {
+                Directory.Delete(BaseDirectory, true);
+            }
+        }
+
         internal static void Store(BuildResult result, IBuildArtifact[] artifacts) => SetArtifactData(result, artifacts);
 
         internal static string GetArtifactPath(BuildConfiguration config) => GetArtifactsPath(GetBuildConfigurationName(config));
-
-        internal static void Clear() => s_ArtifactDataCache.Clear();
 
         static string GetBuildConfigurationName(BuildConfiguration config)
         {

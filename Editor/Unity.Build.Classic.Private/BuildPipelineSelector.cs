@@ -9,8 +9,7 @@ namespace Unity.Build.Classic
         public override BuildPipelineBase SelectFor(Platform platform)
         {
             var classicPipelineBases = TypeCacheHelper.ConstructTypesDerivedFrom<ClassicPipelineBase>();
-            return classicPipelineBases.FirstOrDefault(pipeline => pipeline.Platform.GetType() == platform.GetType()) ??
-                   throw new ArgumentException($"There is no classic pipeline for {platform}");
+            return classicPipelineBases.FirstOrDefault(pipeline => pipeline.Platform.GetType() == platform.GetType());
         }
     }
 }
