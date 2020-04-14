@@ -307,7 +307,6 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidComponents_OtherComponentsArePreserved()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-            LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetQualifedAssemblyTypeName().DoubleQuotes()}}}, {{\"$type\": \"Some.InvalidComponent.Name, Unknown.Assembly\"}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
