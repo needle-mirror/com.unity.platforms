@@ -1,8 +1,7 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using Unity.BuildSystem.NativeProgramSupport;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     class BuildPipelineSelector : BuildPipelineSelectorBase
     {

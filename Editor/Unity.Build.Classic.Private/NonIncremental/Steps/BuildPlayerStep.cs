@@ -3,9 +3,9 @@ using System.IO;
 using Unity.Build.Common;
 using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
-    public sealed class BuildPlayerStep : BuildStepBase
+    sealed class BuildPlayerStep : BuildStepBase
     {
         public override Type[] UsedComponents { get; } =
         {

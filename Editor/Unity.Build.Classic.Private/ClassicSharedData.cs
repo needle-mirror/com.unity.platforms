@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
-using UnityEditor;
+﻿using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     public class ClassicSharedData
     {

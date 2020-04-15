@@ -1,5 +1,3 @@
-using UnityEditor;
-
 namespace Unity.Build.Internals
 {
     internal static class BuildContextInternals

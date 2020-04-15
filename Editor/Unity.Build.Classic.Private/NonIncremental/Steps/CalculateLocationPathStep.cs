@@ -1,14 +1,14 @@
 ﻿using System.IO;
 using Unity.Build.Common;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     internal class LocationInfo
     {
         internal string Path { get; set; }
     }
 
-    public abstract class CalculateLocationPathStep : BuildStepBase
+    abstract class CalculateLocationPathStep : BuildStepBase
     {
         protected string CalculateDefaultLocationPath(BuildContext context)
         {

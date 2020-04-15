@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     public abstract class ClassicNonIncrementalPipelineBase : ClassicPipelineBase
     {

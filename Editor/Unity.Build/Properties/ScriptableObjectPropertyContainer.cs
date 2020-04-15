@@ -260,8 +260,16 @@ namespace Unity.Build
 
                 if (!result.DidSucceed())
                 {
-                    var errors = result.Events.Select(e => e.ToString());
-                    LogDeserializeError(string.Join("\n", errors), container);
+                    var errors = result.Errors.Select(e => e.ToString());
+#if UNITY_2020_1_OR_NEWER
+                    // nothing to do here
+#else
+                    errors = errors.Where(e => !e.Contains("Asset is not yet loaded and will result in a null reference"));
+#endif
+                    if (errors.Count() > 0)
+                    {
+                        LogDeserializeError(string.Join("\n", errors), container);
+                    }
                 }
 
                 container.Sanitize();

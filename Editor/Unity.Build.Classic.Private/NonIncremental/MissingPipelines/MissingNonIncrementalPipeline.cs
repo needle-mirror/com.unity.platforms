@@ -1,14 +1,14 @@
+using NiceIO;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using NiceIO;
 using Unity.Build.Common;
 using Unity.Build.Editor;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     sealed class CopyAdditionallyProvidedFilesStepBeforeBuild : BuildStepBase
     {
@@ -43,7 +43,7 @@ namespace Unity.Build.Classic
         public override BuildResult Cleanup(BuildContext context)
         {
             var info = context.GetValue<ProviderInfo>();
-            foreach(var f in info.Paths)
+            foreach (var f in info.Paths)
             {
                 f.DeleteIfExists();
             }

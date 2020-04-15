@@ -1,4 +1,4 @@
-﻿namespace Unity.Build.Classic
+﻿namespace Unity.Build.Classic.Private
 {
     public class NonIncrementalClassicSharedData
     {

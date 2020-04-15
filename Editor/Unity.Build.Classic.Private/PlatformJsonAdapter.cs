@@ -3,7 +3,7 @@ using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     sealed class PlatformJsonAdapter : IJsonAdapter<Platform>
     {

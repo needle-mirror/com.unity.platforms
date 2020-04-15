@@ -1,8 +1,8 @@
 ﻿using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
-    public sealed class SwitchPlatfomStep : BuildStepBase
+    sealed class SwitchPlatfomStep : BuildStepBase
     {
         public override BuildResult Run(BuildContext context)
         {

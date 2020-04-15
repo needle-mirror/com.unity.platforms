@@ -5,16 +5,19 @@ using Unity.Build.Common;
 using Unity.BuildSystem.NativeProgramSupport;
 using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     public abstract class ClassicPipelineBase : BuildPipelineBase
     {
-        Type[] CustomizersUsedComponents =>
-            TypeCacheHelper.ConstructTypesDerivedFrom<ClassicBuildPipelineCustomizer>()
-            .SelectMany(customizer => customizer.UsedComponents)
-            .Distinct().ToArray();
+        // Note: we need pass false to ConstructTypesDerivedFrom to allow non-Unity types to be created.
+        ClassicBuildPipelineCustomizer[] CreateCustomizers() =>
+            TypeCacheHelper.ConstructTypesDerivedFrom<ClassicBuildPipelineCustomizer>(false).ToArray();
 
-        public override Type[] UsedComponents => base.UsedComponents.Concat(CustomizersUsedComponents).Distinct().ToArray();
+        Type[] CustomizersUsedComponents =>
+            CreateCustomizers().SelectMany(customizer => customizer.UsedComponents).Distinct().ToArray();
+
+        public override Type[] UsedComponents =>
+            base.UsedComponents.Concat(CustomizersUsedComponents).Distinct().ToArray();
 
         protected abstract BuildTarget BuildTarget { get; }
         public abstract Platform Platform { get; }
@@ -25,7 +28,7 @@ namespace Unity.Build.Classic
             bool isDevelopment = buildType == BuildType.Debug || buildType == BuildType.Develop;
             var playbackEngineDirectory = UnityEditor.BuildPipeline.GetPlaybackEngineDirectory(BuildTarget, isDevelopment ? BuildOptions.Development : BuildOptions.None);
 
-            var customizers = TypeCacheHelper.ConstructTypesDerivedFrom<ClassicBuildPipelineCustomizer>().ToArray();
+            var customizers = CreateCustomizers();
             foreach (var customizer in customizers)
                 customizer.m_Info = new CustomizerInfoImpl(context);
 

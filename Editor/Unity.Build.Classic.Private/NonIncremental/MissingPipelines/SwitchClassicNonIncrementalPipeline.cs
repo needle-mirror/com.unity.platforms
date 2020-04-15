@@ -1,7 +1,7 @@
 using Unity.BuildSystem.NativeProgramSupport;
 using UnityEditor;
 
-namespace Unity.Build.Classic.MissingPipelines
+namespace Unity.Build.Classic.Private.MissingPipelines
 {
     /// <summary>
     /// Placeholder classic non incremental pipeline for Switch

@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     static class BuildContextExtensions
     {

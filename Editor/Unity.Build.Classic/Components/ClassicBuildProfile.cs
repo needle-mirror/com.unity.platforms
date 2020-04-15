@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using Unity.BuildSystem.NativeProgramSupport;
 using Unity.Properties;

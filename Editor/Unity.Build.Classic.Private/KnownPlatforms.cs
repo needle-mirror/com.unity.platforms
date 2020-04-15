@@ -2,17 +2,17 @@
 using System.Collections.Generic;
 using Unity.BuildSystem.NativeProgramSupport;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     static class KnownPlatforms
     {
         public static Dictionary<Type, string> All { get; } = new Dictionary<Type, string>
         {
-            {typeof(WindowsPlatform), "com.platform.windows"},
-            {typeof(MacOSXPlatform), "com.platform.macos"},
-            {typeof(LinuxPlatform), "com.platform.linux"},
-            {typeof(IosPlatform), "com.platform.ios"},
-            {typeof(AndroidPlatform), "com.platform.android"}
+            {typeof(WindowsPlatform), "com.platforms.windows"},
+            {typeof(MacOSXPlatform), "com.platforms.macos"},
+            {typeof(LinuxPlatform), "com.platforms.linux"},
+            {typeof(IosPlatform), "com.platforms.ios"},
+            {typeof(AndroidPlatform), "com.platforms.android"}
         };
     }
 }

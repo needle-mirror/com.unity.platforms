@@ -1,7 +1,7 @@
 using System;
 using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     sealed class UnitySettingsState
     {

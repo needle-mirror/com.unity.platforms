@@ -1,7 +1,7 @@
 ﻿using NiceIO;
 using UnityEditor;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     class CustomizerInfoImpl : ClassicBuildPipelineCustomizer.Info
     {

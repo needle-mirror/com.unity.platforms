@@ -121,7 +121,6 @@ namespace Unity.Build.Editor
             m_Container.SetComponent(element.GetTarget<T>());
             element.SetTarget(m_Container.GetComponent<T>());
             SetStyle();
-            OnChanged();
         }
 
         public void PreUpdate()

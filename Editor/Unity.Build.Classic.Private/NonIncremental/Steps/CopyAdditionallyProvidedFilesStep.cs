@@ -1,14 +1,8 @@
 ﻿using NiceIO;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using Bee.Core;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
-    public sealed class CopyAdditionallyProvidedFilesStep : BuildStepBase
+    sealed class CopyAdditionallyProvidedFilesStep : BuildStepBase
     {
         public override BuildResult Run(BuildContext context)
         {

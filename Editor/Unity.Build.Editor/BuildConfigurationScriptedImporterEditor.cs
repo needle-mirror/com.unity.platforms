@@ -260,14 +260,14 @@ namespace Unity.Build.Editor
         {
             root.Clear();
 
-            var config = extraDataTarget as BuildConfiguration;
-            if (config == null)
+            var asset = assetTarget as BuildConfiguration;
+            if (asset == null)
             {
                 return;
             }
 
-            m_LastEditState = AssetDatabase.IsOpenForEdit(config);
-            var openedForEditUpdater = UIUpdaters.MakeBinding(config, root);
+            m_LastEditState = AssetDatabase.IsOpenForEdit(asset);
+            var openedForEditUpdater = UIUpdaters.MakeBinding(asset, root);
             openedForEditUpdater.OnPreUpdate += updater =>
             {
                 if (!updater.Source)
@@ -277,6 +277,12 @@ namespace Unity.Build.Editor
                 m_LastEditState = AssetDatabase.IsOpenForEdit(updater.Source);
             };
             root.binding = openedForEditUpdater;
+
+            var config = extraDataTarget as BuildConfiguration;
+            if (config == null)
+            {
+                return;
+            }
 
             RefreshHeader(root, config);
             RefreshDependencies(root, config);

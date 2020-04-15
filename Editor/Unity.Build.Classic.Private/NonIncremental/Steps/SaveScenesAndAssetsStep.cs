@@ -1,8 +1,8 @@
 using UnityEditor.SceneManagement;
 
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
-    public sealed class SaveScenesAndAssetsStep : BuildStepBase
+    sealed class SaveScenesAndAssetsStep : BuildStepBase
     {
         public override BuildResult Run(BuildContext context)
         {

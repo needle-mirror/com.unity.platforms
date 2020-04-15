@@ -1,4 +1,4 @@
-namespace Unity.Build.Classic
+namespace Unity.Build.Classic.Private
 {
     class EmbeddedScenesValue
     {

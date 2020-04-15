@@ -1,7 +1,7 @@
+using Unity.Properties;
 using Unity.Serialization;
 using UnityEditor;
 using UnityEngine;
-using Unity.Properties;
 
 namespace Unity.Build.Classic
 {

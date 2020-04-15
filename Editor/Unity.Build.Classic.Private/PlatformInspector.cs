@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Unity.Build.Classic;
+using Unity.Build.Classic.Private;
 using Unity.BuildSystem.NativeProgramSupport;
 using Unity.Properties.Editor;
 using Unity.Properties.UI;
