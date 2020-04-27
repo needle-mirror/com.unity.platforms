@@ -235,30 +235,7 @@ namespace Unity.Build
         public IEnumerable<TComponent> GetComponents(Type type)
         {
             CheckComponentTypeAndThrowIfInvalid(type);
-
-            var lookup = new Dictionary<Type, TComponent>();
-            foreach (var dependency in GetDependencies())
-            {
-                foreach (var component in dependency.Components)
-                {
-                    var componentType = component.GetType();
-                    if (type.IsAssignableFrom(componentType))
-                    {
-                        lookup[componentType] = CopyComponent(component);
-                    }
-                }
-            }
-
-            foreach (var component in Components)
-            {
-                var componentType = component.GetType();
-                if (type.IsAssignableFrom(componentType))
-                {
-                    lookup[componentType] = CopyComponent(component);
-                }
-            }
-
-            return lookup.Values;
+            return GetComponents().Where(component => type.IsAssignableFrom(component.GetType()));
         }
 
         /// <summary>
@@ -377,25 +354,7 @@ namespace Unity.Build
                 return false;
             }
 
-            for (var i = 0; i < Dependencies.Count; ++i)
-            {
-#if UNITY_2020_1_OR_NEWER
-                var dep = Dependencies[i].asset;
-#else
-                var dep = Dependencies[i];
-#endif
-                if (dep == null || !dep)
-                {
-                    continue;
-                }
-
-                if (dep == dependency || dep.HasDependency(dependency))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return GetDependencies().Contains(dependency);
         }
 
         /// <summary>
@@ -430,7 +389,7 @@ namespace Unity.Build
         /// <returns>List of dependencies.</returns>
         public IEnumerable<TContainer> GetDependencies()
         {
-            var dependencies = new HashSet<TContainer>();
+            var dependencies = new List<TContainer>();
             for (var i = 0; i < Dependencies.Count; ++i)
             {
 #if UNITY_2020_1_OR_NEWER
@@ -442,12 +401,8 @@ namespace Unity.Build
                 {
                     continue;
                 }
-
+                dependencies.AddRange(dependency.GetDependencies());
                 dependencies.Add(dependency);
-                foreach (var childDependency in dependency.GetDependencies())
-                {
-                    dependencies.Add(childDependency);
-                }
             }
             return dependencies;
         }
@@ -530,46 +485,43 @@ namespace Unity.Build
 
         bool TryGetDerivedTypeFromBaseType(Type baseType, out Type value)
         {
-            value = baseType;
             if (baseType == null || baseType == typeof(object) || !typeof(TComponent).IsAssignableFrom(baseType))
             {
+                value = default;
                 return false;
             }
 
             if (!baseType.IsInterface && !baseType.IsAbstract)
             {
+                value = baseType;
                 return true;
             }
 
-            for (var i = 0; i < Dependencies.Count; ++i)
+            foreach (var dependency in GetDependencies())
             {
-#if UNITY_2020_1_OR_NEWER
-                var dependency = Dependencies[i].asset;
-#else
-                var dependency = Dependencies[i];
-#endif
-                if (null == dependency && !dependency)
+                foreach (var component in dependency.Components)
                 {
-                    continue;
-                }
-
-                if (dependency.TryGetDerivedTypeFromBaseType(baseType, out var type))
-                {
-                    value = type;
+                    var componentType = component.GetType();
+                    if (baseType.IsAssignableFrom(componentType))
+                    {
+                        value = componentType;
+                        return true;
+                    }
                 }
             }
 
             foreach (var component in Components)
             {
-                var type = component.GetType();
-                if (baseType.IsAssignableFrom(type))
+                var componentType = component.GetType();
+                if (baseType.IsAssignableFrom(componentType))
                 {
-                    value = type;
-                    break;
+                    value = componentType;
+                    return true;
                 }
             }
 
-            return true;
+            value = baseType;
+            return false;
         }
 
         TComponent CopyComponent(TComponent value)

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 
@@ -158,6 +159,51 @@ namespace Unity.Build
         }
 
         /// <summary>
+        /// Clean the build result from building the build pipeline of this build configuration.
+        /// </summary>
+        /// <param name="config">The build configuration that was used to build this build pipeline.</param>
+        public CleanResult Clean(BuildConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            if (EditorApplication.isCompiling)
+            {
+                throw new InvalidOperationException("Cleaning is not allowed while Unity is compiling.");
+            }
+
+            if (EditorUtility.scriptCompilationFailed)
+            {
+                throw new InvalidOperationException("Cleaning is not allowed because scripts have compile errors in the editor.");
+            }
+
+            CleanResult result = null;
+            try
+            {
+                using (var context = new CleanContext(this, config))
+                {
+                    var timer = Stopwatch.StartNew();   
+                    result = OnClean(context);
+                    // Clean artifacts after OnClean, since OnClean might use artifacts to determine build directory
+                    BuildArtifacts.CleanBuildArtifact(config);
+                    timer.Stop();
+
+                    if (result != null)
+                    {
+                        result.Duration = timer.Elapsed;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                result = CleanResult.Failure(this, config, exception);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Provides additional implementation to determine if the build pipeline satisfy requirements to build.
         /// </summary>
         /// <param name="context">The build context for the scope of the build operation.</param>
@@ -185,6 +231,13 @@ namespace Unity.Build
         /// <param name="context">The run context for the scope of the run operation.</param>
         /// <returns>A result describing if run is successful or not.</returns>
         protected abstract RunResult OnRun(RunContext context);
+
+        /// <summary>
+        /// Provides implementation to clean files produced by the build of this build pipeline corresponding to the specified build configuration.
+        /// </summary>
+        /// <param name="context">The clean context for the scope of the clean operation.</param>
+        /// <returns>A result describing if clean is successful or not</returns>
+        protected abstract CleanResult OnClean(CleanContext context);
 
         internal static void BuildAsync(BuildBatchDescription buildBatchDescription)
         {
@@ -256,5 +309,12 @@ namespace Unity.Build
 
             return OnCanRun(context);
         }
+
+        /// <summary>
+        /// Directory containing final build files.
+        /// </summary>
+        /// <param name="config">The build configuration containing the information .</param>
+        /// <returns>Returns the directory path.</returns>
+        public abstract DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config);
     }
 }

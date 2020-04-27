@@ -274,23 +274,7 @@ namespace Unity.Build
         public IEnumerable<IBuildComponent> GetComponents(Type type)
         {
             CheckUsedComponentTypesAndThrowIfMissing(type);
-
-            var lookup = new Dictionary<Type, IBuildComponent>();
-            var components = BuildConfiguration.GetComponents(type);
-            foreach (var component in components)
-            {
-                lookup[component.GetType()] = component;
-            }
-
-            foreach (var pair in m_Components)
-            {
-                if (type.IsAssignableFrom(pair.Key))
-                {
-                    lookup[pair.Key] = pair.Value;
-                }
-            }
-
-            return lookup.Values;
+            return GetComponents().Where(component => type.IsAssignableFrom(component.GetType()));
         }
 
         /// <summary>

@@ -8,7 +8,7 @@ using Unity.Build.Editor;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
-namespace Unity.Build.Classic.Private
+namespace Unity.Build.Classic.Private.MissingPipelines
 {
     sealed class CopyAdditionallyProvidedFilesStepBeforeBuild : BuildStepBase
     {

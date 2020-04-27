@@ -81,6 +81,20 @@ namespace Unity.Build
             }
         }
 
+        /// <summary>
+        /// Clean the last build artifact stored on disk for the build configuration.
+        /// </summary>
+        /// <param name="config">The build configuration that was used to store the build artifact.</param>
+        public static void CleanBuildArtifact(BuildConfiguration config)
+        {
+            s_ArtifactDataCache.Clear();
+            var file = GetArtifactPath(config);
+            if (File.Exists(file))
+            {
+                File.Delete(file);
+            }
+        }
+
         internal static void Store(BuildResult result, IBuildArtifact[] artifacts) => SetArtifactData(result, artifacts);
 
         internal static string GetArtifactPath(BuildConfiguration config) => GetArtifactsPath(GetBuildConfigurationName(config));

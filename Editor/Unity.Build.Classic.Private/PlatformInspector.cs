@@ -1,13 +1,12 @@
 using System;
 using System.Linq;
-using Unity.Build.Classic;
-using Unity.Build.Classic.Private;
+using Unity.Build.Editor;
 using Unity.BuildSystem.NativeProgramSupport;
 using Unity.Properties.Editor;
 using Unity.Properties.UI;
 using UnityEngine.UIElements;
 
-namespace Unity.Build.Editor
+namespace Unity.Build.Classic.Private
 {
     sealed class PlatformInspector : TypeInspector<Platform>
     {

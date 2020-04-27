@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using System;
+using System.IO;
 using Unity.Properties;
 using UnityEngine;
 
@@ -29,70 +30,62 @@ namespace Unity.Build.Tests
         [HideInInspector]
         protected class TestBuildPipeline : BuildPipelineBase
         {
+            protected override CleanResult OnClean(CleanContext context) => context.Success();
             protected override BuildResult OnBuild(BuildContext context) => context.Success();
             protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
+            public override DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config) => throw new NotImplementedException();
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineCantBuild : BuildPipelineBase
+        protected class TestBuildPipelineCantBuild : TestBuildPipeline
         {
             protected override BoolResult OnCanBuild(BuildContext context) => BoolResult.False(nameof(TestBuildPipelineCantBuild));
-            protected override BuildResult OnBuild(BuildContext context) => context.Success();
-            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineBuildFails : BuildPipelineBase
+        protected class TestBuildPipelineBuildFails : TestBuildPipeline
         {
             protected override BuildResult OnBuild(BuildContext context) => context.Failure(nameof(TestBuildPipelineBuildFails));
-            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineBuildThrows : BuildPipelineBase
+        protected class TestBuildPipelineBuildThrows : TestBuildPipeline
         {
             protected override BuildResult OnBuild(BuildContext context) => throw new InvalidOperationException(nameof(TestBuildPipelineBuildThrows));
-            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineNullBuildResult : BuildPipelineBase
+        protected class TestBuildPipelineNullBuildResult : TestBuildPipeline
         {
             protected override BuildResult OnBuild(BuildContext context) => null;
-            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineCantRun : BuildPipelineBase
+        protected class TestBuildPipelineCantRun : TestBuildPipeline
         {
-            protected override BuildResult OnBuild(BuildContext context) => context.Success();
             protected override BoolResult OnCanRun(RunContext context) => BoolResult.False(nameof(TestBuildPipelineCantRun));
-            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineRunFails : BuildPipelineBase
+        protected class TestBuildPipelineRunFails : TestBuildPipeline
         {
-            protected override BuildResult OnBuild(BuildContext context) => context.Success();
             protected override RunResult OnRun(RunContext context) => context.Failure(nameof(TestBuildPipelineCantRun));
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineRunThrows : BuildPipelineBase
+        protected class TestBuildPipelineRunThrows : TestBuildPipeline
         {
-            protected override BuildResult OnBuild(BuildContext context) => context.Success();
             protected override RunResult OnRun(RunContext context) => throw new InvalidOperationException(nameof(TestBuildPipelineRunThrows));
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineNullRunResult : BuildPipelineBase
+        protected class TestBuildPipelineNullRunResult : TestBuildPipeline
         {
-            protected override BuildResult OnBuild(BuildContext context) => context.Success();
             protected override RunResult OnRun(RunContext context) => null;
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineWithComponents : BuildPipelineBase
+        protected class TestBuildPipelineWithComponents : TestBuildPipeline
         {
             public override Type[] UsedComponents { get; } =
             {
@@ -116,7 +109,7 @@ namespace Unity.Build.Tests
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineWithMissingComponents : BuildPipelineBase
+        protected class TestBuildPipelineWithMissingComponents : TestBuildPipeline
         {
             protected override BuildResult OnBuild(BuildContext context)
             {
@@ -134,11 +127,9 @@ namespace Unity.Build.Tests
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineWithInvalidComponents : BuildPipelineBase
+        protected class TestBuildPipelineWithInvalidComponents : TestBuildPipeline
         {
             public override Type[] UsedComponents { get; } = { typeof(TestBuildComponentInvalid) };
-            protected override BuildResult OnBuild(BuildContext context) => context.Success();
-            protected override RunResult OnRun(RunContext context) => context.Success(new TestRunInstance());
         }
 
         protected class TestBuildStepA : BuildStepBase

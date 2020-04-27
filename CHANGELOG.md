@@ -21,6 +21,9 @@ Build pipeline major overhaul: build pipelines are no longer asset based, and in
 - New method `GetComponentTypes` on `BuildConfiguration` which returns the flatten list of all component types from the configuration and its dependencies.
 - New method `SetComponent` on `BuildConfiguration` that only takes a type and sets the component value to a default instance of the component type.
 - New method `BuildIncremental` on `BuildPipelineBase` which can be used to implement build pipelines that run in background.
+- New build component 'ScriptingDebuggerSettings' which allows you to enable Scripting Debugging and Wait For Managed Debugger options.
+- Successful build message will contain a hyperlink point towards build directory.
+- New build component 'PlayerScriptingDefines', allows you to specify extra scripting defines for your scripts while doing a build.
 
 ### Changed
 - Class `BuildContext` now derives from new base class `ContextBase`.
@@ -36,6 +39,10 @@ Build pipeline major overhaul: build pipelines are no longer asset based, and in
 
 ### Removed
 - Removed optional mutator parameter on `BuildContext` class.
+
+### Fixed
+- Fixed a dependency ordering issue causing some components to not be found in some cases.
+- Clicking Build/BuildAndRun/Run with unsaved changes will now properly refresh the build configuration asset before performing the action.
 
 ## [0.2.2] - 2020-03-23
 

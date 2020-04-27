@@ -1,9 +1,10 @@
 using System;
 using UnityEditor;
+using Unity.Build.Common;
 
 namespace Unity.Build.Classic.Private
 {
-    class ClassicBuildOptionsCustomizer : ClassicBuildPipelineCustomizer
+    class ClassicBuildCustomizer : ClassicBuildPipelineCustomizer
     {
         public override Type[] UsedComponents { get; } =
         {
@@ -13,6 +14,8 @@ namespace Unity.Build.Classic.Private
             typeof(IncludeTestAssemblies),
             typeof(InstallInBuildFolder),
             typeof(PlayerConnectionSettings),
+            typeof(ScriptingDebuggerSettings),
+            typeof(PlayerScriptingDefines)
         };
 
         public override BuildOptions ProvideBuildOptions()
@@ -49,7 +52,14 @@ namespace Unity.Build.Classic.Private
                 if (value.WaitForConnection)
                     options |= BuildOptions.WaitForPlayerConnection;
             }
+            if (Context.HasComponent<ScriptingDebuggerSettings>())
+                options |= BuildOptions.AllowDebugging;
             return options;
+        }
+
+        public override string[] ProvidePlayerScriptingDefines()
+        {
+            return Context.GetComponentOrDefault<PlayerScriptingDefines>().Defines;
         }
     }
 }

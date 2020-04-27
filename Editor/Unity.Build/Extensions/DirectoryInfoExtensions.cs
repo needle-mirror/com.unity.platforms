@@ -1,10 +1,27 @@
 using System.IO;
 using System.Linq;
+using Unity.Build.Bridge;
+using UnityEditor;
 
 namespace Unity.Build
 {
     internal static class DirectoryInfoExtensions
     {
+        const string k_Directory = "directory";
+
+        [InitializeOnLoadMethod]
+        static void Register()
+        {
+            EditorGUIBridge.HyperLinkClicked += (args) =>
+            {
+                if (args.TryGetValue(k_Directory, out var outputFolder))
+                {
+                    EditorUtility.RevealInFinder(outputFolder);
+                }
+            };
+        }
+
+
         public static DirectoryInfo Combine(this DirectoryInfo directoryInfo, params string[] paths)
         {
             return new DirectoryInfo(Path.Combine(new[] { directoryInfo.FullName }.Concat(paths).ToArray()));
@@ -65,6 +82,16 @@ namespace Unity.Build
             var path = directoryInfo.FullName;
             var relativePath = relativeTo.FullName;
             return path.StartsWith(relativePath) ? path.Remove(0, relativePath.Length).TrimStart('\\', '/') : path;
+        }
+
+        public static string ToHyperLink(this DirectoryInfo directoryInfo)
+        {
+            if (directoryInfo == null || !directoryInfo.Exists)
+            {
+                return string.Empty;
+            }
+
+            return $"<a {k_Directory}=\"{directoryInfo.FullName}\">{directoryInfo.FullName}</a>";
         }
     }
 }

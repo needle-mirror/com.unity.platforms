@@ -31,7 +31,7 @@ namespace Unity.Build.Common
         }
     }
 
-    public static class BuildContextExtensions
+    public static class ContextBaseExtensions
     {
         /// <summary>
         /// Get the output build directory override used in this build context.
@@ -40,7 +40,7 @@ namespace Unity.Build.Common
         /// <param name="step">This build step.</param>
         /// <param name="context">The build context used throughout this build.</param>
         /// <returns>The output build directory.</returns>
-        public static string GetOutputBuildDirectory(this BuildContext context)
+        public static string GetOutputBuildDirectory(this ContextBase context)
         {
             if (context.TryGetComponent<OutputBuildDirectory>(out var value))
             {

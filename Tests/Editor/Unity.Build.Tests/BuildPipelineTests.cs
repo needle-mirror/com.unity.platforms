@@ -243,6 +243,29 @@ namespace Unity.Build.Tests
         }
 
         [Test]
+        public void Clean_Succeeds()
+        {
+            var pipeline = new TestBuildPipeline();
+            var config = BuildConfiguration.CreateInstance();
+            Assert.That(pipeline.Clean(config).Succeeded, Is.True);
+        }
+
+        [Test]
+        public void Clean_From_Config_Succeeds()
+        {
+            var config = BuildConfiguration.CreateInstance();
+            config.SetComponent(new TestBuildPipelineComponent() { Pipeline = new TestBuildPipeline() } );
+            Assert.That(config.Clean().Succeeded, Is.True);
+        }
+
+        [Test]
+        public void Clean_WithoutConfig_Throws()
+        {
+            var pipeline = new TestBuildPipeline();
+            Assert.Throws<ArgumentNullException>(() => pipeline.Clean(null));
+        }
+
+        [Test]
         public void CanRun_IsTrue()
         {
             var pipeline = new TestBuildPipeline();

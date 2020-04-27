@@ -315,6 +315,9 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidDependencies_ComponentsArePreserved()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
+#if UNITY_2020_1_OR_NEWER
+            LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
+#endif
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [123, \"abc\"], \"Components\": [{{\"$type\": {typeof(ComponentA).GetQualifedAssemblyTypeName().DoubleQuotes()}}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
@@ -350,11 +353,30 @@ namespace Unity.Build.Tests
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
             container.SetComponent(new ComponentA { Float = 123.456f, Integer = 42, String = "foo" });
+            container.SetComponent(new ComponentB { Byte = 255, Double = 3.14159265358979323846, Short = 32767 });
 
             Assert.That(container.HasComponent(typeof(ITestInterface)));
             Assert.That(container.TryGetComponent(typeof(ITestInterface), out var value), Is.True);
             Assert.That(value, Is.EqualTo(new ComponentA { Float = 123.456f, Integer = 42, String = "foo" }));
             Assert.That(container.RemoveComponent(typeof(ITestInterface)), Is.True);
+            Assert.That(container.Components.Count, Is.Zero);
+        }
+
+        [Test]
+        public void CanQuery_InterfaceType_OnDependencies()
+        {
+            var containerA = TestHierarchicalComponentContainer.CreateInstance();
+            var containerB = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent<ComponentA>());
+            var containerC = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent<ComponentB>());
+            var containerD = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent<ComplexComponent>());
+
+            containerA.AddDependency(containerB);
+            containerA.AddDependency(containerC);
+            containerA.AddDependency(containerD);
+
+            Assert.That(containerA.HasComponent<ITestInterface>(), Is.True);
+            Assert.That(containerA.TryGetComponent<ITestInterface>(out var value), Is.True);
+            Assert.That(value, Is.EqualTo(new ComponentA()));
         }
 
         [Test]
@@ -723,9 +745,14 @@ namespace Unity.Build.Tests
             containerA.AddDependency(containerB);
             containerB.AddDependency(containerC);
 
-            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerB, containerC }));
+            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerC, containerB }));
             Assert.That(containerB.GetDependencies(), Is.EqualTo(new[] { containerC }));
             Assert.That(containerC.GetDependencies(), Is.Empty);
+
+            var containerD = TestHierarchicalComponentContainer.CreateInstance();
+            containerA.AddDependency(containerD);
+            containerC.AddDependency(containerD);
+            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerD, containerC, containerB, containerD }));
         }
 
         [Test]

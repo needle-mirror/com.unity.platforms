@@ -25,8 +25,8 @@ namespace Unity.Build
         public BoolResult CanBuild()
         {
             var pipeline = GetBuildPipeline();
-            var canBuild = CanBuildOrRun(pipeline);
-            return canBuild.Result ? pipeline.CanBuild(this) : canBuild;
+            var canUse = CanUsePipeline(pipeline);
+            return canUse.Result ? pipeline.CanBuild(this) : canUse;
         }
 
         /// <summary>
@@ -36,10 +36,10 @@ namespace Unity.Build
         public BuildResult Build()
         {
             var pipeline = GetBuildPipeline();
-            var canBuild = CanBuildOrRun(pipeline);
-            if (!canBuild.Result)
+            var canUse = CanUsePipeline(pipeline);
+            if (!canUse.Result)
             {
-                return BuildResult.Failure(pipeline, this, canBuild.Reason);
+                return BuildResult.Failure(pipeline, this, canUse.Reason);
             }
 
             var what = !string.IsNullOrEmpty(name) ? $" {name}" : string.Empty;
@@ -56,8 +56,8 @@ namespace Unity.Build
         public BoolResult CanRun()
         {
             var pipeline = GetBuildPipeline();
-            var canRun = CanBuildOrRun(pipeline);
-            return canRun.Result ? pipeline.CanRun(this) : canRun;
+            var canUse = CanUsePipeline(pipeline);
+            return canUse.Result ? pipeline.CanRun(this) : canUse;
         }
 
         /// <summary>
@@ -67,12 +67,18 @@ namespace Unity.Build
         public RunResult Run()
         {
             var pipeline = GetBuildPipeline();
-            var canRun = CanBuildOrRun(pipeline);
-            if (!canRun.Result)
-            {
-                return RunResult.Failure(pipeline, this, canRun.Reason);
-            }
-            return pipeline.Run(this);
+            var canUse = CanUsePipeline(pipeline);
+            return canUse.Result ? pipeline.Run(this) : RunResult.Failure(pipeline, this, canUse.Reason);
+        }
+
+        /// <summary>
+        /// Clean the build result from building the build pipeline of this build configuration.
+        /// </summary>
+        public CleanResult Clean()
+        {
+            var pipeline = GetBuildPipeline();
+            var canUse = CanUsePipeline(pipeline);
+            return canUse.Result ? pipeline.Clean(this) : CleanResult.Failure(pipeline, this, canUse.Reason);
         }
 
         /// <summary>
@@ -98,7 +104,7 @@ namespace Unity.Build
         /// <returns>The build result if found, otherwise <see langword="null"/>.</returns>
         public BuildResult GetLastBuildResult() => BuildArtifacts.GetBuildResult(this);
 
-        BoolResult CanBuildOrRun(BuildPipelineBase pipeline)
+        BoolResult CanUsePipeline(BuildPipelineBase pipeline)
         {
             if (pipeline == null)
             {

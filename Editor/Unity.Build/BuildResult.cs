@@ -50,7 +50,15 @@ namespace Unity.Build
             Exception = exception
         };
 
-        public override string ToString() => $"Build {base.ToString()}";
+        private string GetOpenBuildDirectory()
+        {
+            if (Failed)
+                return string.Empty;
+            var directory = BuildPipeline.GetOutputBuildDirectory(BuildConfiguration);
+            return directory != null ? $"\nResult can be found in {directory.ToHyperLink()}." : string.Empty;
+        }
+
+        public override string ToString() => $"Build {base.ToString()}{GetOpenBuildDirectory()}";
 
         public BuildResult() { }
     }

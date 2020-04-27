@@ -111,7 +111,25 @@ namespace Unity.Build.Editor
                         return;
                 }
             }
-            EditorApplication.delayCall += () => CurrentBuildAction.Action(assetTarget as BuildConfiguration);
+
+            EditorApplication.delayCall += () =>
+            {
+                var assetImporter = target as AssetImporter;
+                if (assetImporter == null || !assetImporter)
+                {
+                    return;
+                }
+
+                AssetDatabase.ImportAsset(assetImporter.assetPath);
+
+                var config = assetTarget as BuildConfiguration;
+                if (config == null || !config)
+                {
+                    return;
+                }
+
+                CurrentBuildAction.Action(config);
+            };
         }
 
         // Needed because properties don't handle root collections well.
@@ -261,7 +279,7 @@ namespace Unity.Build.Editor
             root.Clear();
 
             var asset = assetTarget as BuildConfiguration;
-            if (asset == null)
+            if (asset == null || !asset)
             {
                 return;
             }
@@ -279,7 +297,7 @@ namespace Unity.Build.Editor
             root.binding = openedForEditUpdater;
 
             var config = extraDataTarget as BuildConfiguration;
-            if (config == null)
+            if (config == null || !config)
             {
                 return;
             }
@@ -357,9 +375,9 @@ namespace Unity.Build.Editor
         void RefreshDependencies(BindableElement root, BuildConfiguration config)
         {
 #if UNITY_2020_1_OR_NEWER
-            m_DependenciesWrapper.Dependencies = FilterDependencies(config, config.Dependencies.Select(d => d.asset)).ToList();
+            m_DependenciesWrapper.Dependencies = FilterDependencies(config.Dependencies.Select(d => d.asset)).ToList();
 #else
-            m_DependenciesWrapper.Dependencies = FilterDependencies(config, config.Dependencies).ToList();
+            m_DependenciesWrapper.Dependencies = FilterDependencies(config.Dependencies).ToList();
 #endif
 
             var dependencyElement = new PropertyElement();
@@ -369,10 +387,10 @@ namespace Unity.Build.Editor
             {
                 config.Dependencies.Clear();
 #if UNITY_2020_1_OR_NEWER
-                config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies)
+                config.Dependencies.AddRange(FilterDependencies(m_DependenciesWrapper.Dependencies)
                     .Select(asset => new LazyLoadReference<BuildConfiguration>(asset)));
 #else
-                config.Dependencies.AddRange(FilterDependencies(config, m_DependenciesWrapper.Dependencies));
+                config.Dependencies.AddRange(FilterDependencies(m_DependenciesWrapper.Dependencies));
 #endif
             };
             dependencyElement.SetEnabled(m_LastEditState);
@@ -388,11 +406,11 @@ namespace Unity.Build.Editor
             dependencyElement.binding = dependencyUpdater;
         }
 
-        IEnumerable<BuildConfiguration> FilterDependencies(BuildConfiguration config, IEnumerable<BuildConfiguration> dependencies)
+        IEnumerable<BuildConfiguration> FilterDependencies(IEnumerable<BuildConfiguration> dependencies)
         {
             foreach (var dependency in dependencies)
             {
-                if (dependency == null || !dependency || dependency == config || dependency.HasDependency(config))
+                if (dependency == null || !dependency || dependency == assetTarget || dependency.HasDependency(assetTarget as BuildConfiguration))
                 {
                     yield return null;
                 }
@@ -485,9 +503,8 @@ namespace Unity.Build.Editor
                 return false;
             }
 
-            var type = typeItem.Type;
-            config.SetComponent(type, TypeConstruction.Construct<IBuildComponent>(type));
-            Refresh(m_BuildConfigurationRoot);
+            config.SetComponent(typeItem.Type);
+            Refresh();
             return true;
         }
 

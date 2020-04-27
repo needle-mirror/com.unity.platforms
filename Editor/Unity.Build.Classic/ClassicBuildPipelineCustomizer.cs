@@ -86,5 +86,12 @@ namespace Unity.Build.Classic
         /// </summary>
         /// <returns></returns>
         public virtual BuildOptions ProvideBuildOptions() => BuildOptions.None;
+
+        /// <summary>
+        /// Override this method if you want to add extra scripting defines to the player build.
+        /// Note: Only available with Unity version 2020.1 or higher.
+        /// </summary>
+        /// <returns></returns>
+        public virtual string[] ProvidePlayerScriptingDefines() => Array.Empty<string>();
     }
 }

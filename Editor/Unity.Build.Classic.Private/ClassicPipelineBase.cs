@@ -49,5 +49,23 @@ namespace Unity.Build.Classic.Private
             foreach (var customizer in customizers)
                 customizer.OnBeforeBuild();
         }
+
+        protected override CleanResult OnClean(CleanContext context)
+        {
+            var buildDirectory = context.GetOutputBuildDirectory();
+            if (Directory.Exists(buildDirectory))
+                Directory.Delete(buildDirectory, true);
+            return context.Success();
+        }
+
+        public override DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            return new DirectoryInfo(config.GetOutputBuildDirectory());
+        }
     }
 }

@@ -9,7 +9,8 @@ namespace Unity.Build.Classic.Private
         public override Type[] UsedComponents { get; } =
         {
             typeof(GeneralSettings),
-            typeof(ClassicScriptingSettings)
+            typeof(ClassicScriptingSettings),
+            typeof(ScriptingDebuggerSettings)
         };
 
         public override BuildResult Run(BuildContext context)
@@ -39,6 +40,12 @@ namespace Unity.Build.Classic.Private
             PlayerSettings.SetScriptingBackend(targetGroup, scriptingSettings.ScriptingBackend);
             PlayerSettings.SetIl2CppCompilerConfiguration(targetGroup, scriptingSettings.Il2CppCompilerConfiguration);
             gcIncremental.boolValue = scriptingSettings.UseIncrementalGC;
+
+            if (context.TryGetComponent<ScriptingDebuggerSettings>(out var debuggerSettings))
+            {
+                // Don't set EditorUserBuildSettings.allowDebugging, since it gets overriden by BuildOptions we provide in BuildPlayerStep
+                EditorUserBuildSettings.waitForManagedDebugger = debuggerSettings.WaitForManagedDebugger;
+            }
 
             foreach (var b in backups)
             {
