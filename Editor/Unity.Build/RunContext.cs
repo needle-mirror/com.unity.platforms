@@ -8,6 +8,11 @@ namespace Unity.Build
     public sealed class RunContext : ContextBase
     {
         /// <summary>
+        /// Optional list of run targets to deploy and run on.
+        /// </summary>
+        public RunTargetBase[] RunTargets { get; } = Array.Empty<RunTargetBase>();
+
+        /// <summary>
         /// Get a run result representing a success.
         /// </summary>
         /// <param name="instance">The run process instance.</param>
@@ -30,9 +35,10 @@ namespace Unity.Build
 
         internal RunContext() : base() { }
 
-        internal RunContext(BuildPipelineBase pipeline, BuildConfiguration config)
+        internal RunContext(BuildPipelineBase pipeline, BuildConfiguration config, params RunTargetBase[] runTargets)
             : base(pipeline, config)
         {
+            RunTargets = runTargets ?? Array.Empty<RunTargetBase>();
         }
     }
 }

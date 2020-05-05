@@ -1,4 +1,3 @@
-using Unity.Build;
 using Unity.Properties;
 
 namespace Unity.Build.Common

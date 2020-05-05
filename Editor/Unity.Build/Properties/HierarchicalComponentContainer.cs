@@ -475,7 +475,7 @@ namespace Unity.Build
 
             if (!typeof(TComponent).IsAssignableFrom(type))
             {
-                throw new InvalidOperationException($"{nameof(type)} must derive from '{typeof(TComponent).FullName}'.");
+                throw new InvalidOperationException($"Component type '{type.FullName}' must derive from '{typeof(TComponent).FullName}'.");
             }
         }
 

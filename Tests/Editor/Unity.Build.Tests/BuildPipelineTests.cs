@@ -254,7 +254,7 @@ namespace Unity.Build.Tests
         public void Clean_From_Config_Succeeds()
         {
             var config = BuildConfiguration.CreateInstance();
-            config.SetComponent(new TestBuildPipelineComponent() { Pipeline = new TestBuildPipeline() } );
+            config.SetComponent(new TestBuildPipelineComponent() { Pipeline = new TestBuildPipeline() });
             Assert.That(config.Clean().Succeeded, Is.True);
         }
 

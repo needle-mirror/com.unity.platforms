@@ -10,7 +10,8 @@ namespace Unity.Build.Classic.Private
         {
             typeof(GeneralSettings),
             typeof(ClassicScriptingSettings),
-            typeof(ScriptingDebuggerSettings)
+            typeof(ScriptingDebuggerSettings),
+            typeof(ClassicCodeStrippingOptions)
         };
 
         public override BuildResult Run(BuildContext context)
@@ -25,6 +26,7 @@ namespace Unity.Build.Classic.Private
             var serializedObject = new SerializedObject(UnitySettingsState.PlayerSettingsAsset);
             var generalSettings = context.GetComponentOrDefault<GeneralSettings>();
             var scriptingSettings = context.GetComponentOrDefault<ClassicScriptingSettings>();
+            var strippingOptions = context.GetComponentOrDefault<ClassicCodeStrippingOptions>();
             var targetGroup = UnityEditor.BuildPipeline.GetBuildTargetGroup(context.GetValue<ClassicSharedData>().BuildTarget);
 
             // Get serialized properties for things which don't have API exposed
@@ -40,6 +42,9 @@ namespace Unity.Build.Classic.Private
             PlayerSettings.SetScriptingBackend(targetGroup, scriptingSettings.ScriptingBackend);
             PlayerSettings.SetIl2CppCompilerConfiguration(targetGroup, scriptingSettings.Il2CppCompilerConfiguration);
             gcIncremental.boolValue = scriptingSettings.UseIncrementalGC;
+
+            PlayerSettings.stripEngineCode = strippingOptions.StripEngineCode;
+            PlayerSettings.SetManagedStrippingLevel(targetGroup, strippingOptions.ManagedStrippingLevel);
 
             if (context.TryGetComponent<ScriptingDebuggerSettings>(out var debuggerSettings))
             {

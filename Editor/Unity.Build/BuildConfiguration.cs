@@ -52,23 +52,25 @@ namespace Unity.Build
         /// <summary>
         /// Determine if the build pipeline of this build configuration can run.
         /// </summary>
+        /// <param name="runTargets">List of run targets to deploy and run on.</param>
         /// <returns>A result describing if the pipeline can run or not.</returns>
-        public BoolResult CanRun()
+        public BoolResult CanRun(params RunTargetBase[] runTargets)
         {
             var pipeline = GetBuildPipeline();
             var canUse = CanUsePipeline(pipeline);
-            return canUse.Result ? pipeline.CanRun(this) : canUse;
+            return canUse.Result ? pipeline.CanRun(this, runTargets) : canUse;
         }
 
         /// <summary>
         /// Run the resulting target from building the build pipeline of this build configuration.
         /// </summary>
+        /// <param name="runTargets">List of run targets to deploy and run on.</param>
         /// <returns></returns>
-        public RunResult Run()
+        public RunResult Run(params RunTargetBase[] runTargets)
         {
             var pipeline = GetBuildPipeline();
             var canUse = CanUsePipeline(pipeline);
-            return canUse.Result ? pipeline.Run(this) : RunResult.Failure(pipeline, this, canUse.Reason);
+            return canUse.Result ? pipeline.Run(this, runTargets) : RunResult.Failure(pipeline, this, canUse.Reason);
         }
 
         /// <summary>

@@ -4,6 +4,30 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2020-05-05
+
+### Added
+- New component `ClassicCodeStrippingOptions`, exposes Classic's StripEngineCode and ManagedStrippingLevel values.
+- New class `RunTargetBase`, can be used to specify deploy targets for pipelines.
+
+### Changed
+- Updated `com.unity.properties` package version to `1.2.0-preview`.
+- Updated `com.unity.properties.ui` package version to `1.2.0-preview`.
+- Updated `com.unity.serialization` package version to `1.2.0-preview`.
+- Classic build pipelines will pick development players when ClassicBuildProfile Configuration is set to Debug or Development.
+
+### Removed
+- Removed obsolete class `BuildSettings`.
+- Removed obsolete interfaces `IBuildSettingsComponent` and `IRunStep`.
+- Removed obsolete properties `flags`, `description` and `category` on class `BuildStepAttribute`, as well as the nested `Flags` enum.
+- Removed obsolete property `BuildSettings` on class `BuildPipelineResult` and `RunStepResult`.
+- Removed obsolete property `Scenes` on class `SceneList`.
+
+## [0.3.1] - 2020-05-04
+
+### Changed
+- Update platforms packages to 0.3.1
+
 ## [0.3.0] - 2020-04-28
 
 Build pipeline major overhaul: build pipelines are no longer asset based, and instead must be implemented in code by deriving from `BuildPipelineBase` class. Build steps are no longer mandatory but can still be used by deriving from `BuildStepBase`.
@@ -21,9 +45,9 @@ Build pipeline major overhaul: build pipelines are no longer asset based, and in
 - New method `GetComponentTypes` on `BuildConfiguration` which returns the flatten list of all component types from the configuration and its dependencies.
 - New method `SetComponent` on `BuildConfiguration` that only takes a type and sets the component value to a default instance of the component type.
 - New method `BuildIncremental` on `BuildPipelineBase` which can be used to implement build pipelines that run in background.
-- New build component 'ScriptingDebuggerSettings' which allows you to enable Scripting Debugging and Wait For Managed Debugger options.
+- New build component `ScriptingDebuggerSettings` which allows you to enable Scripting Debugging and Wait For Managed Debugger options.
 - Successful build message will contain a hyperlink point towards build directory.
-- New build component 'PlayerScriptingDefines', allows you to specify extra scripting defines for your scripts while doing a build.
+- New build component `PlayerScriptingDefines`, allows you to specify extra scripting defines for your scripts while doing a build.
 
 ### Changed
 - Class `BuildContext` now derives from new base class `ContextBase`.

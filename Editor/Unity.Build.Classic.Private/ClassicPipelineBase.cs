@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using NiceIO;
 using Unity.Build.Common;
 using Unity.BuildSystem.NativeProgramSupport;
 using UnityEditor;
@@ -31,14 +32,16 @@ namespace Unity.Build.Classic.Private
             var customizers = CreateCustomizers();
             foreach (var customizer in customizers)
                 customizer.m_Info = new CustomizerInfoImpl(context);
-
+            var workingDir = new NPath($"Library/BuildWorkingDir/{context.BuildConfigurationName}");
+            workingDir.MakeAbsolute().EnsureDirectoryExists();
             context.SetValue(new ClassicSharedData()
             {
                 BuildTarget = BuildTarget,
                 PlaybackEngineDirectory = playbackEngineDirectory,
                 BuildToolsDirectory = Path.Combine(playbackEngineDirectory, "Tools"),
                 DevelopmentPlayer = isDevelopment,
-                Customizers = customizers
+                Customizers = customizers,
+                WorkingDirectory = workingDir.ToString()
             });
 
             var scenes = context.GetComponentOrDefault<SceneList>().GetScenePathsForBuild();

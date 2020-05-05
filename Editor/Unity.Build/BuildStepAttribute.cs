@@ -29,33 +29,5 @@ namespace Unity.Build
             get => throw null;
             set => throw null;
         }
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("To hide a BuildStep in inspector or searcher menu, please use attribute [HideInInspector] instead. (RemovedAfter 2020-05-01)")]
-        public enum Flags
-        {
-            None = 0,
-            Hidden = 1
-        }
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("To hide a BuildStep in inspector or searcher menu, please use attribute [HideInInspector] instead. (RemovedAfter 2020-05-01)")]
-        public Flags flags = Flags.None;
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("description has been renamed to Description. (RemovedAfter 2020-05-01) (UnityUpgradable) -> Description")]
-        public string description
-        {
-            get => throw null;
-            set => throw null;
-        }
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("category has been renamed to Category. (RemovedAfter 2020-05-01) (UnityUpgradable) -> Category")]
-        public string category
-        {
-            get => throw null;
-            set => throw null;
-        }
     }
 }

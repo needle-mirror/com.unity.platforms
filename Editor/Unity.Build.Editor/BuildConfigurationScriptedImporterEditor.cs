@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.Properties.Editor;
 using Unity.Properties.UI;
 using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;

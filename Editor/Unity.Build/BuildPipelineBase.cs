@@ -104,15 +104,16 @@ namespace Unity.Build
         /// Determine if the build pipeline satisfy requirements to run the last build.
         /// </summary>
         /// <param name="config">The build configuration corresponding to the build to be run.</param>
+        /// <param name="runTargets">List of devices to deploy and run on.</param>
         /// <returns>A result describing if the pipeline can run or not.</returns>
-        public BoolResult CanRun(BuildConfiguration config)
+        public BoolResult CanRun(BuildConfiguration config, params RunTargetBase[] runTargets)
         {
             if (config == null)
             {
                 throw new ArgumentNullException(nameof(config));
             }
 
-            using (var context = new RunContext(this, config))
+            using (var context = new RunContext(this, config, runTargets))
             {
                 return CanRun(context);
             }
@@ -122,8 +123,9 @@ namespace Unity.Build
         /// Run the last build of this build pipeline corresponding to the specified build configuration.
         /// </summary>
         /// <param name="config">The build configuration corresponding to the build to be run.</param>
+        /// <param name="runTargets">List of devices to deploy and run on.</param>
         /// <returns>A result describing if run is successful or not.</returns>
-        public RunResult Run(BuildConfiguration config)
+        public RunResult Run(BuildConfiguration config, params RunTargetBase[] runTargets)
         {
             if (config == null)
             {
@@ -133,7 +135,7 @@ namespace Unity.Build
             RunResult result = null;
             try
             {
-                using (var context = new RunContext(this, config))
+                using (var context = new RunContext(this, config, runTargets))
                 {
                     var canRun = CanRun(context);
                     if (!canRun.Result)
@@ -184,7 +186,7 @@ namespace Unity.Build
             {
                 using (var context = new CleanContext(this, config))
                 {
-                    var timer = Stopwatch.StartNew();   
+                    var timer = Stopwatch.StartNew();
                     result = OnClean(context);
                     // Clean artifacts after OnClean, since OnClean might use artifacts to determine build directory
                     BuildArtifacts.CleanBuildArtifact(config);

@@ -1,18 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Unity.Serialization.Json;
 using UnityEditor;
 using UnityEditor.Experimental.AssetImporters;
-using UnityEngine;
 
 namespace Unity.Build
 {
-    [ScriptedImporter(Version, new[] { BuildConfiguration.AssetExtension
-#pragma warning disable 618
-        , BuildSettings.AssetExtension
-#pragma warning restore 618
-    })]
+    [ScriptedImporter(Version, new[] { BuildConfiguration.AssetExtension })]
     sealed class BuildConfigurationScriptedImporter : ScriptedImporter
     {
 #if UNITY_2020_1_OR_NEWER
@@ -28,13 +22,6 @@ namespace Unity.Build
             {
                 context.AddObjectToAsset("asset", asset/*, icon*/);
                 context.SetMainObject(asset);
-
-#pragma warning disable 618
-                if (Path.GetExtension(context.assetPath) == BuildSettings.AssetExtension)
-                {
-                    Debug.LogWarning($"{context.assetPath.ToHyperLink()}: {BuildSettings.AssetExtension.SingleQuotes()} asset extension is obsolete: it has been renamed to {BuildConfiguration.AssetExtension.SingleQuotes()}. (RemovedAfter 2020-05-01)", asset);
-                }
-#pragma warning restore 618
             }
         }
 

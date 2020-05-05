@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using Unity.Properties;
 using Unity.Serialization.Json;
@@ -49,14 +47,6 @@ namespace Unity.Build.Common
         /// </summary>
         [CreateProperty]
         public List<SceneInfo> SceneInfos { get; set; } = new List<SceneInfo>();
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Scenes has been replaced by SceneInfos. (RemovedAfter 2020-05-01)")]
-        public List<GlobalObjectId> Scenes
-        {
-            get => throw null;
-            set => throw null;
-        }
 
         /// <summary>
         /// Returns all scenes marked as auto load.  The first scene is always included.

@@ -10,6 +10,8 @@ namespace Unity.Build.Classic.Private
 
         public string OutputBuildDirectory { get; internal set; }
 
+        public string WorkingDirectory { get; internal set; }
+
         public string StreamingAssetsDirectory { set; get; }
 
         public bool DevelopmentPlayer { get; internal set; }

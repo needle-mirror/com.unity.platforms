@@ -15,9 +15,5 @@ namespace Unity.Build
         public static BuildPipelineResult Failure(BuildPipeline pipeline, BuildConfiguration config, string message) => throw null;
         public static BuildPipelineResult Failure(BuildPipeline pipeline, BuildConfiguration config, Exception exception) => throw null;
         public BuildPipelineResult() => throw null;
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("BuildSettings has been renamed to BuildConfiguration. (RemovedAfter 2020-05-01) (UnityUpgradable) -> BuildConfiguration")]
-        public BuildConfiguration BuildSettings { get; internal set; }
     }
 }

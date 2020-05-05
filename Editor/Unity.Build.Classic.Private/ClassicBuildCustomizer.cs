@@ -1,6 +1,6 @@
 using System;
-using UnityEditor;
 using Unity.Build.Common;
+using UnityEditor;
 
 namespace Unity.Build.Classic.Private
 {

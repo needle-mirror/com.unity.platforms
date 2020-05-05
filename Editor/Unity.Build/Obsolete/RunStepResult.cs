@@ -15,9 +15,5 @@ namespace Unity.Build
         public static RunStepResult Failure(BuildConfiguration config, RunStep step, Exception exception) => throw null;
         public void Dispose() => throw null;
         public RunStepResult() => throw null;
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("BuildSettings has been renamed to BuildConfiguration. (RemovedAfter 2020-05-01) (UnityUpgradable) -> BuildConfiguration")]
-        public BuildConfiguration BuildSettings { get; internal set; }
     }
 }
