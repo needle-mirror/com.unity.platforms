@@ -399,6 +399,16 @@ namespace Unity.Build
         /// </summary>
         public virtual void Dispose() { }
 
+        /// <summary>
+        /// Get the output build directory override used in this build context.
+        /// The output build directory can be overridden using a <see cref="OutputBuildDirectory"/> component.
+        /// </summary>
+        /// <returns>The output build directory.</returns>
+        public string GetOutputBuildDirectory()
+        {
+            return BuildPipeline.GetOutputBuildDirectory(BuildConfiguration).ToString();
+        }
+
         internal ContextBase() { }
 
         internal ContextBase(BuildPipelineBase pipeline, BuildConfiguration config)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Properties;
+using Unity.Serialization;
 using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters;
 using UnityEditor;
@@ -11,6 +12,7 @@ namespace Unity.Build.Common
     /// <summary>
     /// Contains information about the scenes for the build.
     /// </summary>
+    [FormerName("Unity.Build.Common.SceneList, Unity.Build.Common")]
     public sealed class SceneList : IBuildComponent
     {
         /// <summary>

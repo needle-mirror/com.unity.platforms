@@ -14,6 +14,7 @@ namespace Unity.Build.Classic
     public sealed class ClassicBuildProfile : IBuildPipelineComponent
     {
         Platform m_Platform;
+        bool m_Incremental;
         BuildPipelineBase m_Pipeline;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -38,7 +39,7 @@ namespace Unity.Build.Classic
                 else if (value.GetType() != m_Platform?.GetType())
                 {
                     m_Platform = value;
-                    m_Pipeline = ConstructPipeline(m_Platform);
+                    m_Pipeline = ConstructPipeline(m_Platform, m_Incremental);
                 }
             }
         }
@@ -49,10 +50,34 @@ namespace Unity.Build.Classic
         [CreateProperty]
         public BuildType Configuration { get; set; } = BuildType.Develop;
 
+ #if !ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+        // Hide this property instead of removing, since when saving json
+        // We'll loose incremental value
+        [HideInInspector]
+#endif
+        [CreateProperty]
+        public bool Incremental
+        {
+            get => m_Incremental;
+            set
+            {
+                if (m_Incremental != value)
+                {
+                    m_Incremental = value;
+                    m_Pipeline = ConstructPipeline(m_Platform, m_Incremental);
+                }
+            }
+        }
+
+
         public BuildPipelineBase Pipeline
         {
             get => m_Pipeline;
+#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+            set => throw new InvalidOperationException($"Cannot explicitly set {nameof(Pipeline)}, set {nameof(Platform)} and/or {nameof(Incremental)} properties instead.");
+#else
             set => throw new InvalidOperationException($"Cannot explicitly set {nameof(Pipeline)}, set {nameof(Platform)} property instead.");
+#endif
         }
 
         public int SortingIndex => throw new NotImplementedException();
@@ -68,7 +93,8 @@ namespace Unity.Build.Classic
 #elif UNITY_EDITOR_LINUX
             m_Platform = new LinuxPlatform();
 #endif
-            m_Pipeline = ConstructPipeline(m_Platform);
+            m_Incremental = false;
+            m_Pipeline = ConstructPipeline(m_Platform, m_Incremental);
         }
 
         internal static string GetExecutableExtension(BuildTarget target)
@@ -142,14 +168,14 @@ namespace Unity.Build.Classic
 #pragma warning restore 618
         }
 
-        static BuildPipelineBase ConstructPipeline(Platform platform)
+        static BuildPipelineBase ConstructPipeline(Platform platform, bool incremental)
         {
             if (platform == null)
             {
                 return null;
             }
 
-            return TypeCacheHelper.ConstructTypeDerivedFrom<BuildPipelineSelectorBase>().SelectFor(platform);
+            return TypeCacheHelper.ConstructTypeDerivedFrom<BuildPipelineSelectorBase>().SelectFor(platform, incremental);
         }
 
         class ClassicBuildProfileMigration : IJsonMigration<ClassicBuildProfile>
@@ -294,7 +320,7 @@ namespace Unity.Build.Classic
     /// </summary>
     internal abstract class BuildPipelineSelectorBase
     {
-        public abstract BuildPipelineBase SelectFor(Platform platform);
+        public abstract BuildPipelineBase SelectFor(Platform platform, bool incremental);
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using Unity.Build.Common;
 using UnityEditor;
 
 namespace Unity.Build
@@ -317,6 +318,19 @@ namespace Unity.Build
         /// </summary>
         /// <param name="config">The build configuration containing the information .</param>
         /// <returns>Returns the directory path.</returns>
-        public abstract DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config);
+        public virtual DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            if (config.TryGetComponent<OutputBuildDirectory>(out var value))
+            {
+                return new DirectoryInfo(value.OutputDirectory);
+            }
+
+            return new DirectoryInfo($"Builds/{config.name}");
+        }
     }
 }

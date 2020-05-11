@@ -114,5 +114,19 @@ namespace Unity.Build
             }
             return BoolResult.True();
         }
+
+        /// <summary>
+        /// Get the output build directory override for this build configuration.
+        /// The output build directory can be overridden using a <see cref="OutputBuildDirectory"/> component.
+        /// </summary>
+        /// <returns>The output build directory.</returns>
+        public string GetOutputBuildDirectory()
+        {
+            var pipeline = GetBuildPipeline();
+            if (pipeline == null)
+                throw new NullReferenceException("The BuildConfiguration must have a BuildPipline in order to retrieve the OutputBuildDirectory");
+
+            return pipeline.GetOutputBuildDirectory(this).ToString();
+        }
     }
 }

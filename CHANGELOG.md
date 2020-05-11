@@ -4,11 +4,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- `Unity.Build.Common.asmdef` has been deprecated. All components defined there previously are now available in `Unity.Build.asmdef`. Users should remove all references to `Unity.Build.Common` from their asmdefs. The type names and namespaces have been maintained. List of moved types:
+    - `Unity.Build.Common.GeneralSettings`
+    - `Unity.Build.Common.GraphicsSettings`
+    - `Unity.Build.Common.OutputBuildDirectory`
+    - `Unity.Build.Common.PlayerScriptingDefines`
+    - `Unity.Build.Common.SceneList`
+    - `Unity.Build.Common.ScriptingDebuggerSettings`
+
 ## [0.4.0] - 2020-05-05
 
 ### Added
 - New component `ClassicCodeStrippingOptions`, exposes Classic's StripEngineCode and ManagedStrippingLevel values.
 - New class `RunTargetBase`, can be used to specify deploy targets for pipelines.
+- Added `com.unity.scriptablebuildpipeline` package dependency, required for upcoming incremental pipeline.
 
 ### Changed
 - Updated `com.unity.properties` package version to `1.2.0-preview`.

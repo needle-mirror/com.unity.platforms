@@ -60,15 +60,5 @@ namespace Unity.Build.Classic.Private
                 Directory.Delete(buildDirectory, true);
             return context.Success();
         }
-
-        public override DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config)
-        {
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config));
-            }
-
-            return new DirectoryInfo(config.GetOutputBuildDirectory());
-        }
     }
 }

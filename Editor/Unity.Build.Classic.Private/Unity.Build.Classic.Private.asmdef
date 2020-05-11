@@ -9,7 +9,9 @@
         "Unity.Properties.Editor",
         "Unity.Properties.UI",
         "Unity.Properties.UI.Editor",
-        "Unity.Serialization"
+        "Unity.Serialization",
+        "Unity.ScriptableBuildPipeline",
+        "Unity.ScriptableBuildPipeline.Editor"
     ],
     "includePlatforms": [
         "Editor"
