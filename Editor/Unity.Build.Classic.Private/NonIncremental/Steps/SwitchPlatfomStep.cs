@@ -17,13 +17,14 @@ namespace Unity.Build.Classic.Private
                 return context.Success();
             }
 
-            if (EditorUserBuildSettings.SwitchActiveBuildTarget(UnityEditor.BuildPipeline.GetBuildTargetGroup(target), target))
+            var group = UnityEditor.BuildPipeline.GetBuildTargetGroup(target);
+            if (EditorUserBuildSettings.SwitchActiveBuildTargetAsync(group, target))
             {
-                return context.Failure("Editor's active Build Target needed to be switched. Please wait for switch to complete and then build again.");
+                return context.Failure($"Editor's active Build Target needed to be switched to {target} (BuildTargetGroup {group}). Please wait for switch to complete and then build again.");
             }
             else
             {
-                return context.Failure($"Editor's active Build Target could not be switched. Look in the console or the editor log for additional errors.");
+                return context.Failure($"Editor's active Build Target could not be switched to {target} (BuildTargetGroup {group}). Look in the console or the editor log for additional errors.");
             }
         }
     }

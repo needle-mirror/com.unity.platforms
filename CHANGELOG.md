@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     - `Unity.Build.Common.PlayerScriptingDefines`
     - `Unity.Build.Common.SceneList`
     - `Unity.Build.Common.ScriptingDebuggerSettings`
+	
+### Fixed
+- Fix issue where active build target wouldn't switch when trying to build using classic build configuration with mismatching active build target.
 
 ## [0.4.0] - 2020-05-05
 
