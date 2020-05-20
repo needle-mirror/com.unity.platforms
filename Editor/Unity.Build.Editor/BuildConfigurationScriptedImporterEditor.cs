@@ -100,10 +100,12 @@ namespace Unity.Build.Editor
                 {
                     case 0: // Apply
                         Apply();
+                        AssetDatabase.Refresh();
                         break;
 
                     case 1: // Revert
                         ResetValues();
+                        AssetDatabase.Refresh();
                         break;
 
                     case 2: // Cancel
@@ -111,24 +113,13 @@ namespace Unity.Build.Editor
                 }
             }
 
-            EditorApplication.delayCall += () =>
+            var config = assetTarget as BuildConfiguration;
+            if (config == null || !config)
             {
-                var assetImporter = target as AssetImporter;
-                if (assetImporter == null || !assetImporter)
-                {
-                    return;
-                }
+                throw new NullReferenceException(nameof(config));
+            }
 
-                AssetDatabase.ImportAsset(assetImporter.assetPath);
-
-                var config = assetTarget as BuildConfiguration;
-                if (config == null || !config)
-                {
-                    return;
-                }
-
-                CurrentBuildAction.Action(config);
-            };
+            CurrentBuildAction.Action(config);
         }
 
         // Needed because properties don't handle root collections well.

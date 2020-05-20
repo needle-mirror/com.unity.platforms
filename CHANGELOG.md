@@ -4,20 +4,6 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Changed
-- `Unity.Build.Common.asmdef` has been deprecated. All components defined there previously are now available in `Unity.Build.asmdef`. Users should remove all references to `Unity.Build.Common` from their asmdefs. The type names and namespaces have been maintained. List of moved types:
-    - `Unity.Build.Common.GeneralSettings`
-    - `Unity.Build.Common.GraphicsSettings`
-    - `Unity.Build.Common.OutputBuildDirectory`
-    - `Unity.Build.Common.PlayerScriptingDefines`
-    - `Unity.Build.Common.SceneList`
-    - `Unity.Build.Common.ScriptingDebuggerSettings`
-	
-### Fixed
-- Fix issue where active build target wouldn't switch when trying to build using classic build configuration with mismatching active build target.
-
 ## [0.4.0] - 2020-05-05
 
 ### Added
@@ -30,6 +16,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Updated `com.unity.properties.ui` package version to `1.2.0-preview`.
 - Updated `com.unity.serialization` package version to `1.2.0-preview`.
 - Classic build pipelines will pick development players when ClassicBuildProfile Configuration is set to Debug or Development.
+- `Unity.Build.Common.asmdef` has been deprecated. All components defined there previously are now available in `Unity.Build.asmdef`. Users should remove all references to `Unity.Build.Common` from their asmdefs. The type names and namespaces have been maintained. List of moved types:
+    - `Unity.Build.Common.GeneralSettings`
+    - `Unity.Build.Common.GraphicsSettings`
+    - `Unity.Build.Common.OutputBuildDirectory`
+    - `Unity.Build.Common.PlayerScriptingDefines`
+    - `Unity.Build.Common.SceneList`
+    - `Unity.Build.Common.ScriptingDebuggerSettings`
 
 ### Removed
 - Removed obsolete class `BuildSettings`.
@@ -37,6 +30,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Removed obsolete properties `flags`, `description` and `category` on class `BuildStepAttribute`, as well as the nested `Flags` enum.
 - Removed obsolete property `BuildSettings` on class `BuildPipelineResult` and `RunStepResult`.
 - Removed obsolete property `Scenes` on class `SceneList`.
+
+### Fixed
+- Fix issue where active build target wouldn't switch when trying to build using classic build configuration with mismatching active build target.
+- Fix build action button in build configuration inspector that would sometimes not work at all, without any error or console messages.
 
 ## [0.3.1] - 2020-05-04
 

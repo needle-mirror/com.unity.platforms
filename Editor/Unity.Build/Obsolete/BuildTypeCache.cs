@@ -8,6 +8,7 @@ using CompilationPipeline = UnityEditor.Compilation.CompilationPipeline;
 
 namespace Unity.Build
 {
+    [Obsolete("BuildTypeCache has been deprecated. Please use BuildAssemblyCache instead to retrieve the set of assemblies from a root assembly. (RemovedAfter 2020-08-19)", false)]
     public sealed class BuildTypeCache
     {
         readonly HashSet<Assembly> m_AssembliesCache = new HashSet<Assembly>();
