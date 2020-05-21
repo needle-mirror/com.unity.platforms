@@ -1,7 +1,7 @@
-﻿using System;
+﻿using NiceIO;
+using System;
 using System.IO;
 using System.Linq;
-using NiceIO;
 using Unity.Build.Common;
 using Unity.BuildSystem.NativeProgramSupport;
 using UnityEditor;

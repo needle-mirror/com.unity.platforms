@@ -16,11 +16,29 @@ namespace Unity.Build
     public abstract class ScriptableObjectPropertyContainer<TContainer> : ScriptableObject, ISerializationCallbackReceiver
         where TContainer : ScriptableObjectPropertyContainer<TContainer>
     {
-        [SerializeField, DontCreateProperty] string m_AssetContent;
+        /// <summary>
+        /// Deserialization context passed to <see cref="JsonSerializationParameters.UserData"/> during deserialization.
+        /// </summary>
+        public class DeserializationContext
+        {
+            /// <summary>
+            /// The asset being deserialized.
+            /// </summary>
+            public TContainer Asset { get; }
 
-        //@TODO: replace with deserialization context object when its available
-        internal static string CurrentDeserializationAssetPath { get; private set; }
-        internal static TContainer CurrentDeserializationAsset { get; private set; }
+            /// <summary>
+            /// The path of the asset being deserialized.
+            /// </summary>
+            public string AssetPath { get; }
+
+            internal DeserializationContext(TContainer container, string assetPath)
+            {
+                Asset = container;
+                AssetPath = assetPath;
+            }
+        }
+
+        [SerializeField, DontCreateProperty] string m_AssetContent;
 
         /// <summary>
         /// Reset this asset in preparation for deserialization.
@@ -245,17 +263,15 @@ namespace Unity.Build
 
         static bool TryDeserialize(TContainer container, string json, string assetPath)
         {
-            CurrentDeserializationAsset = container;
-            CurrentDeserializationAssetPath = assetPath;
             try
             {
                 container.Reset();
-
                 container.m_AssetContent = json;
                 JsonSerialization.TryFromJsonOverride(json, ref container, out var result, new JsonSerializationParameters
                 {
                     DisableRootAdapters = true,
-                    SerializedType = typeof(TContainer)
+                    SerializedType = typeof(TContainer),
+                    UserData = new DeserializationContext(container, assetPath)
                 });
 
                 if (!result.DidSucceed())
@@ -268,7 +284,7 @@ namespace Unity.Build
 #endif
                     if (errors.Count() > 0)
                     {
-                        LogDeserializeError(string.Join("\n", errors), container);
+                        LogDeserializeError(string.Join("\n", errors), container, assetPath);
                     }
                 }
 
@@ -277,21 +293,16 @@ namespace Unity.Build
             }
             catch (Exception e)
             {
-                LogDeserializeError(e.Message, container);
+                LogDeserializeError(e.Message, container, assetPath);
                 container.Sanitize();
                 return false;
             }
-            finally
-            {
-                CurrentDeserializationAsset = null;
-                CurrentDeserializationAssetPath = null;
-            }
         }
 
-        static void LogDeserializeError(string message, TContainer container)
+        static void LogDeserializeError(string message, TContainer container, string assetPath)
         {
-            var what = !string.IsNullOrEmpty(CurrentDeserializationAssetPath) ?
-                CurrentDeserializationAssetPath.ToHyperLink() :
+            var what = !string.IsNullOrEmpty(assetPath) ?
+                assetPath.ToHyperLink() :
                 $"memory container of type '{container.GetType().FullName}'";
             Debug.LogError($"Failed to deserialize {what}:\n{message}");
         }

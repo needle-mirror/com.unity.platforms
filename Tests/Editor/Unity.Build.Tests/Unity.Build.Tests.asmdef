@@ -3,7 +3,8 @@
     "references": [
         "Unity.Build",
         "Unity.Build.Common",
-        "Unity.Properties"
+        "Unity.Properties",
+        "Unity.Serialization"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

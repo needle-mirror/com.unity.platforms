@@ -1,5 +1,4 @@
-﻿using NiceIO;
-using UnityEditor;
+﻿using UnityEditor;
 
 namespace Unity.Build.Classic.Private
 {

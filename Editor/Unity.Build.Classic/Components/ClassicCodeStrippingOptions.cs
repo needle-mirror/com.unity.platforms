@@ -1,5 +1,4 @@
 using Unity.Properties;
-using Unity.Serialization;
 using UnityEditor;
 
 namespace Unity.Build.Classic

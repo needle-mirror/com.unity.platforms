@@ -50,7 +50,7 @@ namespace Unity.Build.Classic
         [CreateProperty]
         public BuildType Configuration { get; set; } = BuildType.Develop;
 
- #if !ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+#if !ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
         // Hide this property instead of removing, since when saving json
         // We'll loose incremental value
         [HideInInspector]
@@ -203,34 +203,35 @@ namespace Unity.Build.Classic
                         if (GlobalObjectId.TryParse(pipeline, out var id))
                         {
                             var assetGuid = id.assetGUID.ToString();
-                            CheckForCustomBuildPipeline(AssetDatabase.GUIDToAssetPath(assetGuid));
-                            CheckForHybridLiveLinkBuildPipeline(assetGuid);
+                            var deserializationContext = context.UserData as BuildConfiguration.DeserializationContext;
+                            CheckForCustomBuildPipeline(deserializationContext, AssetDatabase.GUIDToAssetPath(assetGuid));
+                            CheckForHybridLiveLinkBuildPipeline(deserializationContext, assetGuid);
                         }
                     }
                 }
                 return profile;
             }
 
-            void CheckForCustomBuildPipeline(string assetPath)
+            void CheckForCustomBuildPipeline(BuildConfiguration.DeserializationContext deserializationContext, string pipelineAssetPath)
             {
-                if (string.IsNullOrEmpty(assetPath))
+                if (deserializationContext == null || string.IsNullOrEmpty(pipelineAssetPath))
                 {
                     return;
                 }
 
                 try
                 {
-                    using (var reader = new SerializedObjectReader(assetPath))
+                    using (var reader = new SerializedObjectReader(pipelineAssetPath))
                     {
                         var root = reader.ReadObject();
                         if (ContainsCustomBuildSteps(root) || ContainsCustomRunStep(root))
                         {
                             var config = string.Empty;
-                            if (!string.IsNullOrEmpty(BuildConfiguration.CurrentDeserializationAssetPath))
+                            if (!string.IsNullOrEmpty(deserializationContext.AssetPath))
                             {
-                                config = BuildConfiguration.CurrentDeserializationAssetPath.ToHyperLink();
+                                config = deserializationContext.AssetPath.ToHyperLink();
                             }
-                            Debug.LogWarning($"{config} uses custom build pipeline {assetPath.ToHyperLink()}. Custom build pipelines are no longer supported.\n" +
+                            Debug.LogWarning($"{config} uses custom build pipeline {deserializationContext.AssetPath.ToHyperLink()}. Custom build pipelines are no longer supported.\n" +
                                 $"Several options can be set using build components (like {nameof(PlayerConnectionSettings)}, {nameof(EnableHeadlessMode)}, etc).");
                         }
                     }
@@ -299,7 +300,7 @@ namespace Unity.Build.Classic
                 return false;
             }
 
-            void CheckForHybridLiveLinkBuildPipeline(string assetGuid)
+            void CheckForHybridLiveLinkBuildPipeline(BuildConfiguration.DeserializationContext deserializationContext, string assetGuid)
             {
                 if (string.IsNullOrEmpty(assetGuid))
                 {
@@ -309,7 +310,7 @@ namespace Unity.Build.Classic
                 var migration = TypeCacheHelper.ConstructTypeDerivedFrom<HybridBuildPipelineMigrationBase>();
                 if (migration != null)
                 {
-                    migration.Migrate(BuildConfiguration.CurrentDeserializationAsset, assetGuid);
+                    migration.Migrate(deserializationContext.Asset, assetGuid);
                 }
             }
         }

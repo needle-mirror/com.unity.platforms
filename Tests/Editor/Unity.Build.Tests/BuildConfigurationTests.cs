@@ -1,4 +1,8 @@
 ﻿using NUnit.Framework;
+using System.IO;
+using Unity.Serialization.Json;
+using Unity.Serialization.Json.Adapters;
+using UnityEditor;
 
 namespace Unity.Build.Tests
 {
@@ -9,7 +13,7 @@ namespace Unity.Build.Tests
         {
             const string assetPath = "Assets/" + nameof(BuildConfigurationTests) + BuildConfiguration.AssetExtension;
             Assert.That(BuildConfiguration.CreateAsset(assetPath), Is.Not.Null);
-            UnityEditor.AssetDatabase.DeleteAsset(assetPath);
+            AssetDatabase.DeleteAsset(assetPath);
         }
 
         [Test]
@@ -222,6 +226,45 @@ namespace Unity.Build.Tests
             {
                 Assert.That(result.Succeeded, Is.False);
             }
+        }
+
+        class TestMigrationContext : IJsonMigration<TestBuildComponentA>
+        {
+            public const string k_AssetPath = "Assets/" + nameof(BuildConfigurationTests) + BuildConfiguration.AssetExtension;
+
+            public int Version => 1;
+
+            public TestBuildComponentA Migrate(JsonMigrationContext context)
+            {
+                context.TryRead<TestBuildComponentA>(out var component);
+                if (context.SerializedVersion == 0)
+                {
+                    var deserializationContext = context.UserData as BuildConfiguration.DeserializationContext;
+                    Assert.That(deserializationContext, Is.Not.Null);
+                    Assert.That(deserializationContext.AssetPath, Is.EqualTo(k_AssetPath));
+
+                    deserializationContext.Asset.SetComponent<TestBuildComponentB>();
+                    Assert.That(deserializationContext.Asset.HasComponent<TestBuildComponentB>(), Is.True);
+                }
+                return component;
+            }
+        }
+
+        [Test]
+        public void DeserializationContext()
+        {
+            var migration = new TestMigrationContext();
+            JsonSerialization.AddGlobalMigration(migration);
+
+            File.WriteAllText(TestMigrationContext.k_AssetPath, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(TestBuildComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}]}}");
+            AssetDatabase.ImportAsset(TestMigrationContext.k_AssetPath, ImportAssetOptions.ForceSynchronousImport | ImportAssetOptions.ForceUpdate);
+
+            var asset = BuildConfiguration.LoadAsset(TestMigrationContext.k_AssetPath);
+            Assert.That(asset.HasComponent<TestBuildComponentA>(), Is.True);
+            Assert.That(asset.HasComponent<TestBuildComponentB>(), Is.True);
+
+            AssetDatabase.DeleteAsset(TestMigrationContext.k_AssetPath);
+            JsonSerialization.RemoveGlobalMigration(migration);
         }
     }
 }

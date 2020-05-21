@@ -4,17 +4,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] - 2020-05-05
+## [0.4.0] - 2020-05-20
 
 ### Added
 - New component `ClassicCodeStrippingOptions`, exposes Classic's StripEngineCode and ManagedStrippingLevel values.
 - New class `RunTargetBase`, can be used to specify deploy targets for pipelines.
 - Added `com.unity.scriptablebuildpipeline` package dependency, required for upcoming incremental pipeline.
+- Added `BuildConfiguration.DeserializationContext` which can be retrieved in `IJsonMigration` derived classes from the `JsonMigrationContext.UserData` member.
 
 ### Changed
-- Updated `com.unity.properties` package version to `1.2.0-preview`.
-- Updated `com.unity.properties.ui` package version to `1.2.0-preview`.
-- Updated `com.unity.serialization` package version to `1.2.0-preview`.
+- Updated `com.unity.properties` package version to `1.3.0-preview`.
+- Updated `com.unity.properties.ui` package version to `1.3.0-preview`.
+- Updated `com.unity.serialization` package version to `1.3.0-preview`.
 - Classic build pipelines will pick development players when ClassicBuildProfile Configuration is set to Debug or Development.
 - `Unity.Build.Common.asmdef` has been deprecated. All components defined there previously are now available in `Unity.Build.asmdef`. Users should remove all references to `Unity.Build.Common` from their asmdefs. The type names and namespaces have been maintained. List of moved types:
     - `Unity.Build.Common.GeneralSettings`

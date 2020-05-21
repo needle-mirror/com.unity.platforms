@@ -307,7 +307,7 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidComponents_OtherComponentsArePreserved()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetQualifedAssemblyTypeName().DoubleQuotes()}}}, {{\"$type\": \"Some.InvalidComponent.Name, Unknown.Assembly\"}}]}}");
+            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}, {{\"$type\": \"Some.InvalidComponent.Name, Unknown.Assembly\"}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
 
@@ -318,7 +318,7 @@ namespace Unity.Build.Tests
 #if UNITY_2020_1_OR_NEWER
             LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
 #endif
-            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [123, \"abc\"], \"Components\": [{{\"$type\": {typeof(ComponentA).GetQualifedAssemblyTypeName().DoubleQuotes()}}}]}}");
+            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [123, \"abc\"], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
 
@@ -340,10 +340,10 @@ namespace Unity.Build.Tests
             var container = TestHierarchicalComponentContainer.CreateInstance();
             Assert.That(container.HasComponent<ComponentA>(), Is.False);
             Assert.That(container.Components.Count, Is.Zero);
-            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetQualifedAssemblyTypeName().DoubleQuotes()}}}]}}");
+            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
             Assert.That(container.Components.Count, Is.EqualTo(1));
-            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetQualifedAssemblyTypeName().DoubleQuotes()}}}]}}");
+            TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
             Assert.That(container.Components.Count, Is.EqualTo(1));
         }

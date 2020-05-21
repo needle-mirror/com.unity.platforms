@@ -156,7 +156,7 @@ namespace Unity.Build
         {
             internal static AssemblyDefinitionDescription Deserialize(string assemblyDefinitionPath)
             {
-                var assemblyDefinition = new AssemblyDefinitionDescription (); // autoReferenced is true by default even when it's not defined
+                var assemblyDefinition = new AssemblyDefinitionDescription(); // autoReferenced is true by default even when it's not defined
                 UnityEngine.JsonUtility.FromJsonOverwrite(File.ReadAllText(assemblyDefinitionPath), assemblyDefinition);
 
                 if (assemblyDefinition == null)
