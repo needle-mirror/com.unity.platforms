@@ -21,7 +21,7 @@ namespace DotsBuildTargets
 
         protected virtual NativeProgramFormat GetExecutableFormatForConfig(DotsConfiguration config, bool enableManagedDebugger) => null;
 
-        public virtual NativeProgramFormat CustomizeExecutableForSettings(FriendlyJObject settings) => null;
+        public virtual DotsRuntimeCSharpProgramConfiguration CustomizeConfigForSettings(DotsRuntimeCSharpProgramConfiguration config, FriendlyJObject settings) => config;
 
         // required if more than one set of binaries need to be generated (for example Android armv7 + arm64)
         // see comment in https://github.com/Unity-Technologies/dots/blob/master/TinySamples/Packages/com.unity.dots.runtime/bee%7E/BuildProgramSources/DotsConfigs.cs
