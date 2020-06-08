@@ -118,7 +118,7 @@ namespace Unity.Build.DotsRuntime
         // List of build components used by this build target.
         public virtual Type[] UsedComponents { get; } = Array.Empty<Type>();
 
-        public void WriteBuildConfiguration(BuildContext context, string path)
+        public virtual void WriteBuildConfiguration(BuildContext context, string path)
         {
             var components = new List<IBuildComponent>();
 
