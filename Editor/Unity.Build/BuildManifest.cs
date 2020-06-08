@@ -12,7 +12,7 @@ namespace Unity.Build
     public sealed class BuildManifest
     {
         readonly Dictionary<Guid, string> m_Assets = new Dictionary<Guid, string>();
-        readonly List<FileInfo> m_ExportedFiles = new List<FileInfo>();
+        readonly HashSet<FileInfo> m_ExportedFiles = new HashSet<FileInfo>();
 
         /// <summary>
         /// A dictionary of all assets exported during the build pipeline execution.
@@ -33,12 +33,40 @@ namespace Unity.Build
         public void Add(Guid assetGuid, string assetPath, IEnumerable<FileInfo> exportedFiles)
         {
             if (exportedFiles == null || exportedFiles.Count() == 0)
-            {
                 return;
+
+            if (!m_Assets.ContainsKey(assetGuid))
+            {
+                m_Assets.Add(assetGuid, assetPath);
             }
 
-            m_Assets.Add(assetGuid, assetPath);
-            m_ExportedFiles.AddRange(exportedFiles);
+            foreach(var file in exportedFiles)
+                m_ExportedFiles.Add(file);
+        }
+
+        /// <summary>
+        /// Add files to be deployed to the build manifest which are not backed by an asset.
+        /// </summary>
+        /// <param name="exportedFiles">The files to be exported with the build.</param>
+        public void AddAdditionalFilesToDeploy(IEnumerable<FileInfo> exportedFiles)
+        {
+            if (exportedFiles == null || exportedFiles.Count() == 0)
+                return;
+
+            foreach (var file in exportedFiles)
+                m_ExportedFiles.Add(file);
+        }
+
+        /// <summary>
+        /// Add a file to be deployed to the build manifest which are not backed by an asset.
+        /// </summary>
+        /// <param name="exportedFile">The file to be exported with the build.</param>
+        public void AddAdditionalFilesToDeploy(FileInfo exportedFile)
+        {
+            if (exportedFile == null)
+                return;
+
+            m_ExportedFiles.Add(exportedFile);
         }
     }
 }
