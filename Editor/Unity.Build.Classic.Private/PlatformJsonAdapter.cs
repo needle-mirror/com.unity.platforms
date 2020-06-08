@@ -1,4 +1,4 @@
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
 using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters;
 using UnityEditor;

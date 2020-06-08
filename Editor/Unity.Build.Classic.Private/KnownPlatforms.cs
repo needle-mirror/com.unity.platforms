@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
 
 namespace Unity.Build.Classic.Private
 {

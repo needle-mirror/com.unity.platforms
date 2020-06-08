@@ -5,8 +5,7 @@ using NiceIO;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.BuildSystem.CSharpSupport;
-using Unity.BuildTools;
+using Bee.CSharpSupport;
 using Unity.Profiling;
 using UnityEditor;
 
@@ -52,14 +51,10 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
             _inputFilesFromPostProcessor = _processorRunner.RecursiveRuntimeDependenciesIncludingSelf.Concat(_builtProcessorsDependenciesAndSelf).Select(p => p.Path).ToArray();
 
-            var stevedoreReferenceAssemblyProvider = new StevedoreReferenceAssemblyProvider();
-
             //we are in a funky situation today where user code is compiled against .net standard 2,  but unityengine assemblies are compiled against .net47.  Postprocessors
             //need to be able to deep-resolve any typereference, and it's going to encounter references to both netstandard.dll as well as mscorlib.dll and system.dll. We're going
             //to allow all these typereferences to resolve by resolving against the reference assemblies for both these profiles.
-            stevedoreReferenceAssemblyProvider.TryFor(Framework.Framework471, false, out var net47files, out _, out _);
-            stevedoreReferenceAssemblyProvider.TryFor(Framework.NetStandard20, false, out var net20files, out _, out _);
-            _bclFiles = net47files.Concat(net20files).ToArray();
+            _bclFiles = Framework471.Singleton.ReferenceAssemblies.Concat(Netstandard20.Singleton.ReferenceAssemblies).Select(a=>a.Path).ToArray();
         }
 
         public DotNetAssembly SetupPostProcessorInvocation(DotNetAssembly inputAsm)
@@ -68,14 +63,6 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             using (new ProfilerMarker(nameof(inputAsm.RecursiveRuntimeDependenciesIncludingSelf)).Auto())
                 inputAssemblyAndReferences = inputAsm.RecursiveRuntimeDependenciesIncludingSelf.ToList();
 
-            var referenceAsmPaths = inputAssemblyAndReferences
-                .Where(a => !a.Path.IsChildOf("post_ilprocessing"))
-                .Select(a => a.Path)
-                .Concat(_bclFiles)
-                .Select(p => p.InQuotes(SlashMode.Native));
-
-            var referencesArg = referenceAsmPaths.Select(r => $"-r={r}");
-
             var inputFiles = _inputFilesFromPostProcessor.Concat(inputAssemblyAndReferences.Select(p => p.Path)).ToArray();
 
             var result = new DotNetAssembly(OutputDirectory.Combine(inputAsm.Path.FileName), inputAsm.Framework, debugSymbolPath: OutputDirectory.Combine(inputAsm.DebugSymbolPath.FileName))
@@ -83,13 +70,18 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
             var processorPathsArg = _builtProcessors.Select(p => $"-p={p.Path.InQuotes(SlashMode.Native)}");
 
+            var referenceAsmPaths = inputAssemblyAndReferences
+                .Where(a => !a.Path.IsChildOf("post_ilprocessing"))
+                .Select(a => a.Path)
+                .Concat(_bclFiles);
+
             var args = new List<string>
             {
                 "-a",
                 inputAsm.Path.InQuotes(SlashMode.Native),
                 $"--outputDir={OutputDirectory.InQuotes(SlashMode.Native)}",
                 processorPathsArg,
-                referencesArg,
+                referenceAsmPaths.Select(r => $"-r={r.InQuotesResolved()}"),
                 "-f=.",
             }.ToArray();
 
@@ -105,5 +97,10 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             return result;
         }
     }
+}
+
+static class ListExtensions
+{
+    public static void Add<T>(this List<T> list, IEnumerable<T> elements) => list.AddRange(elements);
 }
 #endif

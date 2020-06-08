@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.BuildTools;
 using Unity.Profiling;
 using UnityEngine;
 
@@ -110,7 +109,8 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                 burstPackageRawVersion = parts[0];
 
             // Get the preview version number.
-            var previewNumber = 0;
+            // Default to max int to signal a very high preview number on release.
+            var previewNumber = int.MaxValue;
             if (parts.Length > 1)
                 previewNumber = int.Parse(parts[1].Split('.')[1]);
 
@@ -131,11 +131,11 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                 || burstVersion >= new Version(1, 4);
         }
 
-        public NPath[] Setup(DotNetAssembly[] inputAssemblies, int assemblyIndex, string burstLibraryName, Dictionary<string, string> environmentVariables, BurstOutputMode outputMode)
+        public NPath[] Setup(Architecture architecture, DotNetAssembly[] inputAssemblies, int assemblyIndex, string burstLibraryName, Dictionary<string, string> environmentVariables, BurstOutputMode outputMode)
         {
             using (new ProfilerMarker("Burst-" + burstLibraryName).Auto())
             {
-                NPath intermediateOutputDir = Configuration.RootArtifactsPath.Combine($"bcl/{burstLibraryName}");
+                NPath intermediateOutputDir = Configuration.RootArtifactsPath.Combine($"bcl/{architecture.Name}/{burstLibraryName}");
 
                 var runtimeDependencies = inputAssemblies.SelectMany(i =>
                     {
@@ -150,9 +150,8 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                     //"--log-timings",
                     "--dump=none",
                     $"--output={intermediateOutputDir.Combine(burstLibraryName)}",
-                    inputAssemblies.Select(inputAssembly => $"--root-assembly={inputAssembly.Path.InQuotes()}"),
-                    runtimeDependencies.Select(r => r.Path.Parent.InQuotes()).Distinct()
-                        .Select(d => $"--assembly-folder={d}"),
+                    inputAssemblies.Select(inputAssembly => $"--root-assembly={inputAssembly.Path.InQuotesResolved()}"),
+                    runtimeDependencies.Select(r => r.Path.ResolveWithFileSystem().Parent.InQuotes()).Distinct().Select(d => $"--assembly-folder={d}"),
                 };
 
                 if (_installedBurstSupportsIncludeRootAssemblyReferencesFeature)
@@ -178,8 +177,7 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                 else
                     args.Add("--debug");
 
-                var tundraBackend = (TundraBackend) Backend.Current;
-                tundraBackend.AddAction(
+                Backend.Current.AddAction(
                     "Burst"
                     , new NPath[]
                     {

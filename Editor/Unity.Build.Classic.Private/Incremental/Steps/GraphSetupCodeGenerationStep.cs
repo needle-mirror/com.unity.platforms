@@ -7,8 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.BuildSystem.CSharpSupport;
-using Unity.BuildTools;
+using Bee.CSharpSupport;
+using Bee.Tools;
 using Unity.Profiling;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -42,7 +42,10 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             var assembliesToCompile = assemblyGraph.Where(a => !Path.GetFileName(a.outputPath).Contains("Test"))
                 .OrderByDependencies().ToList();
 
-            CSharpProgram.DefaultConfig = new CSharpProgramConfiguration(CSharpCodeGen.Release, new UnityEditorCsc(), DebugFormat.PortablePdb);
+            //We should probably at some point switch back to using the roslyn that ships in the editor, however that has a bug where it crashes
+            //with /refout on our postprocessing code. To work around that for now, we're going to compile with the latest roslyn from stevedore.
+            var csharpCompiler = Csc.Latest; //new UnityEditorCsc
+            CSharpProgram.DefaultConfig = new CSharpProgramConfiguration(CSharpCodeGen.Release, csharpCompiler, DebugFormat.PortablePdb);
 
             Dictionary<Assembly, (CSharpProgram program, DotNetAssembly assembly)> unityAssemblyToCSharpProgramAndBuiltAssembly = SetupCSharpProgramsFor(context, assembliesToCompile);
 
@@ -64,27 +67,28 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
             using (new ProfilerMarker(nameof(BurstCompiler)).Auto())
             {
-                foreach (var a in classicContext.Architectures.Values)
+                foreach (var arch in classicContext.Architectures)
                 {
+                    var a = arch.Value;
                     var burstCompiler = new BurstCompiler(a.BurstTarget, classicContext.PlatformName, a.DynamicLibraryDeployDirectory);
 
                     switch (burstSettings.BurstGranularity)
                     {
                         case BurstGranularity.One:
-                            burstCompiler.Setup(localAssemblies.Concat(externalAssemblies).ToArray(), 0, "wholeprogram",
+                            burstCompiler.Setup(arch.Key, localAssemblies.Concat(externalAssemblies).ToArray(), 0, "wholeprogram",
                                 burstSettings.EnvironmentVariables, BurstCompiler.BurstOutputMode.SingleLibrary);
                             break;
                         case BurstGranularity.OnePerJob:
                             int assemblyIndex = 0;
 
                             //compile all exeternal assemblies into one big burst library
-                            burstCompiler.Setup(externalAssemblies, assemblyIndex++, "externalassemblies",
+                            burstCompiler.Setup(arch.Key, externalAssemblies, assemblyIndex++, "externalassemblies",
                                 burstSettings.EnvironmentVariables, BurstCompiler.BurstOutputMode.SingleLibrary);
 
                             //and the local ones, in one burst library per assembly.
                             foreach (var localAssembly in localAssemblies)
                             {
-                                var producedLibraries = burstCompiler.Setup(new[] { localAssembly }, assemblyIndex,
+                                var producedLibraries = burstCompiler.Setup(arch.Key, new[] { localAssembly }, assemblyIndex,
                                     localAssembly.Path.FileNameWithoutExtension, burstSettings.EnvironmentVariables,
                                     BurstCompiler.BurstOutputMode.LibraryPerJob);
                                 if (producedLibraries.Length > 0)

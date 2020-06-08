@@ -4,8 +4,8 @@ using NiceIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Build.Common;
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
+using Bee.NativeProgramSupport;
 using UnityEditor;
 
 namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
@@ -18,39 +18,57 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
     public class GraphSetupIl2Cpp : BuildStepBase
     {
+        private CodeGen ToCodeGen(Il2CppCompilerConfiguration il2CppCompilerConfiguration)
+        {
+            switch(il2CppCompilerConfiguration)
+            {
+                case Il2CppCompilerConfiguration.Debug: return CodeGen.Debug;
+                case Il2CppCompilerConfiguration.Release: return CodeGen.Release;
+                case Il2CppCompilerConfiguration.Master: return CodeGen.Master;
+                default:
+                    throw new ArgumentException(nameof(il2CppCompilerConfiguration));
+            }
+        }
         public override BuildResult Run(BuildContext context)
         {
             // TODO: Move to IsEnabled
             if (!context.UsesIL2CPP())
                 return context.Success();
 
-            var classicContext = context.GetValue<IncrementalClassicSharedData>();
+            var sharedData = context.GetValue<IncrementalClassicSharedData>();
             var input = context.GetValue<Il2CppInputAssemblies>();
-            foreach (var a in classicContext.Architectures.Values)
+    
+            if (!context.TryGetComponent(out ClassicScriptingSettings scriptingSettings))
+                throw new ArgumentException("IL2CPP Compiler Configuration was not set on BuildContext");
+
+            var workingDirectory = context.GetValue<ClassicSharedData>().WorkingDirectory;
+
+            var il2CppBeeSuport = new IL2CPPBeeSupport(sharedData);
+
+            var il2CppFiles = il2CppBeeSuport.SetupIl2CppOutputFiles(
+                sharedData.BuildTarget,
+                input.prebuiltAssemblies,
+                input.processedAssemblies.Select(p => p.dotNetAssembly).ToList(),
+                sharedData.IL2CPPDataDirectory,
+                workingDirectory);
+
+            var platformSupport = context.GetValue<IL2CPPPlatformBeeSupport>();
+            foreach (var a in sharedData.Architectures.Values)
             {
-                if (!context.TryGetComponent(out ClassicScriptingSettings scriptingSettings))
-                    throw new ArgumentException("IL2CPP Compiler Configuration was not set on BuildContext");
-
                 var toolChain = a.ToolChain ?? throw new ArgumentException("ToolChain was not set on BuildContext");
-                var npc = new NativeProgramConfiguration(
-                    scriptingSettings.Il2CppCompilerConfiguration == Il2CppCompilerConfiguration.Debug ?
-                        CodeGen.Debug :
-                        scriptingSettings.Il2CppCompilerConfiguration == Il2CppCompilerConfiguration.Release ?
-                            CodeGen.Release :
-                            CodeGen.Master,
-                    toolChain, false);
-
                 var format = a.NativeProgramFormat;
-                var nativeProgramForIl2CppOutput = IL2CPPBeeSupport.NativeProgramForIL2CPPOutputFor(
-                    npc.ToolChain.Platform is AndroidPlatform ? "libil2cpp" : "GameAssembly", classicContext, input.prebuiltAssemblies,
-                    input.processedAssemblies.Select(p => p.dotNetAssembly).ToList(),
-                    classicContext.IL2CPPDataDirectory, context);
+
+                var npc = new NativeProgramConfiguration(ToCodeGen(scriptingSettings.Il2CppCompilerConfiguration), toolChain, false);
+                var nativeProgramForIl2CppOutput = il2CppBeeSuport.NativeProgramForIL2CPPOutputFor(
+                    npc.ToolChain.Platform is AndroidPlatform ? "libil2cpp" : "GameAssembly",
+                    platformSupport,
+                    il2CppFiles);
 
                 nativeProgramForIl2CppOutput.RTTI.Set(toolChain.EnablingExceptionsRequiresRTTI);
 
                 var builtNativeProgram = nativeProgramForIl2CppOutput.SetupSpecificConfiguration(npc, format);
 
-                builtNativeProgram.DeployTo(a.DynamicLibraryDeployDirectory);
+                builtNativeProgram.DeployTo(a.IL2CPPLibraryDirectory);
             }
 
             return context.Success();

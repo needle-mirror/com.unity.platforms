@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
+using Bee.Core;
 using Unity.Build.Editor;
-using Unity.BuildSystem.NativeProgramSupport;
 using Unity.Properties.Editor;
 using Unity.Properties.UI;
 using UnityEngine.UIElements;

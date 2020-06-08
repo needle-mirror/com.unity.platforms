@@ -1,9 +1,9 @@
 #if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-using Bee.NativeProgramSupport.Building;
 using Bee.TundraBackend;
 using NiceIO;
 using System.Collections.Generic;
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
+using Bee.NativeProgramSupport;
 using UnityEditor;
 
 namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
@@ -11,6 +11,8 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
     public class ClassicBuildArchitectureData
     {
         public NPath DynamicLibraryDeployDirectory { set; get; }
+
+        public NPath IL2CPPLibraryDirectory { get; set; }
 
         // TODO: this one is very specific, should it be here?
         public string BurstTarget { set; get; }

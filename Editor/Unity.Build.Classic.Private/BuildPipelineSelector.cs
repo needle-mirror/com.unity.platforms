@@ -1,7 +1,8 @@
-﻿#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+﻿using Bee.Core;
+
+#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
 using Unity.Build.Classic.Private.IncrementalClassicPipeline;
 #endif
-using Unity.BuildSystem.NativeProgramSupport;
 
 namespace Unity.Build.Classic.Private
 {

@@ -1,4 +1,4 @@
-﻿namespace Unity.Build
+namespace Unity.Build
 {
     /// <summary>
     /// Represents the deployement target where you can run your application.
@@ -8,17 +8,12 @@
         /// <summary>
         /// Display Name suitable for use in UI.
         /// </summary>
-        public string DisplayName { get; }
+        public abstract string DisplayName { get; protected set; }
 
         /// <summary>
         /// Stable Id between runs, can be used for storing in settings and similar.
         /// </summary>
-        public virtual string UniqueId => DisplayName;
-
-        protected RunTargetBase(string displayName)
-        {
-            DisplayName = displayName;
-        }
+        public abstract string UniqueId { get; }
 
         /// <summary>
         /// Deploy application to the run target.

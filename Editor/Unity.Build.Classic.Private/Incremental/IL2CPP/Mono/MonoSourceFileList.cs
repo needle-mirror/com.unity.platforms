@@ -1,7 +1,8 @@
 #if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
 using NiceIO;
 using System.Collections.Generic;
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
+using Bee.NativeProgramSupport;
 
 namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 {

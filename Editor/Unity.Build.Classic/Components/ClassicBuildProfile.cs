@@ -1,6 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
 using Unity.Properties;
 using Unity.Serialization;
 using Unity.Serialization.Json;

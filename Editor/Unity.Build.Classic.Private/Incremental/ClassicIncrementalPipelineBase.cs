@@ -1,6 +1,5 @@
 #if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
 using Bee.Core;
-using Bee.Stevedore;
 using Bee.Tools;
 using Bee.TundraBackend;
 using NiceIO;
@@ -11,8 +10,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using Bee.Core.Stevedore;
 using Unity.Build.Common;
-using Unity.BuildTools;
 using Unity.Profiling;
 using UnityEditor;
 using UnityEngine;
@@ -52,8 +51,6 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
         {
             SetOuputBuildDirectoryAbsolute(context);
 
-            Configuration.AbsoluteRootArtifactsPath = ResolveBeeProjectRoot(context).Combine("artifacts").MakeAbsolute();
-
             var backups = new[]
             {
                 new UnitySettingsState(UnitySettingsState.PlayerSettingsAsset)
@@ -72,13 +69,9 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
             try
             {
-                if (!StevedoreGlobalSettings.HasInstance)
-                    StevedoreGlobalSettings.Instance = new StevedoreGlobalSettings
-                        {UnpackPathPrefix = "Library/IncPipeline/Stevedore"};
-
                 context.BuildProgress?.Update($"Setting up typedb graph", "", 10);
-                TundraTypeDBDag().DeleteIfExists();
-                TundraTypeDBDagJson().DeleteIfExists();
+                TundraTypeDBDagFor(context).DeleteIfExists();
+                TundraTypeDBDagJson(context).DeleteIfExists();
 
                 var firstTypeDBGraphGenResult = CreateTypeDBTundraGraph(0, context);
                 if (firstTypeDBGraphGenResult.Failed)
@@ -86,7 +79,7 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
                 context.BuildProgress?.Update($"Executing typedb graph", "", 10);
 
-                JustTundra(incrementalPassNumber => CreateTypeDBTundraGraph(incrementalPassNumber, context), TundraTypeDBDag(), 0, context);
+                JustTundra(incrementalPassNumber => CreateTypeDBTundraGraph(incrementalPassNumber, context), TundraTypeDBDagFor(context), 0, context);
 
                 context.BuildProgress?.Update($"Building datafiles", "", 10);
                 using(new ProfilerMarker("DataBuild").Auto())
@@ -96,15 +89,15 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                 //for now, always regenerate the graph. we do not have enough knowledge yet to make a good decision on when it is, and when it is not safe to reuse the previous one.
 
                 {
-                    TundraDag().DeleteIfExists();
-                    TundraDagJson().DeleteIfExists();
+                    TundraDag(context).DeleteIfExists();
+                    TundraDagJson(context).DeleteIfExists();
                     var result = CreateFullTundraGraph(0, context);
                     if (result.Failed)
                         return result;
                 }
 
                 context.BuildProgress?.Update($"Executing full graph", "", 10);
-                JustTundra((passNumber) => CreateFullTundraGraph(passNumber, context), TundraDag(), 0,
+                JustTundra((passNumber) => CreateFullTundraGraph(passNumber, context), TundraDag(context), 0,
                     context);
                 return context.Success();
             }
@@ -112,9 +105,6 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             {
                 foreach (var b in backups)
                     b.Restore();
-
-                // Reset path, to avoid it leaking to other places
-                Configuration.AbsoluteRootArtifactsPath = string.Empty;
             }
         }
 
@@ -144,10 +134,13 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
         {
             using (new ProfilerMarker("CreateTypeDBTundraGraph").Auto())
             {
-                var typeDBackend = CreateTundraBackend(context, context.BuildConfigurationName + "TypeDB");
-                new GraphSetupCodeGeneration().SetupCodegeneration(context, GraphSetupCodeGeneration.Mode.EnoughToProduceTypeDB);
-                typeDBackend.Write(TundraTypeDBDagJson());
-                BackupTundraFile(TundraTypeDBDagJson(), incrementalPassNumber);
+                var (typeDBackend, requirements) = CreateTundraBackend(context, context.BuildConfigurationName + "TypeDB");
+                using (requirements)
+                {
+                    new GraphSetupCodeGeneration().SetupCodegeneration(context, GraphSetupCodeGeneration.Mode.EnoughToProduceTypeDB);
+                    typeDBackend.Write(TundraTypeDBDagJson(context));
+                }
+                BackupTundraFile(TundraTypeDBDagJson(context), incrementalPassNumber);
                 return context.Success();
             }
         }
@@ -181,29 +174,34 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             using (new ProfilerMarker("CreateFullTundraGraph").Auto())
             {
                 BuildResult result;
-                var fullBackend = CreateTundraBackend(context, context.BuildConfigurationName);
-                context.GetValue<IncrementalClassicSharedData>().Backend = fullBackend;
-                using (new GraphBuildingNPathHooks())
-                    //@TODO: should we do something about a failure here?
+                var (fullBackend,requirements) = CreateTundraBackend(context, context.BuildConfigurationName);
+                using (requirements)
                 {
-                    result = BuildSteps.Run(context);
+                    context.GetValue<IncrementalClassicSharedData>().Backend = fullBackend;
+                    //@TODO: should we do something about a failure here?
+                    {
+                        result = BuildSteps.Run(context);
+                    }
+
+                    using (new ProfilerMarker("backendWrite").Auto())
+                        fullBackend.Write(TundraDagJson(context));
+                    BackupTundraFile(TundraDagJson(context), incrementalPassNumber);
+
+                    return result;
                 }
-
-                using (new ProfilerMarker("backendWrite").Auto())
-                    fullBackend.Write(TundraDagJson());
-                BackupTundraFile(TundraDagJson(), incrementalPassNumber);
-
-                return result;
             }
         }
 
-        TundraBackend CreateTundraBackend(BuildContext context, string graphTitle)
+        (TundraBackend backend, IDisposable requirements) CreateTundraBackend(BuildContext context, string graphTitle)
         {
-            var classicContext = context.GetValue<IncrementalClassicSharedData>();
+            var tundraFilesRoot = ResolveBeeProjectRoot(context).Combine("artifacts");
+            var backend = new TundraBackend(tundraFilesRoot, graphTitle, false)
+            {
+                StevedoreSettings = new StevedoreSettings() {UnpackPathPrefix = StevedoreUnpackPathPrefixFor()},
+                ArtifactsPath = tundraFilesRoot
+            };
+            var requirements = backend.InstallRequirementsForRunningBuildCode();
 
-            var backend = new TundraBackend(Configuration.AbsoluteRootArtifactsPath, graphTitle, false);
-            Backend.Current = backend;
-            StevedoreBackendSettings.Get(Backend.Current).SevenZip = new SevenZipExecutable($"{EditorApplication.applicationContentsPath}/Tools/" + (HostPlatform.IsWindows ? "7z.exe" : "7za"));
 
             //super hack
             var field = backend.GetType()
@@ -212,8 +210,10 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             extensions.Clear();
             backend.AddExtensionToBeScannedByHashInsteadOfTimeStamp("cs", "c", "cpp", "m", "mm", "rsp", "exe", "dll", "pdb", "txt", "json", "bundle", "entities", "header", "bin", "");
 
-            return backend;
+            return (backend, requirements);
         }
+
+        private NPath StevedoreUnpackPathPrefixFor() => Path.GetFullPath(Application.dataPath + $"/../Library/IncPipeline/Stevedore");
 
         void JustTundra(Func<int, BuildResult> rerunFrontend, NPath tundraDag, int incrementalPassNumber, BuildContext context)
         {
@@ -251,13 +251,7 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
         IEnumerator<ShellProcessProgressInfo> RunTundraIncremental(NPath tundraDag, int incrementalPassNumber, BuildContext context)
         {
-            //Paths.ProjectRoot = projectRoot;
-            //Paths.ProjectRoot.EnsureDirectoryExists();
-
-            var fullTundraPath = Path.GetFullPath(Path.Combine(Package.PackagePath, "Editor/Unity.Build.Classic.Private/bee_as_library/tundra~", HostPlatform.IsWindows ? "Win_x64/tundra2.exe" : "Mac_x64/tundra2"));
-
-            if (!new NPath(fullTundraPath).FileExists())
-                throw new Exception("Cannot find tundra2.exe: " + fullTundraPath);
+            TundraInvoker.DownloadTundraViaStevedore(StevedoreUnpackPathPrefixFor(), out var fullTundraPath);
 
             var tundraArguments = new[]
             {
@@ -268,12 +262,12 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
             tundraDag.Parent.Combine("run_" + tundraDag.FileNameWithoutExtension + (HostPlatform.IsWindows ? ".bat" : ".sh")).WriteAllText($"{fullTundraPath} {tundraArguments.SeparateWithSpace()}");
 
-            BackupTundraFile(TundraLogJson(), incrementalPassNumber);
+            BackupTundraFile(TundraLogJson(context), incrementalPassNumber);
 
             var progressInfo = new ShellProcessProgressInfo() { Output = new StringBuilder() };
             var process = ShellProcess.Start(new ShellProcessArguments
             {
-                Executable = fullTundraPath,
+                Executable = fullTundraPath.ToString(SlashMode.Native),
                 Arguments = tundraArguments ,
                 OutputDataReceived = (sender, args) =>
                 {
@@ -341,13 +335,14 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
         static readonly Regex BeeProgressRegex = new Regex(@"^\[\s*(?'nominator'\d+)\/(?'denominator'\d+)\ .*] (?'annotation'.*)$", RegexOptions.Compiled);
         static readonly Regex BeeBusyRegex = new Regex(@"^\[\s*BUSY.*\] (?'annotation'.*)$", RegexOptions.Compiled);
+        private IDisposable _requirements;
 
-        NPath BeeProjectRootFor() => Configuration.AbsoluteRootArtifactsPath.Combine("..");
-        NPath TundraDag() => BeeProjectRootFor().Combine("tundra.dag");
-        NPath TundraDagJson() => $"{TundraDag()}.json";
-        NPath TundraTypeDBDag() => BeeProjectRootFor().Combine("tundra_typedb.dag");
-        NPath TundraTypeDBDagJson() => $"{TundraTypeDBDag()}.json";
-        NPath TundraLogJson() => BeeProjectRootFor().Combine("tundra.log.json");
+        NPath BeeProjectRootFor(BuildContext context) => $"Library/IncPipeline/{context.BuildConfigurationName}";
+        NPath TundraDag(BuildContext context) => BeeProjectRootFor(context).Combine("tundra.dag");
+        NPath TundraDagJson(BuildContext context) => $"{TundraDag(context)}.json";
+        NPath TundraTypeDBDagFor(BuildContext context) => BeeProjectRootFor(context).Combine("tundra_typedb.dag");
+        NPath TundraTypeDBDagJson(BuildContext context) => $"{TundraTypeDBDagFor(context)}.json";
+        NPath TundraLogJson(BuildContext context) => BeeProjectRootFor(context).Combine("tundra.log.json");
     }
 }
 #endif

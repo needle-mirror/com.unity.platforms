@@ -2,9 +2,8 @@
 using Bee.Core;
 using Bee.DotNet;
 using NiceIO;
-using System.Collections.Generic;
 using System.Linq;
-using Unity.BuildTools;
+using Bee.Tools;
 using UnityEditor;
 
 
