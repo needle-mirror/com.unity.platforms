@@ -76,6 +76,7 @@ namespace Unity.Build.DotsRuntime
         public static BuildTarget DefaultBuildTarget { get; }
 
         public abstract bool CanBuild { get; }
+        public virtual bool CanRun => true;
         public abstract string DisplayName { get; }
         public abstract string UnityPlatformName { get; }
         public abstract string ExecutableExtension { get; }
