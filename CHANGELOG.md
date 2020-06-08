@@ -4,6 +4,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2020-06-08
+
+### Changed
+- Tiny build specific classes moved from `Unity.Platforms` to `Unity.Build.DotsRuntime`.
+
+## [0.4.1] - 2020-05-27
+
+### Changed
+- Update platforms packages to 0.4.1-preview
+- Updated minimum Unity version to 2020.1.
+
 ## [0.4.0] - 2020-05-20
 
 ### Added
@@ -24,6 +35,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
     - `Unity.Build.Common.PlayerScriptingDefines`
     - `Unity.Build.Common.SceneList`
     - `Unity.Build.Common.ScriptingDebuggerSettings`
+- Classic Components which are not explicitly added to the build configuration will get its default values from Player Settings, the following components are affected:
+    - `Unity.Build.Classic.ClassicCodeStrippingOptions`
+    - `Unity.Build.Classic.ClassicScriptingSettings`
+    - `Unity.Platforms.Android.Build.AndroidAPILevels`
+    - `Unity.Platforms.Android.Build.AndroidArchitectures`
+    - `Unity.Platforms.Android.Build.ApplicationIdentifier`
+- Change `Unity.Build.Classic.ClassicCodeStrippingOptions.ManagedStrippingLevel` default value to `ManagedStrippingLevel.Disabled`
 
 ### Removed
 - Removed obsolete class `BuildSettings`.

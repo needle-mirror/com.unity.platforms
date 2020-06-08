@@ -5,7 +5,7 @@ using UnityEditor;
 namespace Unity.Build.Classic
 {
     [FormerName("Unity.Build.Common.ClassicScriptingSettings, Unity.Build.Common")]
-    public sealed class ClassicScriptingSettings : IBuildComponent
+    public sealed class ClassicScriptingSettings : IBuildComponent, ICustomBuildComponentConstructor
     {
         [CreateProperty]
         public ScriptingImplementation ScriptingBackend { get; set; } = ScriptingImplementation.Mono2x;
@@ -20,5 +20,15 @@ namespace Unity.Build.Classic
         //       - Editor will not reflect the same set compilation result as building to player, which is not very good.
         //       - We need to either decide to have somekind of global project settings (used both in Editor and while building to player) or have
         //         "active build settings" property which would be used as information what kind of enviromnent to simulate, in this it may make sense to but 'ScriptingDefineSymbols, ApiCompatibilityLevel, AllowUnsafeCode' here
+
+        void ICustomBuildComponentConstructor.Construct(BuildConfiguration.ReadOnly config)
+        {
+            var group = config.GetBuildTargetGroup();
+            if (group == BuildTargetGroup.Unknown)
+                return;
+
+            ScriptingBackend = PlayerSettings.GetScriptingBackend(group);
+            Il2CppCompilerConfiguration = PlayerSettings.GetIl2CppCompilerConfiguration(group);
+        }
     }
 }

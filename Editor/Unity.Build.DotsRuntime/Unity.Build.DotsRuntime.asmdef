@@ -2,7 +2,8 @@
     "name": "Unity.Build.DotsRuntime",
     "references": [
         "Unity.Build",
-        "Unity.Serialization"
+        "Unity.Serialization",
+        "Unity.Serialization.Properties"
     ],
     "includePlatforms": [
         "Editor"

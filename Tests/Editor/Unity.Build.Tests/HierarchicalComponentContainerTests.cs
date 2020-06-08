@@ -785,5 +785,41 @@ namespace Unity.Build.Tests
             Assert.DoesNotThrow(() => containerA.ClearDependencies());
             Assert.That(containerA.Dependencies, Is.Empty);
         }
+
+        [Test]
+        public void AsReadOnly()
+        {
+            var container = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent<ComponentA>());
+            var containerRO = container.AsReadOnly();
+
+            Assert.That(container.HasComponent<ComponentA>(), Is.EqualTo(containerRO.HasComponent<ComponentA>()));
+            Assert.That(container.HasComponent<ComponentB>(), Is.EqualTo(containerRO.HasComponent<ComponentB>()));
+            Assert.That(container.IsComponentInherited<ComponentA>(), Is.EqualTo(containerRO.IsComponentInherited<ComponentA>()));
+            Assert.That(container.IsComponentInherited<ComponentB>(), Is.EqualTo(containerRO.IsComponentInherited<ComponentB>()));
+            Assert.That(container.IsComponentOverridden<ComponentA>(), Is.EqualTo(containerRO.IsComponentOverridden<ComponentA>()));
+            Assert.That(container.IsComponentOverridden<ComponentB>(), Is.EqualTo(containerRO.IsComponentOverridden<ComponentB>()));
+            Assert.That(container.GetComponent<ComponentA>(), Is.EqualTo(containerRO.GetComponent<ComponentA>()));
+            Assert.Throws<InvalidOperationException>(() => containerRO.GetComponent<ComponentB>());
+            Assert.That(container.TryGetComponent<ComponentA>(out _), Is.EqualTo(containerRO.TryGetComponent<ComponentA>(out _)));
+            Assert.That(container.TryGetComponent<ComponentB>(out _), Is.EqualTo(containerRO.TryGetComponent<ComponentB>(out _)));
+            Assert.That(container.GetComponentOrDefault<ComponentA>(), Is.EqualTo(containerRO.GetComponentOrDefault<ComponentA>()));
+            Assert.That(container.GetComponentOrDefault<ComponentB>(), Is.EqualTo(containerRO.GetComponentOrDefault<ComponentB>()));
+            Assert.That(container.GetComponents(), Is.EquivalentTo(containerRO.GetComponents()));
+            Assert.That(container.GetComponents<ComponentA>(), Is.EquivalentTo(containerRO.GetComponents<ComponentA>()));
+            Assert.That(container.GetComponents<ComponentB>(), Is.EquivalentTo(containerRO.GetComponents<ComponentB>()));
+            Assert.That(container.GetComponentTypes(), Is.EquivalentTo(containerRO.GetComponentTypes()));
+        }
+
+        [Test]
+        public void AsReadOnly_ReflectChanges()
+        {
+            var container = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent<ComponentA>());
+            var containerRO = container.AsReadOnly();
+
+            Assert.That(containerRO.GetComponentTypes(), Is.EquivalentTo(new[] { typeof(ComponentA) }));
+
+            container.SetComponent<ComponentB>();
+            Assert.That(containerRO.GetComponentTypes(), Is.EquivalentTo(new[] { typeof(ComponentA), typeof(ComponentB) }));
+        }
     }
 }

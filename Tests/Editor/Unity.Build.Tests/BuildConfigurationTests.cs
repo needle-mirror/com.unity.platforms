@@ -266,5 +266,26 @@ namespace Unity.Build.Tests
             AssetDatabase.DeleteAsset(TestMigrationContext.k_AssetPath);
             JsonSerialization.RemoveGlobalMigration(migration);
         }
+
+        class ComponentConstruct : IBuildComponent, ICustomBuildComponentConstructor
+        {
+            public int Integer;
+            void ICustomBuildComponentConstructor.Construct(BuildConfiguration.ReadOnly config) => Integer = 255;
+        }
+
+        [Test]
+        public void BuildComponentConstruct()
+        {
+            var container = BuildConfiguration.CreateInstance();
+            Assert.That(container.GetComponentOrDefault<ComponentConstruct>().Integer, Is.EqualTo(255));
+
+            container.SetComponent<ComponentConstruct>();
+            Assert.That(container.GetComponent<ComponentConstruct>().Integer, Is.EqualTo(255));
+            Assert.That(container.GetComponentOrDefault<ComponentConstruct>().Integer, Is.EqualTo(255));
+
+            container.SetComponent(new ComponentConstruct());
+            Assert.That(container.GetComponent<ComponentConstruct>().Integer, Is.EqualTo(0));
+            Assert.That(container.GetComponentOrDefault<ComponentConstruct>().Integer, Is.EqualTo(0));
+        }
     }
 }

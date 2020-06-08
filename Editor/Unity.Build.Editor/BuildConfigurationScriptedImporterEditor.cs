@@ -210,6 +210,7 @@ namespace Unity.Build.Editor
 
                 config.SerializeToPath(assetImporter.assetPath);
             }
+            Refresh();
         }
 
         protected override void ResetValues()

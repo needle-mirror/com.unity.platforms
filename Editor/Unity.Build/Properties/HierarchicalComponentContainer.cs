@@ -190,7 +190,9 @@ namespace Unity.Build
             CheckComponentTypeAndThrowIfInvalid(type);
             if (!TryGetComponent(type, out var value))
             {
-                return TypeConstruction.Construct<TComponent>(type);
+                var component = TypeConstruction.Construct<TComponent>(type);
+                OnComponentConstruct(ref component);
+                return component;
             }
             return value;
         }
@@ -230,7 +232,7 @@ namespace Unity.Build
         /// <summary>
         /// Get a flatten list of all components recursively from this container and its dependencies, that matches <see cref="Type"/>.
         /// </summary>
-        /// <typeparam name="T">Type of the components.</typeparam>
+        /// <param name="type"><see cref="Type"/> of the component.</param>
         /// <returns>List of components.</returns>
         public IEnumerable<TComponent> GetComponents(Type type)
         {
@@ -312,7 +314,9 @@ namespace Unity.Build
                 throw new InvalidOperationException($"{nameof(type)} cannot be interface or abstract.");
             }
 
-            SetComponent(type, TypeConstruction.Construct<TComponent>(type));
+            var component = TypeConstruction.Construct<TComponent>(type);
+            OnComponentConstruct(ref component);
+            SetComponent(type, component);
         }
 
         /// <summary>
@@ -429,6 +433,132 @@ namespace Unity.Build
         /// </summary>
         public void ClearDependencies() => Dependencies.Clear();
 
+        /// <summary>
+        /// A read-only wrapper for this container, which does not expose methods that modify the container.
+        /// If changes are made to the underlying container, the read-only wrapper reflects those changes.
+        /// </summary>
+        public class ReadOnly
+        {
+            readonly HierarchicalComponentContainer<TContainer, TComponent> m_Container;
+
+            internal ReadOnly(HierarchicalComponentContainer<TContainer, TComponent> container)
+            {
+                m_Container = container;
+            }
+
+            /// <summary>
+            /// Determine if a <see cref="Type"/> component is stored in this container or its dependencies.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            public bool HasComponent(Type type) => m_Container.HasComponent(type);
+
+            /// <summary>
+            /// Determine if a <typeparamref name="T"/> component is stored in this container or its dependencies.
+            /// </summary>
+            /// <typeparam name="T">Type of the component.</typeparam>
+            public bool HasComponent<T>() where T : TComponent => m_Container.HasComponent<T>();
+
+            /// <summary>
+            /// Determine if a <see cref="Type"/> component is inherited from a dependency.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            public bool IsComponentInherited(Type type) => m_Container.IsComponentInherited(type);
+
+            /// <summary>
+            /// Determine if a <typeparamref name="T"/> component is inherited from a dependency.
+            /// </summary>
+            /// <typeparam name="T">Type of the component.</typeparam>
+            public bool IsComponentInherited<T>() where T : TComponent => m_Container.IsComponentInherited<T>();
+
+            /// <summary>
+            /// Determine if a <see cref="Type"/> component overrides a dependency.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            public bool IsComponentOverridden(Type type) => m_Container.IsComponentOverridden(type);
+
+            /// <summary>
+            /// Determine if a <typeparamref name="T"/> component overrides a dependency.
+            /// </summary>
+            /// <typeparam name="T">Type of the component.</typeparam>
+            public bool IsComponentOverridden<T>() where T : TComponent => m_Container.IsComponentOverridden<T>();
+
+            /// <summary>
+            /// Get the value of a <see cref="Type"/> component.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            public TComponent GetComponent(Type type) => m_Container.GetComponent(type);
+
+            /// <summary>
+            /// Get the value of a <typeparamref name="T"/> component.
+            /// </summary>
+            /// <typeparam name="T">Type of the component.</typeparam>
+            public T GetComponent<T>() where T : TComponent => m_Container.GetComponent<T>();
+
+            /// <summary>
+            /// Try to get the value of a <see cref="Type"/> component.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            /// <param name="value">Out value of the component.</param>
+            public bool TryGetComponent(Type type, out TComponent value) => m_Container.TryGetComponent(type, out value);
+
+            /// <summary>
+            /// Try to get the value of a <typeparamref name="T"/> component.
+            /// </summary>
+            /// <param name="value">Out value of the component.</param>
+            /// <typeparam name="T">Type of the component.</typeparam>
+            public bool TryGetComponent<T>(out T value) where T : TComponent => m_Container.TryGetComponent(out value);
+
+            /// <summary>
+            /// Get the value of a <see cref="Type"/> component if found.
+            /// Otherwise an instance created using <see cref="TypeConstruction"/> utility.
+            /// The container is not modified.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            /// <returns>The component value.</returns>
+            public TComponent GetComponentOrDefault(Type type) => m_Container.GetComponentOrDefault(type);
+
+            /// <summary>
+            /// Get the value of a <typeparamref name="T"/> component if found.
+            /// Otherwise an instance created using <see cref="TypeConstruction"/> utility.
+            /// The container is not modified.
+            /// </summary>
+            /// <typeparam name="T">Type of the component.</typeparam>
+            /// <returns>The component value.</returns>
+            public T GetComponentOrDefault<T>() where T : TComponent => m_Container.GetComponentOrDefault<T>();
+
+            /// <summary>
+            /// Get a flatten list of all components recursively from this container and its dependencies.
+            /// </summary>
+            /// <returns>List of components.</returns>
+            public IEnumerable<TComponent> GetComponents() => m_Container.GetComponents();
+
+            /// <summary>
+            /// Get a flatten list of all components recursively from this container and its dependencies, that matches <see cref="Type"/>.
+            /// </summary>
+            /// <param name="type"><see cref="Type"/> of the component.</param>
+            /// <returns>List of components.</returns>
+            public IEnumerable<TComponent> GetComponents(Type type) => m_Container.GetComponents(type);
+
+            /// <summary>
+            /// Get a flatten list of all components recursively from this container and its dependencies, that matches <see cref="Type"/>.
+            /// </summary>
+            /// <typeparam name="T">Type of the components.</typeparam>
+            /// <returns>List of components.</returns>
+            public IEnumerable<T> GetComponents<T>() where T : TComponent => m_Container.GetComponents<T>();
+
+            /// <summary>
+            /// Get a flatten list of all component types from this container and its dependencies.
+            /// </summary>
+            /// <returns>List of component types.</returns>
+            public IEnumerable<Type> GetComponentTypes() => m_Container.GetComponentTypes();
+        }
+
+        /// <summary>
+        /// Returns a read-only wrapper for this container.
+        /// </summary>
+        /// <returns></returns>
+        public ReadOnly AsReadOnly() => new ReadOnly(this);
+
         protected override void Reset()
         {
             base.Reset();
@@ -524,19 +654,21 @@ namespace Unity.Build
             return false;
         }
 
-        TComponent CopyComponent(TComponent value)
+        static TComponent CopyComponent(TComponent value)
         {
             var visitor = new CopyVisitor<TComponent>(ref value);
             PropertyContainer.Visit(ref value, visitor);
             return visitor.Result;
         }
 
-        void CopyComponent(ref TComponent result, ref TComponent value)
+        static void CopyComponent(ref TComponent result, ref TComponent value)
         {
             var visitor = new CopyVisitor<TComponent>(ref value);
             PropertyContainer.Visit(ref value, visitor);
             result = visitor.Result;
         }
+
+        protected virtual void OnComponentConstruct(ref TComponent component) { }
 
         class CopyVisitor<T> : PropertyVisitor
         {

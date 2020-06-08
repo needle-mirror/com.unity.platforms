@@ -106,15 +106,6 @@ namespace Unity.Build
         /// <returns>The build result if found, otherwise <see langword="null"/>.</returns>
         public BuildResult GetLastBuildResult() => BuildArtifacts.GetBuildResult(this);
 
-        BoolResult CanUsePipeline(BuildPipelineBase pipeline)
-        {
-            if (pipeline == null)
-            {
-                return BoolResult.False($"No valid build pipeline found for {this.ToHyperLink()}. At least one component that derives from {nameof(IBuildPipelineComponent)} must be present.");
-            }
-            return BoolResult.True();
-        }
-
         /// <summary>
         /// Get the output build directory override for this build configuration.
         /// The output build directory can be overridden using a <see cref="OutputBuildDirectory"/> component.
@@ -128,5 +119,31 @@ namespace Unity.Build
 
             return pipeline.GetOutputBuildDirectory(this).ToString();
         }
+
+        protected override void OnComponentConstruct(ref IBuildComponent component)
+        {
+            if (component is ICustomBuildComponentConstructor constructible)
+            {
+                constructible.Construct(AsReadOnly());
+            }
+        }
+
+        BoolResult CanUsePipeline(BuildPipelineBase pipeline)
+        {
+            if (pipeline == null)
+            {
+                return BoolResult.False($"No valid build pipeline found for {this.ToHyperLink()}. At least one component that derives from {nameof(IBuildPipelineComponent)} must be present.");
+            }
+            return BoolResult.True();
+        }
+    }
+
+    public static class BuildConfigurationReadOnlyExtensions
+    {
+        /// <summary>
+        /// Retrieve the build pipeline of this build configuration.
+        /// </summary>
+        /// <returns>The build pipeline if found, otherwise <see langword="null"/>.</returns>
+        static public BuildPipelineBase GetBuildPipeline(this BuildConfiguration.ReadOnly config) => config.TryGetComponent<IBuildPipelineComponent>(out var component) ? component.Pipeline : null;
     }
 }
