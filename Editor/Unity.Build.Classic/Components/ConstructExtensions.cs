@@ -1,4 +1,4 @@
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.Core;
 using UnityEditor;
 
 namespace Unity.Build.Classic

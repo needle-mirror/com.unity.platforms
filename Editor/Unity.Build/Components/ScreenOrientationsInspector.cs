@@ -1,8 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
-using Unity.Properties;
 using Unity.Properties.UI;
-using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 

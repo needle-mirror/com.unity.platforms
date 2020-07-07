@@ -3,7 +3,7 @@ using Bee.Core;
 using Bee.DotNet;
 using NiceIO;
 using System.Collections.Generic;
-using Unity.BuildSystem.CSharpSupport;
+using Bee.CSharpSupport;
 using Unity.Serialization.Json;
 using UnityEditor.Compilation;
 

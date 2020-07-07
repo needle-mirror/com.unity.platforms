@@ -1,6 +1,5 @@
-﻿using System;
-using System.ComponentModel;
-using Unity.BuildSystem.NativeProgramSupport;
+﻿using Bee.Core;
+using System;
 using Unity.Properties;
 using Unity.Serialization;
 using Unity.Serialization.Json;
@@ -16,14 +15,6 @@ namespace Unity.Build.Classic
         Platform m_Platform;
         bool m_Incremental;
         BuildPipelineBase m_Pipeline;
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Target has been replaced with Platform. (RemovedAfter 2020-07-01)", true)]
-        public BuildTarget Target
-        {
-            get => throw null;
-            set => throw null;
-        }
 
         [CreateProperty]
         internal Platform Platform

@@ -262,6 +262,12 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 
         static ReturnCode WriteResourcesBundles(BundleBuildParameters parameters)
         {
+            // Resources loading path handling has a few rules:
+            // - Paths are relative to resources folder
+            // - Paths are lowercase
+            // - Paths have extensions removed
+            // So "C:\Project\Assets\MyGame\Resources\SO\SomeAsset.asset" becomes "so\someAsset"
+            // On the loading side, all paths passed in have ToLower() run on them.
             var assetPaths = GetResourcesAssetPaths();
             var bundles = new AssetBundleBuild[]
             {
@@ -277,9 +283,9 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                             // Hack for PostProcessing stack
                             var shader = AssetDatabase.LoadAssetAtPath<Shader>(x.ToString());
                             if (shader != null)
-                                return shader.name;
+                                return shader.name.ToLower();
 
-                            var path = x.FileNameWithoutExtension;
+                            var path = x.ChangeExtension("").ToString().ToLower();
                             var index = path.ToLower().LastIndexOf(k_Folder);
                             if (index > -1)
                                 path = path.Substring(index + k_FolderLength);

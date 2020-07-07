@@ -1,6 +1,6 @@
 #if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+using Bee.NativeProgramSupport;
 using NiceIO;
-using Unity.BuildSystem.NativeProgramSupport;
 
 namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
 {

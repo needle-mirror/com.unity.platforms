@@ -2,19 +2,18 @@ using System;
 using System.Collections.Generic;
 using Unity.Serialization.Json;
 using UnityEditor;
+
+#if UNITY_2020_2_OR_NEWER
+using UnityEditor.AssetImporters;
+#else
 using UnityEditor.Experimental.AssetImporters;
+#endif
 
 namespace Unity.Build
 {
-    [ScriptedImporter(Version, new[] { BuildConfiguration.AssetExtension })]
+    [ScriptedImporter(3, new[] { BuildConfiguration.AssetExtension })]
     sealed class BuildConfigurationScriptedImporter : ScriptedImporter
     {
-#if UNITY_2020_1_OR_NEWER
-        const int Version = 3;
-#else
-        const int Version = 2;
-#endif
-
         public override void OnImportAsset(AssetImportContext context)
         {
             var asset = BuildConfiguration.CreateInstance();

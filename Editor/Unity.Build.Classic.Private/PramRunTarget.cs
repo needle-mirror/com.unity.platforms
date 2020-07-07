@@ -1,20 +1,37 @@
-﻿#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+using System.Threading.Tasks;
+using UnityEngine;
+
 namespace Unity.Build.Classic.Private
 {
     internal class PramRunTarget : RunTargetBase
     {
+        public override string DisplayName { get; protected set;  }
         public override string UniqueId => $"{ProviderName}-{EnvironmentId}";
 
         private Pram Pram { get; }
         private string ProviderName { get; }
         private string EnvironmentId { get; }
 
-        public PramRunTarget(Pram pram, string displayName, string providerName, string environmentId)
-        : base(displayName)
+        public PramRunTarget(Pram pram, string providerName, string environmentId)
         {
             Pram = pram;
             ProviderName = providerName;
             EnvironmentId = environmentId;
+            DisplayName = $"{ProviderName} - {EnvironmentId}";
+
+            // Asynchronously update display name. Often requires device communication.
+            Task.Run(() =>
+            {
+                try
+                {
+                    DisplayName = Pram.GetName(ProviderName, EnvironmentId) ?? DisplayName;
+                }
+                catch
+                {
+                    Debug.LogWarning($"{ProviderName} {EnvironmentId} not reachable.");
+                }
+            });
         }
 
         public override void Deploy(string applicationId, string path)

@@ -1,5 +1,3 @@
-using System;
-
 namespace Unity.Platforms
 {
     public struct SuspendResumeEvent

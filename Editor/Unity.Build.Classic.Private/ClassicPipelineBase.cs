@@ -1,9 +1,9 @@
-﻿using NiceIO;
+﻿using Bee.Core;
+using NiceIO;
 using System;
 using System.IO;
 using System.Linq;
 using Unity.Build.Common;
-using Unity.BuildSystem.NativeProgramSupport;
 using UnityEditor;
 
 namespace Unity.Build.Classic.Private

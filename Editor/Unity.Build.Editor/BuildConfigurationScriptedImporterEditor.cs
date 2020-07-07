@@ -4,11 +4,16 @@ using System.IO;
 using System.Linq;
 using Unity.Properties.UI;
 using UnityEditor;
-using UnityEditor.Experimental.AssetImporters;
 using UnityEditor.Searcher;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+
+#if UNITY_2020_2_OR_NEWER
+using UnityEditor.AssetImporters;
+#else
+using UnityEditor.Experimental.AssetImporters;
+#endif
 
 namespace Unity.Build.Editor
 {
@@ -365,11 +370,7 @@ namespace Unity.Build.Editor
 
         void RefreshDependencies(BindableElement root, BuildConfiguration config)
         {
-#if UNITY_2020_1_OR_NEWER
             m_DependenciesWrapper.Dependencies = FilterDependencies(config.Dependencies.Select(d => d.asset)).ToList();
-#else
-            m_DependenciesWrapper.Dependencies = FilterDependencies(config.Dependencies).ToList();
-#endif
 
             var dependencyElement = new PropertyElement();
             dependencyElement.AddToClassList(ClassNames.BaseClassName);
@@ -377,12 +378,8 @@ namespace Unity.Build.Editor
             dependencyElement.OnChanged += (element, path) =>
             {
                 config.Dependencies.Clear();
-#if UNITY_2020_1_OR_NEWER
                 config.Dependencies.AddRange(FilterDependencies(m_DependenciesWrapper.Dependencies)
                     .Select(asset => new LazyLoadReference<BuildConfiguration>(asset)));
-#else
-                config.Dependencies.AddRange(FilterDependencies(m_DependenciesWrapper.Dependencies));
-#endif
             };
             dependencyElement.SetEnabled(m_LastEditState);
             root.Add(dependencyElement);

@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 
 namespace Unity.Build
 {
@@ -45,9 +44,5 @@ namespace Unity.Build
         {
             BuildProgress = progress;
         }
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        [Obsolete("Remove usage, since BuildPipelineResult is now obsolete. (RemovedAfter 2020-07-01)", true)]
-        public BuildPipelineResult BuildPipelineStatus { get; }
     }
 }

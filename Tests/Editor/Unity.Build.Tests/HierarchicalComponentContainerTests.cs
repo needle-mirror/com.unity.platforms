@@ -315,9 +315,7 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidDependencies_ComponentsArePreserved()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-#if UNITY_2020_1_OR_NEWER
             LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
-#endif
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [123, \"abc\"], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
@@ -327,11 +325,7 @@ namespace Unity.Build.Tests
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [null, \"GlobalObjectId_V1-0-00000000000000000000000000000000-0-0\"], \"Components\": []}}");
-#if UNITY_2020_1_OR_NEWER
             Assert.That(container.Dependencies.Select(d => d.asset), Is.EqualTo(new TestHierarchicalComponentContainer[] { null, null }));
-#else
-            Assert.That(container.Dependencies, Is.EqualTo(new TestHierarchicalComponentContainer[] { null, null }));
-#endif
         }
 
         [Test]
@@ -701,11 +695,7 @@ namespace Unity.Build.Tests
             var containerB = TestHierarchicalComponentContainer.CreateInstance();
             Assert.That(containerA.AddDependency(containerB), Is.True);
             Assert.That(containerA.AddDependency(containerB), Is.False);
-#if UNITY_2020_1_OR_NEWER
             Assert.That(containerA.Dependencies.Select(d => d.asset), Is.EqualTo(new[] { containerB }));
-#else
-            Assert.That(containerA.Dependencies, Is.EqualTo(new[] { containerB }));
-#endif
             Assert.Throws<ArgumentNullException>(() => containerA.AddDependency(null));
         }
 

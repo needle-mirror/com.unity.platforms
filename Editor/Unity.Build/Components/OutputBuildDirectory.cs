@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel;
-using Unity.Serialization;
+﻿using Unity.Serialization;
 
 namespace Unity.Build.Common
 {
@@ -11,13 +9,5 @@ namespace Unity.Build.Common
     public class OutputBuildDirectory : IBuildComponent
     {
         public string OutputDirectory;
-    }
-
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [Obsolete("Remove usage. (RemovedAfter 2020-07-01)", true)]
-    [FormerName("Unity.Build.Common.BuildStepExtensions, Unity.Build.Common")]
-    public static class BuildStepExtensions
-    {
-        public static string GetOutputBuildDirectory(this BuildStep step, BuildContext context) => throw null;
     }
 }

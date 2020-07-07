@@ -15,10 +15,9 @@ namespace Unity.Build.Classic.Private
             base.PrepareContext(context);
 
             var nonIncrementalClassicData = context.GetOrCreateValue<NonIncrementalClassicSharedData>();
-            nonIncrementalClassicData.TemporaryDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Temp", context.BuildConfigurationName);
-            // Cleanup temporary directory
-            if (Directory.Exists(nonIncrementalClassicData.TemporaryDirectory))
-                Directory.Delete(nonIncrementalClassicData.TemporaryDirectory, true);
+            // Note: Don't use absolute paths, since it's easy to hit path-too-long issue
+            //       Also don't delete Temp directory, Unity deletes this directory on quit, also builds might contain cached data, thus making follow up builds faster
+            nonIncrementalClassicData.TemporaryDirectory = Path.Combine("Temp", context.BuildConfigurationName);
             Directory.CreateDirectory(nonIncrementalClassicData.TemporaryDirectory);
         }
     }

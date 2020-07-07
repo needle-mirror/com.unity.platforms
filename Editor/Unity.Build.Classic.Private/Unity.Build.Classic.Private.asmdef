@@ -3,7 +3,6 @@
     "references": [
         "Unity.Build",
         "Unity.Build.Classic",
-        "Unity.Build.Common",
         "Unity.Build.Editor",
         "Unity.Properties",
         "Unity.Properties.Editor",
@@ -20,7 +19,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "bee.dll"
+        "bee.dll",
+        "Bee.Toolchain.IOS.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [],

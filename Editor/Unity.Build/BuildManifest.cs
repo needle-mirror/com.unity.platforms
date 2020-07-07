@@ -40,7 +40,7 @@ namespace Unity.Build
                 m_Assets.Add(assetGuid, assetPath);
             }
 
-            foreach(var file in exportedFiles)
+            foreach (var file in exportedFiles)
                 m_ExportedFiles.Add(file);
         }
 

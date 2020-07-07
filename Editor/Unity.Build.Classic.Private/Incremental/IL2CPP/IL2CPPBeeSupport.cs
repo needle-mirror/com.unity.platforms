@@ -1,17 +1,14 @@
 #if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
 using Bee.Core;
 using Bee.DotNet;
-using Bee.Toolchain.GNU;
 using Bee.Toolchain.VisualStudio;
 using Bee.Toolchain.Xcode;
 using NiceIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Remoting.Contexts;
-using Unity.BuildSystem.NativeProgramSupport;
-using Unity.BuildSystem.VisualStudio;
-using Unity.BuildTools;
+using Bee.NativeProgramSupport;
+using Bee.Tools;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Player;
@@ -25,23 +22,31 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
         public abstract void ProvideLibIl2CppProgramSettings(NativeProgram program);
     }
 
-    static class IL2CPPBeeSupport
+    class IL2CPPBeeSupport
     {
         private static IncrementalClassicSharedData _incrementalClassicSharedData;
 
-        public static NativeProgram NativeProgramForIL2CPPOutputFor(string nativeProgramName, IncrementalClassicSharedData incrementalClassicSharedData,
-            List<NPath> copiedPrebuiltAssemblies, List<DotNetAssembly> postProcessedPlayerAssemblies,
-            NPath il2cpp_data_dir, BuildContext context)
+        public IL2CPPBeeSupport(IncrementalClassicSharedData sharedData)
         {
-            _incrementalClassicSharedData = incrementalClassicSharedData;
-            var linkerOutputFiles = SetupLinker(copiedPrebuiltAssemblies, postProcessedPlayerAssemblies, _incrementalClassicSharedData.BuildTarget, context.GetValue<ClassicSharedData>().WorkingDirectory);
+            _incrementalClassicSharedData = sharedData;
+        }
+
+        public NPath[] SetupIl2CppOutputFiles(BuildTarget buildTarget,
+            List<NPath> copiedPrebuiltAssemblies, List<DotNetAssembly> postProcessedPlayerAssemblies,
+            NPath il2cpp_data_dir, string workingDirectory)
+        {
+            var linkerOutputFiles = SetupLinker(copiedPrebuiltAssemblies, postProcessedPlayerAssemblies, buildTarget, workingDirectory);
             var il2cppOutputFiles = SetupIL2CPPConversion(linkerOutputFiles, il2cpp_data_dir);
-            var platformSupport = context.GetValue<IL2CPPPlatformBeeSupport>();
+            return il2cppOutputFiles;
+        }
+
+        public NativeProgram NativeProgramForIL2CPPOutputFor(string nativeProgramName, IL2CPPPlatformBeeSupport platformSupport, NPath[] il2cppOutputFiles)
+        {
             var nativeProgramForIl2CppOutput = NativeProgramForIL2CPPOutput(nativeProgramName, il2cppOutputFiles, platformSupport);
             return nativeProgramForIl2CppOutput;
         }
 
-        private static NativeProgram NativeProgramForIL2CPPOutput(string nativeProgramName, NPath[] il2cppOutputFiles, IL2CPPPlatformBeeSupport platformSupport, bool managedDebuggingEnabled = true, bool libil2cpptiny = false)
+        private NativeProgram NativeProgramForIL2CPPOutput(string nativeProgramName, NPath[] il2cppOutputFiles, IL2CPPPlatformBeeSupport platformSupport, bool managedDebuggingEnabled = true, bool libil2cpptiny = false)
         {
             var il2cppPlayerPackageDirectory = _incrementalClassicSharedData.PlayerPackageDirectory.Combine("il2cpp");
             var nativeProgram = new NativeProgram(nativeProgramName)
@@ -128,7 +133,7 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             return nativeProgram;
         }
 
-        private static NPath[] SetupIL2CPPConversion(NPath[] linkerOutputFiles, NPath il2cppdata_destinationdir)
+        private NPath[] SetupIL2CPPConversion(NPath[] linkerOutputFiles, NPath il2cppdata_destinationdir)
         {
 
             var il2cpp =
@@ -253,11 +258,15 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                 searchDirectories.Add(file.Path.Parent);
             searchDirectories.Add(_incrementalClassicSharedData.UnityEngineAssembliesDirectory.ToString());
 
+            // Pass along the correct platform names for macOS and Windows desktop targets
             var platformName = _incrementalClassicSharedData.PlatformName == "Windows" ?
                 "WindowsDesktop" :
                 _incrementalClassicSharedData.PlatformName == "UniversalWindows" ?
                     "WinRT" :
                     _incrementalClassicSharedData.PlatformName;
+
+            platformName = _incrementalClassicSharedData.PlatformName == "OSX" ? "MacOSX" : platformName;
+
             NPath linkerOutputDir = Configuration.RootArtifactsPath.Combine("linkeroutput");
             Backend.Current.AddAction("UnityLinker", Array.Empty<NPath>(), inputFiles,
                 linkerProgram.InvocationString, new[]
@@ -297,7 +306,7 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
                 EditorApplication.applicationContentsPath + "/il2cpp"
             );
 
-        private static NativeProgramAsLibrary CreateLibIl2CppProgram(bool useExceptions, IL2CPPPlatformBeeSupport platformSupport, bool managedDebuggingEnabled = true, string libil2cppname = "libil2cpp")
+        private NativeProgramAsLibrary CreateLibIl2CppProgram(bool useExceptions, IL2CPPPlatformBeeSupport platformSupport, bool managedDebuggingEnabled = true, string libil2cppname = "libil2cpp")
         {
             NPath[] fileList;
             if (libil2cppname == "libil2cpptiny" && managedDebuggingEnabled)
@@ -466,7 +475,7 @@ namespace Unity.Build.Classic.Private.IncrementalClassicPipeline
             return result.Length == 0 ? new[] { path.Combine(ifEmptyUse) } : result;
         }
 
-        private static NPath[] MonoSourcesFor(NativeProgramConfiguration npc, NPath MonoSourceDir, bool managedDebuggingEnabled)
+        private NPath[] MonoSourcesFor(NativeProgramConfiguration npc, NPath MonoSourceDir, bool managedDebuggingEnabled)
         {
             var monoSources = new List<NPath>();
 

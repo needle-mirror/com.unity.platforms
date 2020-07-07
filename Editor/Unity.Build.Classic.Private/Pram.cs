@@ -1,16 +1,16 @@
-﻿#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
+#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
 using Bee.Tools;
 using NiceIO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Unity.BuildTools;
+using UnityEditor;
 using UnityEngine;
 
 namespace Unity.Build.Classic.Private
 {
-	internal class Pram : RunTargetProviderBase
+    internal class Pram : RunTargetProviderBase
     {
         // Local pram development setup - set to machine local directory to quickly iterate on pram features.
         private static readonly NPath LocalPramDevelopmentRepository = null;
@@ -19,6 +19,8 @@ namespace Unity.Build.Classic.Private
 
         private IReadOnlyDictionary<string, NPath> PlatformAssemblyLoadPath { get; }
         private IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Environment { get; }
+
+        private NPath PlatformsPackagePath { get; } = UnityEditor.PackageManager.PackageInfo.FindForAssetPath("Packages/com.unity.platforms").resolvedPath;
 
         public Pram()
         {
@@ -38,37 +40,47 @@ namespace Unity.Build.Classic.Private
             Environment = environment;
         }
 
-        public override RunTargetBase[] Discover()
-        {
-            return Discover();
-        }
+        public override RunTargetBase[] Discover() => Discover(Array.Empty<string>());
 
-        public RunTargetBase[] Discover(params string[] providers)
-        {
-            var detected = Execute(providers, "env-detect");
-            var regex = new Regex(@"\s*(\S*)\s*\|\s*(\S*)");
-            var devices = new List<PramRunTarget>();
-            foreach (Match result in detected.Split('\n').Select(s => regex.Match(s)))
-            {
-                if (result.Success)
-                {
-                    var provider = result.Groups[1].Captures[0].Value;
-                    var envId = result.Groups[2].Captures[0].Value;
-                    var deviceData = new PramRunTarget(this, $"{provider} - {envId}", provider, envId);
-                    devices.Add(deviceData);
-                }
-            }
-            return devices.OrderBy(x => x.DisplayName).ToArray();
-        }
+        public RunTargetBase[] GetDefault(params string[] providers) => QueryTargets("env-default", providers);
 
-        public void Deploy(string provider, string environment, string applicationId, NPath path) =>
-            Execute(new[] { provider }, "app-deploy", provider, environment, applicationId, path.InQuotes());
+        public RunTargetBase[] Discover(params string[] providers) =>  QueryTargets("env-detect", providers);
 
-        public void Start(string provider, string environment, string applicationId) =>
-            Execute(new[] { provider }, "app-start", provider, environment, applicationId);
+        public void Deploy(string provider, string environmentId, string applicationId, NPath path) =>
+            ExecuteEnvironmentCommand(provider, "app-deploy", environmentId, applicationId, path.InQuotes());
 
-        public void ForceStop(string provider, string environment, string applicationId) =>
-            Execute(new[] { provider }, "app-kill", provider, environment, applicationId);
+        public void Start(string provider, string environmentId, string applicationId) =>
+            ExecuteEnvironmentCommand(provider, "app-start-detached", environmentId, applicationId);
+
+        public void ForceStop(string provider, string environmentId, string applicationId) =>
+            ExecuteEnvironmentCommand(provider, "app-kill", environmentId, applicationId);
+
+        public string GetName(string provider, string environmentId) =>
+            ParseYamlProperties(ExecuteEnvironmentCommand(provider, "env-props", environmentId))
+                .Where(p => p.Key == "env.name")
+                .Select(p => p.Value)
+                .FirstOrDefault();
+
+
+        // Note: Pram use a very simplified yaml output which essentially means, ':' for key value separation
+        // and single-quotation of any escaped string
+        private readonly Regex _yamlParserExpression = new Regex(@"(?<key>'.*?'|.*?):\s+(?<value>.*)");
+        private static string Unquote(string str) => str.StartsWith("'") ? str.TrimStart('\'').TrimEnd('\'').Replace("''", "'") : str;
+        private IEnumerable<KeyValuePair<string, string>> ParseYamlProperties(string yamlString) =>
+            _yamlParserExpression.Matches(yamlString)
+                .Cast<Match>()
+                .Select(match => new KeyValuePair<string, string>(
+                    Unquote(match.Groups["key"].Value.Trim()),
+                    Unquote(match.Groups["value"].Value.Trim())))
+                .ToArray<KeyValuePair<string, string>>();
+
+        private RunTargetBase[] QueryTargets(string pramCommand, params string[] providers) =>
+            ParseYamlProperties(Execute(providers, pramCommand))
+                .Select(p => new PramRunTarget(this, p.Key, p.Value))
+                .ToArray<RunTargetBase>();
+
+        private string ExecuteEnvironmentCommand(string provider, string command, string environmentId, params string[] args) =>
+            Execute(new[] { provider }, new[] {command, $"-e {environmentId}", provider}.Concat(args).ToArray());
 
         private string Execute(string[] providers, params string[] args)
         {
@@ -83,17 +95,21 @@ namespace Unity.Build.Classic.Private
                 .SelectMany(x => x.Value)
                 .ToDictionary(x => x.Key, x => x.Value);
 
-            NPath platformsPackagePath = UnityEditor.PackageManager.PackageInfo.FindForAssetPath("Packages/com.unity.platforms").resolvedPath;
-
-            var pramExecutable = (LocalPramDevelopmentRepository != null)
-                ? LocalPramDevelopmentRepository.Combine("artifacts/PramDistribution/pram.exe")
-                : platformsPackagePath.Combine("Editor/Unity.Build.Classic.Private/pram~/pram.exe");
+            var pramExecutable = PlatformsPackagePath.Combine("Editor/Unity.Build.Classic.Private/pram~/pram.exe");
             var platformAssembliesPaths = string.Join(" ", assemblyLoadPaths.Select(x => $"--assembly-load-path {x.InQuotes()}"));
 
+            // Override executable and assembly load paths if local repository is used
+            if (LocalPramDevelopmentRepository != null)
+            {
+                pramExecutable = LocalPramDevelopmentRepository.Combine("artifacts/PramDistribution/pram.exe");
+                platformAssembliesPaths = "";
+            }
+
             var trace = Trace ? "--trace --very-verbose" : "";
+            var monoExe = $"{EditorApplication.applicationContentsPath}/MonoBleedingEdge/bin/mono{HostPlatform.Exe}";
             var result = Shell.Execute(new Shell.ExecuteArgs
             {
-                Executable = Paths.MonoBleedingEdgeCLI,
+                Executable = monoExe,
                 Arguments = $"{pramExecutable.InQuotes()} {trace} {platformAssembliesPaths} {args.InQuotes().SeparateWithSpace()}",
                 EnvVars = environment
             });

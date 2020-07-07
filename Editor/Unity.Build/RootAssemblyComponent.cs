@@ -14,26 +14,6 @@ namespace Unity.Build
         /// assembly determines what other assemblies will be pulled in for the build.
         /// </summary>
         [CreateProperty]
-#if UNITY_2020_1_OR_NEWER
-        public LazyLoadReference<AssemblyDefinitionAsset> RootAssembly
-        {
-            get => m_RootAssembly;
-            set
-            {
-                m_RootAssembly = value;
-            }
-        }
-        LazyLoadReference<AssemblyDefinitionAsset> m_RootAssembly;
-#else
-        public AssemblyDefinitionAsset RootAssembly
-        {
-            get => m_RootAssembly;
-            set
-            {
-                m_RootAssembly = value;
-            }
-        }
-        AssemblyDefinitionAsset m_RootAssembly;
-#endif
+        public LazyLoadReference<AssemblyDefinitionAsset> RootAssembly { get; set; }
     }
 }

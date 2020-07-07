@@ -4,10 +4,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2020-07-07
+
+### Changed
+- Updated `com.unity.properties` package version to `1.3.1-preview`.
+- Updated `com.unity.properties.ui` package version to `1.3.1-preview`.
+- Updated `com.unity.serialization` package version to `1.3.1-preview`.
+
+### Fixed
+- Compilation fixes for Unity 2020.2.0a17 or newer.
+
+### Removed
+- Removed obsolete code that expired on 2020-07-01.
+- Removed obsolete assembly `Unity.Build.Common`. Types have been merged in `Unity.Build`, but are still in `Unity.Build.Common` namespace.
+
 ## [0.5.0] - 2020-06-08
 
 ### Changed
 - Tiny build specific classes moved from `Unity.Platforms` to `Unity.Build.DotsRuntime`.
+
+### Fixed
+- Fix issue where ClassicBuildProfile accidentally would pick up a wrong pipeline used for testing purposes.
 
 ## [0.4.1] - 2020-05-27
 

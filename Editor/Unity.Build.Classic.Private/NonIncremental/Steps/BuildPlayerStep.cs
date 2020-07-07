@@ -58,15 +58,8 @@ namespace Unity.Build.Classic.Private
                 buildPlayerOptions.options |= customizer.ProvideBuildOptions();
 
             var extraScriptingDefines = classicSharedData.Customizers.SelectMany(c => c.ProvidePlayerScriptingDefines()).ToArray();
-#if UNITY_2020_1_OR_NEWER
             buildPlayerOptions.extraScriptingDefines = extraScriptingDefines;
-#else
-            if (extraScriptingDefines.Length > 0)
-            {
-                return context.Failure("Your build is using player scripting defines, this Unity version doesn't support them, please use Unity version 2020.1 or higher. Defines used:\n" +
-                    string.Join("\n", extraScriptingDefines));
-            }
-#endif
+
             var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
             context.SetValue(report);
 

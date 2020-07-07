@@ -63,19 +63,19 @@ namespace Unity.Build.SlimPlayerRuntime
 
         private static Object Load(string path, System.Type systemTypeInstance)
         {
-            return ResourcesBundle.LoadAsset(path, systemTypeInstance);
+            return ResourcesBundle.LoadAsset(path.ToLower(), systemTypeInstance);
         }
 
         private static Object[] LoadAll(string path, System.Type systemTypeInstance)
         {
             if (string.IsNullOrEmpty(path))
                 return ResourcesBundle.LoadAllAssets(systemTypeInstance);
-            return ResourcesBundle.LoadAssetWithSubAssets(path, systemTypeInstance);
+            return ResourcesBundle.LoadAssetWithSubAssets(path.ToLower(), systemTypeInstance);
         }
 
         private static ResourceRequest LoadAsync(string path, System.Type systemTypeInstance)
         {
-            return ResourcesBundle.LoadAssetAsync(path, systemTypeInstance);
+            return ResourcesBundle.LoadAssetAsync(path.ToLower(), systemTypeInstance);
         }
 
         private static Object[] FindObjectsOfTypeAll(System.Type systemTypeInstance)

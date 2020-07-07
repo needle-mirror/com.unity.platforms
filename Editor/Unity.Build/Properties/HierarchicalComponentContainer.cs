@@ -4,10 +4,7 @@ using System.Linq;
 using Unity.Properties;
 using Unity.Properties.Editor;
 using UnityEditor;
-
-#if UNITY_2020_1_OR_NEWER
 using UnityEngine;
-#endif
 
 namespace Unity.Build
 {
@@ -20,11 +17,7 @@ namespace Unity.Build
     public abstract class HierarchicalComponentContainer<TContainer, TComponent> : ScriptableObjectPropertyContainer<TContainer>
         where TContainer : HierarchicalComponentContainer<TContainer, TComponent>
     {
-#if UNITY_2020_1_OR_NEWER
         [CreateProperty] internal readonly List<LazyLoadReference<TContainer>> Dependencies = new List<LazyLoadReference<TContainer>>();
-#else
-        [CreateProperty] internal readonly List<TContainer> Dependencies = new List<TContainer>();
-#endif
         [CreateProperty] internal readonly List<TComponent> Components = new List<TComponent>();
 
         /// <summary>
@@ -131,11 +124,7 @@ namespace Unity.Build
 
             for (var i = 0; i < Dependencies.Count; ++i)
             {
-#if UNITY_2020_1_OR_NEWER
                 var dependency = Dependencies[i].asset;
-#else
-                var dependency = Dependencies[i];
-#endif
                 if (dependency == null || !dependency)
                 {
                     continue;
@@ -379,11 +368,7 @@ namespace Unity.Build
                 return false;
             }
 
-#if UNITY_2020_1_OR_NEWER
             Dependencies.Add(dependency.GetInstanceID());
-#else
-            Dependencies.Add(dependency);
-#endif
             return true;
         }
 
@@ -396,11 +381,7 @@ namespace Unity.Build
             var dependencies = new List<TContainer>();
             for (var i = 0; i < Dependencies.Count; ++i)
             {
-#if UNITY_2020_1_OR_NEWER
                 var dependency = Dependencies[i].asset;
-#else
-                var dependency = Dependencies[i];
-#endif
                 if (dependency == null || !dependency || dependency == this)
                 {
                     continue;
@@ -421,11 +402,7 @@ namespace Unity.Build
             {
                 throw new ArgumentNullException(nameof(dependency));
             }
-#if UNITY_2020_1_OR_NEWER
             return Dependencies.Remove(dependency.GetInstanceID());
-#else
-            return Dependencies.Remove(dependency);
-#endif
         }
 
         /// <summary>
