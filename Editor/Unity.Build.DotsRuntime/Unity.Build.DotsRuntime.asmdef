@@ -3,7 +3,8 @@
     "references": [
         "Unity.Build",
         "Unity.Serialization",
-        "Unity.Serialization.Properties"
+        "Unity.Serialization.Properties",
+        "Unity.Properties"
     ],
     "includePlatforms": [
         "Editor"

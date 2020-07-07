@@ -4,6 +4,7 @@
 [assembly: InternalsVisibleTo("Unity.Build.Editor")]
 [assembly: InternalsVisibleTo("Unity.Build.Internals")]
 [assembly: InternalsVisibleTo("Unity.Build.Tests")]
+[assembly: InternalsVisibleTo("Unity.Build.DotsRuntime")]
 
 // For ICustomBuildComponentConstructor
 [assembly: InternalsVisibleTo("Unity.Build.Android")]
