@@ -82,8 +82,6 @@ namespace Unity.Build.DotsRuntime
         public abstract string ExecutableExtension { get; }
         public abstract string BeeTargetName { get; }
         public abstract bool UsesIL2CPP { get; }
-
-        public virtual bool SupportsManagedDebugging => true;
         public virtual bool HideInBuildTargetPopup => false;
         protected virtual bool IsDefaultBuildTarget => false;
 
