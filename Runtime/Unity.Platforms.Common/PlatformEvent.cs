@@ -40,8 +40,14 @@ namespace Unity.Platforms
 
         public static void SendSuspendResumeEvent(object sender, SuspendResumeEvent evt)
         {
+#if UNITY_DOTSRUNTIME
+            Unity.Core.TempMemoryScope.EnterScope();
+#endif
             var handler = OnSuspendResume;
             handler?.Invoke(sender, evt);
+#if UNITY_DOTSRUNTIME
+            Unity.Core.TempMemoryScope.ExitScope();
+#endif
         }
 
         public static void SendQuitEvent(object sender, QuitEvent evt)
