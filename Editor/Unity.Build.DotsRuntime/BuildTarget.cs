@@ -82,6 +82,8 @@ namespace Unity.Build.DotsRuntime
         public abstract string ExecutableExtension { get; }
         public abstract string BeeTargetName { get; }
         public abstract bool UsesIL2CPP { get; }
+
+        public virtual bool SupportsManagedDebugging => true;
         public virtual bool HideInBuildTargetPopup => false;
         protected virtual bool IsDefaultBuildTarget => false;
 
@@ -121,14 +123,24 @@ namespace Unity.Build.DotsRuntime
 
         public virtual void WriteBuildConfiguration(BuildContext context, string path)
         {
-            var components = new List<IBuildComponent>();
+            var realComponents = new List<IBuildComponent>();
+            var defaultComponents = new List<IBuildComponent>();
 
             foreach (var c in UsedComponents)
             {
-                components.Add(context.GetComponentOrDefault(c));
+                var component = context.GetComponentOrDefault(c);
+                if (context.HasComponent(c))
+                {
+                    realComponents.Add(component);
+                }
+                else
+                {
+                    defaultComponents.Add(component);
+                }
             }
 
-            var json = JsonSerialization.ToJson(components.ToArray());
+            var components = new IBuildComponent[][] { realComponents.ToArray(), defaultComponents.ToArray() };
+            var json = JsonSerialization.ToJson(components);
             File.WriteAllText(Path.Combine(path, "buildconfiguration.json"), json);
         }
     }
