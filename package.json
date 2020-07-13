@@ -1,7 +1,7 @@
 {
   "name": "com.unity.platforms",
   "displayName": "Platforms",
-  "version": "0.7.0-preview.8",
+  "version": "0.7.0-preview.9",
   "unity": "2020.1",
   "unityRelease": "0b9",
   "description": "Provides platform and build API foundation used by other platform packages.",
@@ -22,6 +22,6 @@
   "repository": {
     "url": "https://github.com/Unity-Technologies/dots-platforms.git",
     "type": "git",
-    "revision": "4bb638c92858abd9ab2792dc7db8dfc11ff51f1c"
+    "revision": "c234e7a7cb2fc112a202fb4d146174b0f2848189"
   }
 }
