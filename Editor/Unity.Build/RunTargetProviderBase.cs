@@ -1,5 +1,4 @@
-﻿#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-using System.Linq;
+﻿using System.Linq;
 
 namespace Unity.Build
 {
@@ -26,4 +25,3 @@ namespace Unity.Build
         }
     }
 }
-#endif

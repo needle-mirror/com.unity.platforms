@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Bee.Core.Stevedore;
 using Unity.Build.Common;
+using Unity.Build.Internals;
 using Unity.Profiling;
 using UnityEditor;
 using UnityEngine;

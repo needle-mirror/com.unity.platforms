@@ -2,6 +2,7 @@
     "name": "Unity.Build.Classic.Private",
     "references": [
         "Unity.Build",
+        "Unity.Build.Internals",
         "Unity.Build.Classic",
         "Unity.Build.Editor",
         "Unity.Properties",

@@ -1,30 +1,28 @@
-#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-using Bee.Tools;
-using NiceIO;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Build.Classic.Private
+namespace Unity.Build.Internals
 {
     internal class Pram : RunTargetProviderBase
     {
         // Local pram development setup - set to machine local directory to quickly iterate on pram features.
-        private static readonly NPath LocalPramDevelopmentRepository = null;
+        private static readonly string LocalPramDevelopmentRepository = null;
         // Enable tracing
         public static bool Trace { get; set; } = false;
 
-        private IReadOnlyDictionary<string, NPath> PlatformAssemblyLoadPath { get; }
+        private IReadOnlyDictionary<string, string> PlatformAssemblyLoadPath { get; }
         private IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Environment { get; }
 
-        private NPath PlatformsPackagePath { get; } = UnityEditor.PackageManager.PackageInfo.FindForAssetPath("Packages/com.unity.platforms").resolvedPath;
+        private string PlatformsPackagePath { get; } = UnityEditor.PackageManager.PackageInfo.FindForAssetPath("Packages/com.unity.platforms").resolvedPath;
 
         public Pram()
         {
-            var platformAssemblyLoadPath = new Dictionary<string, NPath>();
+            var platformAssemblyLoadPath = new Dictionary<string, string>();
             var environment = new Dictionary<string, IReadOnlyDictionary<string, string>>();
 
             var plugins = TypeCacheHelper.ConstructTypesDerivedFrom<PramPlatformPlugin>();
@@ -46,8 +44,8 @@ namespace Unity.Build.Classic.Private
 
         public RunTargetBase[] Discover(params string[] providers) =>  QueryTargets("env-detect", providers);
 
-        public void Deploy(string provider, string environmentId, string applicationId, NPath path) =>
-            ExecuteEnvironmentCommand(provider, "app-deploy", environmentId, applicationId, path.InQuotes());
+        public void Deploy(string provider, string environmentId, string applicationId, string path) =>
+            ExecuteEnvironmentCommand(provider, "app-deploy", environmentId, applicationId, $"\"{path}\"");
 
         public void Start(string provider, string environmentId, string applicationId) =>
             ExecuteEnvironmentCommand(provider, "app-start-detached", environmentId, applicationId);
@@ -95,32 +93,42 @@ namespace Unity.Build.Classic.Private
                 .SelectMany(x => x.Value)
                 .ToDictionary(x => x.Key, x => x.Value);
 
-            var pramExecutable = PlatformsPackagePath.Combine("Editor/Unity.Build.Classic.Private/pram~/pram.exe");
-            var platformAssembliesPaths = string.Join(" ", assemblyLoadPaths.Select(x => $"--assembly-load-path {x.InQuotes()}"));
+            var pramExecutable = Path.Combine(PlatformsPackagePath, "Editor/Unity.Build.Internals/pram~/pram.exe");
+            var platformAssembliesPaths = string.Join(" ", assemblyLoadPaths.Select(x => $"--assembly-load-path \"{x}\""));
 
             // Override executable and assembly load paths if local repository is used
             if (LocalPramDevelopmentRepository != null)
             {
-                pramExecutable = LocalPramDevelopmentRepository.Combine("artifacts/PramDistribution/pram.exe");
+                pramExecutable = $"\"{Path.Combine(LocalPramDevelopmentRepository, "artifacts/PramDistribution/pram.exe")}\"";
                 platformAssembliesPaths = "";
             }
 
             var trace = Trace ? "--trace --very-verbose" : "";
-            var monoExe = $"{EditorApplication.applicationContentsPath}/MonoBleedingEdge/bin/mono{HostPlatform.Exe}";
-            var result = Shell.Execute(new Shell.ExecuteArgs
+#if UNITY_EDITOR_WIN
+            var exe = ".exe";
+#elif UNITY_EDITOR_OSX
+            var exe = "";
+#else
+            var exe = "";
+#endif            
+            var monoExe = $"{EditorApplication.applicationContentsPath}/MonoBleedingEdge/bin/mono{exe}";
+            var arguments = new List<string> { $"\"{pramExecutable}\"", trace, platformAssembliesPaths };
+            arguments.AddRange(args.Select(arg => $"\"{arg}\""));
+            var result = ShellProcess.Run(new ShellProcessArguments()
             {
+                ThrowOnError = false,
+                AnyOutputToErrorIsAnError = false,
                 Executable = monoExe,
-                Arguments = $"{pramExecutable.InQuotes()} {trace} {platformAssembliesPaths} {args.InQuotes().SeparateWithSpace()}",
-                EnvVars = environment
+                Arguments = arguments.ToArray(),
+                EnvironmentVariables = environment
             });
 
             if (Trace)
-                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "{0}", result.StdErr);
+                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "{0}", result.ErrorOutput);
 
-            if (!result.Success)
-                throw new Exception($"Failed {result}\n{result.StdErr}");
-            return result.StdOut;
+            if (!result.Succeeded)
+                throw new Exception($"Failed {result}\n{result.ErrorOutput}");
+            return result.FullOutput;
         }
     }
 }
-#endif

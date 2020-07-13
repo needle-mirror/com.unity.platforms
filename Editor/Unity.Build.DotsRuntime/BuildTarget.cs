@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Unity.Build.Internals;
 using Unity.Serialization.Json;
 
 namespace Unity.Build.DotsRuntime
@@ -113,7 +114,7 @@ namespace Unity.Build.DotsRuntime
         }
 
         // this method requires default implementation to resolve problem with Samples project
-        public virtual ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
+        internal virtual ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
         {
             throw new NotImplementedException();
         }

@@ -1,8 +1,7 @@
-#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Unity.Build.Classic.Private
+namespace Unity.Build.Internals
 {
     internal class PramRunTarget : RunTargetBase
     {
@@ -50,4 +49,3 @@ namespace Unity.Build.Classic.Private
         }
     }
 }
-#endif
