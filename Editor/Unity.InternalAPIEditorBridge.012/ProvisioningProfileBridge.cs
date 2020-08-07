@@ -21,7 +21,7 @@ namespace Unity.Build.Bridge
         internal static ProvisioningProfileBridge FindLocalProfileByUUID(string UUID, string[] searchPaths = null)
         {
             var profile = ProvisioningProfile.FindLocalProfileByUUID(UUID, searchPaths);
-            return new ProvisioningProfileBridge(profile);
+            return profile != null ? new ProvisioningProfileBridge(profile) : null;
         }
 
         internal string UUID => internalObject.UUID;

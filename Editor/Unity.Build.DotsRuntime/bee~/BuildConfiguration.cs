@@ -51,17 +51,46 @@ namespace Unity.Build.DotsRuntime
                                 continue;
                             }
                             var property = proptype.GetProperty(jo.Name);
-                            if (property != null)
+                            var field = proptype.GetField(jo.Name);
+                            var fieldType = property != null ? property.PropertyType : (field != null ? field.FieldType : null);
+                            if (fieldType == null)
                             {
-                                var val = jo.ToObject(property.PropertyType);
-                                property.SetValue(settingValue, jo.ToObject(property.PropertyType));
                                 continue;
                             }
-                            var field = proptype.GetField(jo.Name);
-                            if (field != null)
+                            Object fieldValue = null;
+                            if (!fieldType.IsArray)
                             {
-                                var val = jo.ToObject(field.FieldType);
-                                field.SetValue(settingValue, jo.ToObject(field.FieldType));
+                                if (fieldType == typeof(Version))
+                                {
+                                    // Newtonsoft JSON cannot deserialize System.Version type from string automatically
+                                    fieldValue = new Version(jo.ToObject<String>());
+                                }
+                                else
+                                {
+                                    fieldValue = jo.ToObject(fieldType);
+                                }
+                            }
+                            else
+                            {
+                                var proparray = jo.Value as JArray;
+                                if (proparray == null)
+                                {
+                                    continue;
+                                }
+                                var array = Array.CreateInstance(fieldType.GetElementType(), proparray.Count);
+                                for (int j = 0; j < proparray.Count; ++j)
+                                {
+                                    array.SetValue(proparray[j].ToObject(fieldType.GetElementType()), j);
+                                }
+                                fieldValue = array;
+                            }
+                            if (property != null)
+                            {
+                                property.SetValue(settingValue, fieldValue);
+                            }
+                            else
+                            {
+                                field.SetValue(settingValue, fieldValue);
                             }
                         }
                         settingProp.SetValue(null, settingValue);
