@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.8.0] - 2020-08-07
 ### Changed
 - Update platforms packages to 0.8.0-preview
+- Updated `com.unity.properties`, `com.unity.properties.ui` and `com.unity.serialization` to `1.4.3-preview`.
 
 ## [0.7.0] - 2020-07-13
 ### Changed
