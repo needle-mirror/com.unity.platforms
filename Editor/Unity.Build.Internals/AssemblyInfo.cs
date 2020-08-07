@@ -13,6 +13,7 @@
 [assembly: InternalsVisibleTo("Unity.Build.Windows.Classic")]
 [assembly: InternalsVisibleTo("Unity.Build.iOS")]
 [assembly: InternalsVisibleTo("Unity.Build.DotsRuntime")]
+[assembly: InternalsVisibleTo("Unity.Build.Desktop.DotsRuntime")]
 [assembly: InternalsVisibleTo("Unity.Build.iOS.DotsRuntime")]
 [assembly: InternalsVisibleTo("Unity.Build.Android.DotsRuntime")]
 [assembly: InternalsVisibleTo("Unity.Build.Linux.DotsRuntime")]

@@ -2,6 +2,7 @@
 [assembly: InternalsVisibleTo("Unity.Build.DotsRuntime.Tests")]
 [assembly: InternalsVisibleTo("Unity.Dots.TestRunner.Editor")]
 [assembly: InternalsVisibleTo("Unity.Entities.Runtime.Build")]
+[assembly: InternalsVisibleTo("Unity.Build.Desktop.DotsRuntime")]
 [assembly: InternalsVisibleTo("Unity.Build.Android.DotsRuntime")]
 [assembly: InternalsVisibleTo("Unity.Build.iOS.DotsRuntime")]
 [assembly: InternalsVisibleTo("Unity.Build.Linux.DotsRuntime")]
