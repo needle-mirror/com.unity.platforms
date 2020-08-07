@@ -1,7 +1,4 @@
-using Bee.NativeProgramSupport.Building;
-using System.Collections.Generic;
-using Unity.BuildSystem.CSharpSupport;
-using Unity.BuildSystem.NativeProgramSupport;
+using Bee.NativeProgramSupport;
 
 namespace DotsBuildTargets
 {
