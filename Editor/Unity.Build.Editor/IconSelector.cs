@@ -78,7 +78,7 @@ namespace Unity.Build.Editor
             {
                 return null;
             }
-            return path;
+            return (new FileInfo(path)).GetRelativePath(new DirectoryInfo("."));
         }
 
         private bool LoadImage(string path)
