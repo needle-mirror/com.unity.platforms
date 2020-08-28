@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.Properties.Editor;
 using Unity.Properties.UI;
 using UnityEditor;
-using UnityEditor.Searcher;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.UIExtras;
 
 namespace Unity.Build.Editor
 {
@@ -14,14 +16,12 @@ namespace Unity.Build.Editor
     /// <typeparam name="T">Type to populate the searcher with.</typeparam>
     public abstract class TypeInspector<T> : Inspector<T>
     {
-        TextElement m_Text;
-        VisualElement m_HelpBox;
-        Label m_Message;
+        TextElement m_TextElement;
 
         /// <summary>
         /// The title displayed on the searcher window.
         /// </summary>
-        public virtual string SearcherTitle => $"Select {typeof(T).Name}";
+        public virtual string Title => $"Select {typeof(T).Name}";
 
         /// <summary>
         /// A function that returns whether or not the type should be filtered.
@@ -31,100 +31,98 @@ namespace Unity.Build.Editor
         /// <summary>
         /// A function that returns the display name of the type.
         /// </summary>
-        public virtual Func<Type, string> TypeNameResolver { get; }
+        public virtual Func<Type, string> TypeName { get; }
 
         /// <summary>
         /// A function that returns the display category name of the type.
         /// </summary>
-        public virtual Func<Type, string> TypeCategoryResolver { get; }
+        public virtual Func<Type, string> TypeCategory { get; }
 
         /// <summary>
-        /// Error message to display below the inspector as a help box.
+        /// A function that returns the display icon of the type.
         /// </summary>
-        public string ErrorMessage { get; set; }
+        public virtual Func<Type, Texture2D> TypeIcon { get; }
 
         public override VisualElement Build()
         {
-            var typeField = Assets.LoadVisualTreeAsset(nameof(TypeInspector<T>)).CloneTree();
-            typeField.AddStyleSheetAndVariant(nameof(TypeInspector<T>));
+            var root = Resources.TypeInspector.Clone();
 
-            var label = typeField.Q<Label>("label");
+            var label = root.Q<Label>("label");
             label.text = DisplayName;
 
-            var input = typeField.Q<VisualElement>("input");
-            input.RegisterCallback<MouseUpEvent>(mouseUpEvent =>
+            var input = root.Q<VisualElement>("input");
+            input.RegisterCallback<MouseDownEvent>(e =>
             {
-                var database = TypeSearcherDatabase.Populate<T>(TypeFilter, TypeNameResolver, TypeCategoryResolver);
-                var searcher = new Searcher(database, new AddTypeSearcherAdapter(SearcherTitle));
-                var position = input.worldBound.min + Vector2.up * (input.worldBound.height + 19f);
-                var alignment = new SearcherWindow.Alignment(SearcherWindow.Alignment.Vertical.Top, SearcherWindow.Alignment.Horizontal.Left);
-                SearcherWindow.Show(EditorWindow.focusedWindow, searcher, OnTypeSelected, position, null);
+                var items = new List<SearchView.Item>();
+                var types = TypeCache.GetTypesDerivedFrom<T>();
+                foreach (var type in types)
+                {
+                    if (type.IsAbstract || type.IsInterface ||
+                        type.HasAttribute<HideInInspector>() ||
+                        type.HasAttribute<ObsoleteAttribute>())
+                    {
+                        continue;
+                    }
+
+                    if (!TypeConstruction.CanBeConstructed(type))
+                    {
+                        continue;
+                    }
+
+                    if (TypeFilter != null && !TypeFilter(type))
+                    {
+                        continue;
+                    }
+
+                    var name = GetName(type);
+                    var category = GetCategory(type);
+                    items.Add(new SearchView.Item
+                    {
+                        Path = !string.IsNullOrEmpty(category) ? $"{category}/{name}" : name,
+                        Icon = GetIcon(type),
+                        Data = type
+                    });
+                }
+                items = items.OrderBy(item => item.Path).ToList();
+
+                SearchWindow searchWindow = SearchWindow.Create();
+                searchWindow.Title = Title;
+                searchWindow.Items = items;
+                searchWindow.OnSelection += item =>
+                {
+                    var type = (Type)item.Data;
+                    if (TypeConstruction.TryConstruct<T>(type, out var instance))
+                    {
+                        Target = instance;
+                        m_TextElement.text = GetName(type);
+                    }
+                };
+
+                var rect = EditorWindow.focusedWindow.position;
+                var button = input.worldBound;
+                searchWindow.position = new Rect(rect.x + button.x, rect.y + button.y + button.height, 230, 315);
+                searchWindow.ShowPopup();
+
+                e.StopPropagation();
             });
 
-            m_HelpBox = typeField.Q<VisualElement>("helpbox");
+            m_TextElement = input.Q<TextElement>("text");
+            m_TextElement.text = GetName(Target?.GetType());
 
-            var icon = m_HelpBox.Q<Image>("icon");
-            icon.image = EditorGUIUtility.IconContent("d_console.erroricon.sml").image;
-            icon.scaleMode = ScaleMode.ScaleToFit;
-
-            m_Message = m_HelpBox.Q<Label>("message");
-            if (!string.IsNullOrEmpty(ErrorMessage))
-            {
-                m_HelpBox.style.display = DisplayStyle.Flex;
-                m_Message.text = ErrorMessage;
-            }
-            else
-            {
-                m_HelpBox.style.display = DisplayStyle.None;
-                m_Message.text = string.Empty;
-            }
-
-            var type = Target?.GetType();
-            if (type != null)
-            {
-                m_Text = typeField.Q<TextElement>("text");
-                m_Text.text = TypeNameResolver?.Invoke(type) ?? type.Name;
-            }
-
-            return typeField;
+            return root;
         }
 
         public override void Update()
         {
-            var type = Target?.GetType();
-            if (type != null)
+            var name = GetName(Target?.GetType());
+            if (m_TextElement.text != name)
             {
-                var text = TypeNameResolver?.Invoke(type) ?? type.Name;
-                if (m_Text.text != text)
-                {
-                    m_Text.text = TypeNameResolver?.Invoke(type) ?? type.Name;
-                    NotifyChanged();
-                }
-            }
-
-            if ((m_Message.text ?? string.Empty) != (ErrorMessage ?? string.Empty))
-            {
-                if (!string.IsNullOrEmpty(ErrorMessage))
-                {
-                    m_HelpBox.style.display = DisplayStyle.Flex;
-                    m_Message.text = ErrorMessage;
-                }
-                else
-                {
-                    m_HelpBox.style.display = DisplayStyle.None;
-                    m_Message.text = string.Empty;
-                }
+                m_TextElement.text = name;
             }
         }
 
-        bool OnTypeSelected(SearcherItem item)
-        {
-            if (item is TypeSearcherItem typeItem && TypeConstruction.TryConstruct<T>(typeItem.Type, out var instance))
-            {
-                Target = instance;
-                return true;
-            }
-            return false;
-        }
+        string GetName(Type type) => type != null ? TypeName?.Invoke(type) ?? type.Name : string.Empty;
+        string GetCategory(Type type) => type != null ? TypeCategory?.Invoke(type) ?? type.Namespace ?? "Global" : string.Empty;
+        Texture2D GetIcon(Type type) => type != null ? TypeIcon?.Invoke(type) : null;
     }
 }

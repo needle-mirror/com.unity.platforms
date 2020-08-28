@@ -32,7 +32,7 @@ namespace Unity.Build.Tests
         [Test]
         public void CanBuild_WithComponents_IsTrue()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(pipeline.CanBuild(config).Result, Is.True);
         }
@@ -117,7 +117,7 @@ namespace Unity.Build.Tests
         [Test]
         public void Build_WithComponents_Succeeds()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(pipeline.CanBuild(config).Result, Is.True);
             Assert.That(pipeline.Build(config).Succeeded, Is.True);
@@ -203,7 +203,7 @@ namespace Unity.Build.Tests
         [Test]
         public void BuildIncremental_WithComponents_Succeeds()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(pipeline.CanBuild(config).Result, Is.True);
             using (var process = pipeline.BuildIncremental(config))
@@ -310,7 +310,7 @@ namespace Unity.Build.Tests
         [Test]
         public void CanRun_WithComponents_IsTrue()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(pipeline.Build(config).Succeeded, Is.True);
             Assert.That(pipeline.CanRun(config).Result, Is.True);
@@ -431,7 +431,7 @@ namespace Unity.Build.Tests
         [Test]
         public void Run_WithComponents_Succeeds()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance();
             Assert.That(pipeline.Build(config).Succeeded, Is.True);
             Assert.That(pipeline.CanRun(config).Result, Is.True);

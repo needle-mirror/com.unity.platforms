@@ -85,7 +85,7 @@ namespace Unity.Build.Tests
         }
 
         [HideInInspector]
-        protected class TestBuildPipelineWithComponents : TestBuildPipeline
+        protected class TestBuildPipelineWithUsedComponents : TestBuildPipeline
         {
             public override Type[] UsedComponents { get; } =
             {

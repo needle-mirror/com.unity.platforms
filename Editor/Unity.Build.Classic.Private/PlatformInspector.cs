@@ -3,14 +3,14 @@ using System;
 using System.Linq;
 using Unity.Build.Editor;
 using Unity.Properties.Editor;
-using Unity.Properties.UI;
-using UnityEngine.UIElements;
+using UnityEngine;
+using Resources = Unity.Build.Editor.Resources;
 
 namespace Unity.Build.Classic.Private
 {
     sealed class PlatformInspector : TypeInspector<Platform>
     {
-        public override string SearcherTitle => "Select Platform";
+        public override string Title => "Platform";
         public override Func<Type, bool> TypeFilter => type =>
         {
             // If there is a pipeline that supports this platform, we want the platform to appear in the list.
@@ -21,47 +21,51 @@ namespace Unity.Build.Classic.Private
             // to inform users that they have to install a package to build for that platform.
             return KnownPlatforms.All.ContainsKey(type);
         };
-        public override Func<Type, string> TypeNameResolver => type => TypeConstruction.Construct<Platform>(type).DisplayName;
-        public override Func<Type, string> TypeCategoryResolver => type => null;
-    }
-
-    sealed class ClassicBuildProfileInspector : Inspector<ClassicBuildProfile>
-    {
-        public override VisualElement Build()
+        public override Func<Type, string> TypeName => type => TypeConstruction.Construct<Platform>(type).DisplayName;
+        public override Func<Type, string> TypeCategory => type => string.Empty;
+        public override Func<Type, Texture2D> TypeIcon => type =>
         {
-            var root = base.Build();
-            var platformElement = root.Q<VisualElement>("Platform");
-            if (platformElement == null)
+            if (type == typeof(WindowsPlatform) || type == typeof(MacOSXPlatform) || type == typeof(LinuxPlatform))
             {
-                return root;
+                return Resources.PlatformStandloneIcon;
             }
-
-            var inspectorProperty = platformElement.GetType().GetProperty("Inspector");
-            if (inspectorProperty == null)
+            else if (type == typeof(AndroidPlatform))
             {
-                return root;
+                return Resources.PlatformAndroidIcon;
             }
-
-            var platformInspector = inspectorProperty.GetValue(platformElement) as PlatformInspector;
-            if (platformInspector == null)
+            else if (type == typeof(IosPlatform))
             {
-                return root;
+                return Resources.PlatformIOSIcon;
             }
-
-            if (Target.Pipeline == null && Target.Platform != null)
+            else if (type == typeof(PS4Platform))
             {
-                if (KnownPlatforms.All.TryGetValue(Target.Platform.GetType(), out var packageName))
-                {
-                    platformInspector.ErrorMessage = $"Platform {Target.Platform.DisplayName} requires package '{packageName}' to be installed.";
-                }
-                else
-                {
-                    platformInspector.ErrorMessage = $"Platform {Target.Platform.DisplayName} requires a package to be installed.";
-                }
-                platformInspector.Update();
+                return Resources.PlatformPS4Icon;
             }
-
-            return root;
-        }
+            else if (type == typeof(SwitchPlatform))
+            {
+                return Resources.PlatformSwitchIcon;
+            }
+            else if (type == typeof(TvosPlatform))
+            {
+                return Resources.PlatformTVOSIcon;
+            }
+            else if (type == typeof(UniversalWindowsPlatform))
+            {
+                return Resources.PlatformUWPIcon;
+            }
+            else if (type == typeof(WebGLPlatform))
+            {
+                return Resources.PlatformWebGLIcon;
+            }
+            else if (type == typeof(XboxOnePlatform))
+            {
+                return Resources.PlatformXBoxOneIcon;
+            }
+            else if (type == typeof(StadiaPlatform))
+            {
+                return Resources.PlatformStadiaIcon;
+            }
+            return null;
+        };
     }
 }

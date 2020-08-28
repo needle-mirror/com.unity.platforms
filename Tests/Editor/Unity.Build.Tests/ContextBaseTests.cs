@@ -122,7 +122,7 @@ namespace Unity.Build.Tests
         [Test]
         public void HasComponent()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentA>());
             var context = new TestContextBase(pipeline, config);
             Assert.That(context.HasComponent<TestBuildComponentA>(), Is.True);
@@ -136,7 +136,7 @@ namespace Unity.Build.Tests
         [Test]
         public void IsComponentInherited()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var configB = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentB>());
             var configA = BuildConfiguration.CreateInstance(c =>
             {
@@ -155,9 +155,9 @@ namespace Unity.Build.Tests
         }
 
         [Test]
-        public void IsComponentOverridden()
+        public void IsComponentOverriding()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var configB = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentA>());
             var configA = BuildConfiguration.CreateInstance(c =>
             {
@@ -167,19 +167,19 @@ namespace Unity.Build.Tests
             });
             var context = new TestContextBase(pipeline, configA);
 
-            Assert.That(context.IsComponentOverridden<TestBuildComponentA>(), Is.True);
-            Assert.That(context.IsComponentOverridden<TestBuildComponentB>(), Is.False);
-            Assert.Throws<InvalidOperationException>(() => context.IsComponentOverridden<TestBuildComponentC>());
+            Assert.That(context.IsComponentOverriding<TestBuildComponentA>(), Is.True);
+            Assert.That(context.IsComponentOverriding<TestBuildComponentB>(), Is.False);
+            Assert.Throws<InvalidOperationException>(() => context.IsComponentOverriding<TestBuildComponentC>());
 
-            Assert.Throws<ArgumentNullException>(() => context.IsComponentOverridden(null));
-            Assert.Throws<InvalidOperationException>(() => context.IsComponentOverridden(typeof(object)));
-            Assert.Throws<InvalidOperationException>(() => context.IsComponentOverridden(typeof(TestBuildComponentInvalid)));
+            Assert.Throws<ArgumentNullException>(() => context.IsComponentOverriding(null));
+            Assert.Throws<InvalidOperationException>(() => context.IsComponentOverriding(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => context.IsComponentOverriding(typeof(TestBuildComponentInvalid)));
         }
 
         [Test]
         public void TryGetComponent()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentA>());
             var context = new TestContextBase(pipeline, config);
             Assert.That(context.TryGetComponent<TestBuildComponentA>(out _), Is.True);
@@ -193,7 +193,7 @@ namespace Unity.Build.Tests
         [Test]
         public void GetComponentOrDefault()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var config = BuildConfiguration.CreateInstance();
             var context = new TestContextBase(pipeline, config);
             Assert.That(context.HasComponent<TestBuildComponentA>(), Is.False);
@@ -207,7 +207,7 @@ namespace Unity.Build.Tests
         [Test]
         public void GetComponents()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var configB = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentB>());
             var configA = BuildConfiguration.CreateInstance(c =>
             {
@@ -227,7 +227,7 @@ namespace Unity.Build.Tests
         [Test]
         public void GetComponents_WithType()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var configB = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentB>());
             var configA = BuildConfiguration.CreateInstance(c =>
             {
@@ -248,7 +248,7 @@ namespace Unity.Build.Tests
         [Test]
         public void GetComponentTypes()
         {
-            var pipeline = new TestBuildPipelineWithComponents();
+            var pipeline = new TestBuildPipelineWithUsedComponents();
             var configB = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildComponentB>());
             var configA = BuildConfiguration.CreateInstance(c =>
             {
@@ -257,9 +257,6 @@ namespace Unity.Build.Tests
             });
             var context = new TestContextBase(pipeline, configA);
             Assert.That(context.GetComponentTypes(), Is.EquivalentTo(new[] { typeof(TestBuildComponentA), typeof(TestBuildComponentB) }));
-
-            configA.SetComponent<TestBuildComponentC>();
-            Assert.Throws<InvalidOperationException>(() => context.GetComponentTypes());
         }
     }
 }

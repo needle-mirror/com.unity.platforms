@@ -2,11 +2,11 @@
     "name": "Unity.Build.Editor",
     "references": [
         "Unity.Build",
+        "Unity.InternalAPIEngineBridge.012",
         "Unity.Properties",
         "Unity.Properties.Editor",
         "Unity.Properties.UI",
         "Unity.Properties.UI.Editor",
-        "Unity.Searcher.Editor",
         "Unity.Serialization"
     ],
     "includePlatforms": [

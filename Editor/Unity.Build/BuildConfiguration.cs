@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace Unity.Build
 {
@@ -17,6 +18,22 @@ namespace Unity.Build
         /// </summary>
         /// <returns>The build pipeline if found, otherwise <see langword="null"/>.</returns>
         public BuildPipelineBase GetBuildPipeline() => TryGetComponent<IBuildPipelineComponent>(out var component) ? component.Pipeline : null;
+
+        /// <summary>
+        /// Determine if component is used by the build pipeline of this build configuration.
+        /// Returns <see langword="false"/> if this build configuration does not have a build pipeline.
+        /// </summary>
+        /// <param name="type">The component type.</param>
+        /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentUsed(Type type) => GetBuildPipeline()?.IsComponentUsed(type) ?? false;
+
+        /// <summary>
+        /// Determine if component is used by the build pipeline of this build configuration.
+        /// Returns <see langword="false"/> if this build configuration does not have a build pipeline.
+        /// </summary>
+        /// <typeparam name="T">The component type.</typeparam>
+        /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentUsed<T>() where T : IBuildComponent => IsComponentUsed(typeof(T));
 
         /// <summary>
         /// Determine if the build pipeline of this build configuration can build.

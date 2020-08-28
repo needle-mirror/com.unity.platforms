@@ -2,59 +2,40 @@ using NUnit.Framework;
 using System;
 using Bee.Core;
 using Unity.Build.Classic.Private;
-using Unity.Build.RealPlatform;
-using Unity.Build.RealPlatform.Classic;
+using Unity.Build.MockPlatform;
+using Unity.Build.MockPlatform.Classic;
 using UnityEditor;
+using UnityEngine;
 
-
-namespace Unity.Build.RealPlatform.Classic
+namespace Unity.Build.MockPlatform
 {
-    public class RealPlatform : Platform
+    class TestPlatformClassicNonIncrementalPipeline_WrongNamespace : ClassicNonIncrementalPipelineBase
     {
-        public override bool HasPosix => false;
-
-        public static RealPlatform Instance = new RealPlatform();
-    }
-
-    class RealPlatformClassicNonIncrementalPipeline : ClassicNonIncrementalPipelineBase
-    {
-        protected override RunResult OnRun(RunContext context)
-        {
-            throw new NotImplementedException();
-        }
-
+        protected override RunResult OnRun(RunContext context) => throw new NotImplementedException();
         protected override BuildTarget BuildTarget { get; } = BuildTarget.NoTarget;
-        public override Platform Platform { get; } = RealPlatform.Instance;
+        public override Platform Platform { get; } = Classic.MockPlatform.Instance;
     }
 }
 
-namespace Unity.Build.RealPlatform
+namespace Unity.Build.MockPlatform.Classic
 {
-    class RealPlatformClassicNonIncrementalPipelineWrongNamespace : ClassicNonIncrementalPipelineBase
+    [HideInInspector]
+    class MockPlatform : Platform
     {
-        protected override RunResult OnRun(RunContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public override bool HasPosix => false;
+        public static MockPlatform Instance = new MockPlatform();
+    }
 
+    class TestPlatformClassicNonIncrementalPipeline : ClassicNonIncrementalPipelineBase
+    {
+        protected override RunResult OnRun(RunContext context) => throw new NotImplementedException();
         protected override BuildTarget BuildTarget { get; } = BuildTarget.NoTarget;
-        public override Platform Platform { get; } = RealPlatform.Classic.RealPlatform.Instance;
+        public override Platform Platform { get; } = MockPlatform.Instance;
     }
 }
 
 namespace Unity.Build.Classic.Tests
 {
-    class FakeClassicNonIncrementalPipeline : ClassicNonIncrementalPipelineBase
-    {
-        protected override RunResult OnRun(RunContext context)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override BuildTarget BuildTarget { get; } = BuildTarget.NoTarget;
-        public override Platform Platform { get; } = RealPlatform.Classic.RealPlatform.Instance;
-    }
-
     /// <summary>
     /// BuildPipelineSelector should only pick pipelines from namespace Unity.Build.*Platform*.Classic
     /// If pipeline class namespace contains "Test" word, ignore it
@@ -65,12 +46,11 @@ namespace Unity.Build.Classic.Tests
         [Test]
         public void BuildPipelineSelectorTests()
         {
-            Assert.IsTrue(BuildPipelineSelector.IsBuildPipelineValid(new RealPlatformClassicNonIncrementalPipeline(), RealPlatform.Classic.RealPlatform.Instance));
-            Assert.IsFalse(BuildPipelineSelector.IsBuildPipelineValid(new FakeClassicNonIncrementalPipeline(), RealPlatform.Classic.RealPlatform.Instance));
-            Assert.IsFalse(BuildPipelineSelector.IsBuildPipelineValid(new RealPlatformClassicNonIncrementalPipelineWrongNamespace(), RealPlatform.Classic.RealPlatform.Instance));
+            Assert.IsTrue(BuildPipelineSelector.IsBuildPipelineValid(new TestPlatformClassicNonIncrementalPipeline(), MockPlatform.Classic.MockPlatform.Instance));
+            Assert.IsFalse(BuildPipelineSelector.IsBuildPipelineValid(new TestPlatformClassicNonIncrementalPipeline_WrongNamespace(), MockPlatform.Classic.MockPlatform.Instance));
 
             var selector = new BuildPipelineSelector();
-            Assert.AreEqual(selector.SelectFor(RealPlatform.Classic.RealPlatform.Instance, false).GetType(), typeof(RealPlatformClassicNonIncrementalPipeline));
+            Assert.AreEqual(selector.SelectFor(MockPlatform.Classic.MockPlatform.Instance, false).GetType(), typeof(TestPlatformClassicNonIncrementalPipeline));
         }
     }
 }

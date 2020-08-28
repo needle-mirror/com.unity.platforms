@@ -20,6 +20,11 @@ namespace Unity.Build
         public object[] Values => m_Values.Values.ToArray();
 
         /// <summary>
+        /// List of build component types used by the build pipeline.
+        /// </summary>
+        public Type[] UsedComponents => BuildPipeline.UsedComponents;
+
+        /// <summary>
         /// The build configuration name.
         /// </summary>
         /// <returns>The build configuration name.</returns>
@@ -158,10 +163,11 @@ namespace Unity.Build
         /// </summary>
         /// <param name="type">The component type.</param>
         /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise</returns>
+        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
         public bool IsComponentOverridden(Type type)
         {
             CheckUsedComponentTypesAndThrowIfMissing(type);
-            return BuildConfiguration.IsComponentOverridden(type);
+            return BuildConfiguration.IsComponentOverriding(type);
         }
 
         /// <summary>
@@ -170,7 +176,42 @@ namespace Unity.Build
         /// </summary>
         /// <typeparam name="T">The component type.</typeparam>
         /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise</returns>
-        public bool IsComponentOverridden<T>() where T : IBuildComponent => IsComponentOverridden(typeof(T));
+        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
+        public bool IsComponentOverridden<T>() where T : IBuildComponent => IsComponentOverriding(typeof(T));
+
+        /// <summary>
+        /// Determines if component overrides a dependency.
+        /// Throws if component type is not in UsedComponents list.
+        /// </summary>
+        /// <param name="type">The component type.</param>
+        /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentOverriding(Type type)
+        {
+            CheckUsedComponentTypesAndThrowIfMissing(type);
+            return BuildConfiguration.IsComponentOverriding(type);
+        }
+
+        /// <summary>
+        /// Determines if component overrides a dependency.
+        /// Throws if component type is not in UsedComponents list.
+        /// </summary>
+        /// <typeparam name="T">The component type.</typeparam>
+        /// <returns><see langword="true"/> if component overrides a dependency, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentOverriding<T>() where T : IBuildComponent => IsComponentOverriding(typeof(T));
+
+        /// <summary>
+        /// Determine if component is used by the build pipeline.
+        /// </summary>
+        /// <param name="type">The component type.</param>
+        /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentUsed(Type type) => BuildPipeline.IsComponentUsed(type);
+
+        /// <summary>
+        /// Determine if component is used by the build pipeline.
+        /// </summary>
+        /// <typeparam name="T">The component type.</typeparam>
+        /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentUsed<T>() where T : IBuildComponent => IsComponentUsed(typeof(T));
 
         /// <summary>
         /// Try to get the value of a component type.
@@ -303,16 +344,11 @@ namespace Unity.Build
 
         /// <summary>
         /// Get a flatten list of all component types from this container and its dependencies.
-        /// Throws if a component type is not in UsedComponents list.
         /// </summary>
         /// <returns>List of component types.</returns>
         public IEnumerable<Type> GetComponentTypes()
         {
             var types = BuildConfiguration.GetComponentTypes();
-            foreach (var type in types)
-            {
-                CheckUsedComponentTypesAndThrowIfMissing(type);
-            }
             return types.Concat(m_Components.Keys).Distinct();
         }
 
@@ -395,11 +431,6 @@ namespace Unity.Build
         public BuildResult GetLastBuildResult() => BuildConfiguration.GetLastBuildResult();
 
         /// <summary>
-        /// Provides a mechanism for releasing unmanaged resources.
-        /// </summary>
-        public virtual void Dispose() { }
-
-        /// <summary>
         /// Get the output build directory override used in this build context.
         /// The output build directory can be overridden using a <see cref="OutputBuildDirectory"/> component.
         /// </summary>
@@ -408,6 +439,11 @@ namespace Unity.Build
         {
             return BuildPipeline.GetOutputBuildDirectory(BuildConfiguration).ToString();
         }
+
+        /// <summary>
+        /// Provides a mechanism for releasing unmanaged resources.
+        /// </summary>
+        public virtual void Dispose() { }
 
         internal ContextBase() { }
 
@@ -427,9 +463,10 @@ namespace Unity.Build
                 throw new ArgumentNullException(nameof(type));
             }
 
-            if (!BuildPipeline.UsedComponents.Contains(type))
+            // 'type' must be in UsedComponents, or be derived from any of them
+            if (!BuildPipeline.IsComponentUsed(type))
             {
-                throw new InvalidOperationException($"Type '{type.Name}' is missing in build pipeline '{BuildPipeline.GetType().Name}' {nameof(BuildPipeline.UsedComponents)} list.");
+                throw new InvalidOperationException($"Type '{type.Name}' is missing / is not derived from any type in build pipeline '{BuildPipeline.GetType().Name}' {nameof(BuildPipeline.UsedComponents)} list.");
             }
         }
     }

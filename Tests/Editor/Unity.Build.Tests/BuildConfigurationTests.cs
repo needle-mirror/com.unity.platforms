@@ -1,8 +1,10 @@
 ﻿using NUnit.Framework;
+using System;
 using System.IO;
 using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters;
 using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Build.Tests
 {
@@ -29,6 +31,21 @@ namespace Unity.Build.Tests
         {
             var config = BuildConfiguration.CreateInstance();
             Assert.That(config.GetBuildPipeline(), Is.Null);
+        }
+
+        [Test]
+        public void IsComponentUsed()
+        {
+            var pipeline = new TestBuildPipelineWithUsedComponents();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+
+            Assert.That(config.IsComponentUsed<TestBuildComponentA>(), Is.True);
+            Assert.That(config.IsComponentUsed<TestBuildComponentB>(), Is.True);
+            Assert.That(config.IsComponentUsed<TestBuildComponentC>(), Is.False);
+
+            Assert.Throws<ArgumentNullException>(() => config.IsComponentUsed(null));
+            Assert.Throws<InvalidOperationException>(() => config.IsComponentUsed(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => config.IsComponentUsed(typeof(TestBuildComponentInvalid)));
         }
 
         [Test]
@@ -267,6 +284,7 @@ namespace Unity.Build.Tests
             JsonSerialization.RemoveGlobalMigration(migration);
         }
 
+        [HideInInspector]
         class ComponentConstruct : IBuildComponent, ICustomBuildComponentConstructor
         {
             public int Integer;

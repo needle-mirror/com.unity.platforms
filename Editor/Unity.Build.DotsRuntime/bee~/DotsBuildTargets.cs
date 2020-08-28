@@ -24,5 +24,7 @@ namespace DotsBuildTargets
         // see comment in https://github.com/Unity-Technologies/dots/blob/master/TinySamples/Packages/com.unity.dots.runtime/bee%7E/BuildProgramSources/DotsConfigs.cs
         // DotsConfigs.MakeConfigs() method for details.
         public virtual DotsBuildSystemTarget ComplementaryTarget => null;
+
+        public virtual bool ValidateManagedDebugging(bool mdb) { return mdb; }
     }
 }

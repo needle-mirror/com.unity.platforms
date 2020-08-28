@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Properties;
@@ -75,6 +76,7 @@ namespace Unity.Build
         /// Determine if a <see cref="Type"/> component overrides a dependency.
         /// </summary>
         /// <param name="type"><see cref="Type"/> of the component.</param>
+        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
         public bool IsComponentOverridden(Type type)
         {
             CheckComponentTypeAndThrowIfInvalid(type);
@@ -85,7 +87,26 @@ namespace Unity.Build
         /// Determine if a <typeparamref name="T"/> component overrides a dependency.
         /// </summary>
         /// <typeparam name="T">Type of the component.</typeparam>
-        public bool IsComponentOverridden<T>() where T : TComponent => IsComponentOverridden(typeof(T));
+        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
+        public bool IsComponentOverridden<T>() where T : TComponent => IsComponentOverriding(typeof(T));
+
+        /// <summary>
+        /// Determines if component overrides a dependency.
+        /// </summary>
+        /// <param name="type">The component type.</param>
+        /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentOverriding(Type type)
+        {
+            CheckComponentTypeAndThrowIfInvalid(type);
+            return HasComponentOnSelf(type) && HasComponentOnDependency(type);
+        }
+
+        /// <summary>
+        /// Determines if component overrides a dependency.
+        /// </summary>
+        /// <typeparam name="T">The component type.</typeparam>
+        /// <returns><see langword="true"/> if component overrides a dependency, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentOverriding<T>() where T : TComponent => IsComponentOverriding(typeof(T));
 
         /// <summary>
         /// Get the value of a <see cref="Type"/> component.
@@ -194,6 +215,51 @@ namespace Unity.Build
         /// <typeparam name="T">Type of the component.</typeparam>
         /// <returns>The component value.</returns>
         public T GetComponentOrDefault<T>() where T : TComponent => (T)GetComponentOrDefault(typeof(T));
+
+        /// <summary>
+        /// Get the source container from which the component value is coming from.
+        /// </summary>
+        /// <param name="type">The component type.</param>
+        /// <param name="dependenciesOnly">If <see langword="true"/>, only look in dependencies, otherwise also look into this container.</param>
+        /// <returns>A container if component is found, <see langword="null"/> otherwise.</returns>
+        public TContainer GetComponentSource(Type type, bool dependenciesOnly = false)
+        {
+            CheckComponentTypeAndThrowIfInvalid(type);
+            if (!TryGetDerivedTypeFromBaseType(type, out type))
+            {
+                return null;
+            }
+
+            if (!dependenciesOnly && HasComponentOnSelf(type))
+            {
+                return (TContainer)this;
+            }
+
+            for (var i = Dependencies.Count - 1; i >= 0; --i)
+            {
+                var dependency = Dependencies[i].asset;
+                if (dependency == null || !dependency)
+                {
+                    continue;
+                }
+
+                var source = dependency.GetComponentSource(type, false);
+                if (source != null)
+                {
+                    return source;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get the source container from which the component value is coming from.
+        /// </summary>
+        /// <typeparam name="T">The component type.</typeparam>
+        /// <param name="dependenciesOnly">If <see langword="true"/>, only look in dependencies, otherwise also look into this container.</param>
+        /// <returns>A container if component is found, <see langword="null"/> otherwise.</returns>
+        public TContainer GetComponentSource<T>(bool dependenciesOnly = false) where T : TComponent => GetComponentSource(typeof(T), dependenciesOnly);
 
         /// <summary>
         /// Get a flatten list of all components recursively from this container and its dependencies.
@@ -451,13 +517,29 @@ namespace Unity.Build
             /// Determine if a <see cref="Type"/> component overrides a dependency.
             /// </summary>
             /// <param name="type"><see cref="Type"/> of the component.</param>
-            public bool IsComponentOverridden(Type type) => m_Container.IsComponentOverridden(type);
+            [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
+            public bool IsComponentOverridden(Type type) => m_Container.IsComponentOverriding(type);
 
             /// <summary>
             /// Determine if a <typeparamref name="T"/> component overrides a dependency.
             /// </summary>
             /// <typeparam name="T">Type of the component.</typeparam>
-            public bool IsComponentOverridden<T>() where T : TComponent => m_Container.IsComponentOverridden<T>();
+            [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
+            public bool IsComponentOverridden<T>() where T : TComponent => m_Container.IsComponentOverriding<T>();
+
+            /// <summary>
+            /// Determines if component overrides a dependency.
+            /// </summary>
+            /// <param name="type">The component type.</param>
+            /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise.</returns>
+            public bool IsComponentOverriding(Type type) => m_Container.IsComponentOverriding(type);
+
+            /// <summary>
+            /// Determines if component overrides a dependency.
+            /// </summary>
+            /// <typeparam name="T">The component type.</typeparam>
+            /// <returns><see langword="true"/> if component overrides a dependency, <see langword="false"/> otherwise.</returns>
+            public bool IsComponentOverriding<T>() where T : TComponent => m_Container.IsComponentOverriding<T>();
 
             /// <summary>
             /// Get the value of a <see cref="Type"/> component.
@@ -586,9 +668,9 @@ namespace Unity.Build
             }
         }
 
-        bool HasComponentOnSelf(Type type) => Components.Any(component => type.IsAssignableFrom(component.GetType()));
+        protected bool HasComponentOnSelf(Type type) => Components.Any(component => type.IsAssignableFrom(component.GetType()));
 
-        bool HasComponentOnDependency(Type type) => GetDependencies().Any(dependency => dependency.HasComponentOnSelf(type));
+        protected bool HasComponentOnDependency(Type type) => GetDependencies().Any(dependency => dependency.HasComponentOnSelf(type));
 
         bool TryGetDerivedTypeFromBaseType(Type baseType, out Type value)
         {
@@ -631,6 +713,8 @@ namespace Unity.Build
             return false;
         }
 
+        protected virtual void OnComponentConstruct(ref TComponent component) { }
+
         static TComponent CopyComponent(TComponent value)
         {
             var visitor = new CopyVisitor<TComponent>(ref value);
@@ -645,8 +729,6 @@ namespace Unity.Build
             result = visitor.Result;
         }
 
-        protected virtual void OnComponentConstruct(ref TComponent component) { }
-
         class CopyVisitor<T> : PropertyVisitor
         {
             T m_DstContainer;
@@ -658,9 +740,51 @@ namespace Unity.Build
                 m_DstContainer = TypeConstruction.Construct<T>(srcContainer.GetType());
             }
 
-            protected override void VisitProperty<TSrcContainer, TSrcValue>(Property<TSrcContainer, TSrcValue> srcProperty, ref TSrcContainer srcContainer, ref TSrcValue srcValue)
+            protected override void VisitProperty<TSrcContainer, TSrcValue>(Property<TSrcContainer, TSrcValue> property, ref TSrcContainer container, ref TSrcValue value)
             {
-                PropertyContainer.TrySetValue(ref m_DstContainer, srcProperty.Name, srcValue);
+                PropertyContainer.TrySetValue(ref m_DstContainer, property.Name, value);
+            }
+
+            protected override void VisitList<TSrcContainer, TSrcList, TSrcElement>(Property<TSrcContainer, TSrcList> property, ref TSrcContainer container, ref TSrcList value)
+            {
+                TSrcList list;
+                if (typeof(TSrcList).IsArray)
+                {
+                    list = TypeConstruction.ConstructArray<TSrcList>(value.Count);
+                    for (var i = 0; i < value.Count; ++i)
+                    {
+                        list[i] = value[i];
+                    }
+                }
+                else
+                {
+                    list = TypeConstruction.Construct<TSrcList>();
+                    foreach (var item in value)
+                    {
+                        list.Add(item);
+                    }
+                }
+                base.VisitList<TSrcContainer, TSrcList, TSrcElement>(property, ref container, ref list);
+            }
+
+            protected override void VisitSet<TSrcContainer, TSrcSet, TSrcValue>(Property<TSrcContainer, TSrcSet> property, ref TSrcContainer container, ref TSrcSet value)
+            {
+                var set = TypeConstruction.Construct<TSrcSet>();
+                foreach (var item in value)
+                {
+                    set.Add(item);
+                }
+                base.VisitSet<TSrcContainer, TSrcSet, TSrcValue>(property, ref container, ref set);
+            }
+
+            protected override void VisitDictionary<TSrcContainer, TSrcDictionary, TSrcKey, TSrcValue>(Property<TSrcContainer, TSrcDictionary> property, ref TSrcContainer container, ref TSrcDictionary value)
+            {
+                var dictionary = TypeConstruction.Construct<TSrcDictionary>();
+                foreach (var item in value)
+                {
+                    dictionary.Add(item);
+                }
+                base.VisitDictionary<TSrcContainer, TSrcDictionary, TSrcKey, TSrcValue>(property, ref container, ref dictionary);
             }
         }
     }

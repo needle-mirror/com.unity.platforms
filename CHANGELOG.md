@@ -4,7 +4,34 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.8.0] - 2020-08-07
+## [0.9.0] - 2020-08-28
+### Added
+- New `BuildConfiguration` APIs:
+ - `GetComponentSource` allows to retrieve which container a component value comes from.
+ - `IsComponentUsed` determine if a component is used by the build pipeline of a build configuration.
+
+### Changed
+- Update platforms packages to 0.9.0-preview
+- Updated `com.unity.properties`, `com.unity.properties.ui` and `com.unity.serialization` to `1.5.0-preview`.
+- Build configuration inspector has been refactored:
+  - Style is now similar to other Unity inspectors.
+  - Added a search field to browse for build component or their field names.
+  - The search field will be improved with filters if the `QuickSeach` package is installed.
+  - `Dependencies` list has been renamed to `Shared Configurations`.
+  - `Shared Configurations` list can now be re-ordered.
+  - Build components styling improved for readability.
+  - `Suggested Components` are now listed with other components, with a read-only greyed out style.
+  - Added option button to build components, allowing to reset value, remove component/overrides, or go to the configuration from which the value is inherited.
+  - Made the `Add Component` button the same as other Unity inspectors.
+
+### Fixed
+- Reverting removing build component overrides for array fields will properly bring back previous value.
+- Alignment of build components fields should not longer push the value out when the name is long.
+- Fixed "Unapplied import settings" popup in Unity 2020.2.
+- When a build configuration is read-only, foldouts of build component fields will remain functional to allow inspection.
+- Fixed several refresh issues.
+
+## [0.8.0] - 2020-08-27
 ### Changed
 - Update platforms packages to 0.8.0-preview
 - Updated `com.unity.properties`, `com.unity.properties.ui` and `com.unity.serialization` to `1.4.3-preview`.

@@ -27,13 +27,30 @@ namespace Unity.Build.Tests
             public short Short;
         }
 
-        class ComplexComponent : ITestComponent
+        struct ComponentC : ITestInterface
+        {
+        }
+
+        struct ComponentD : ITestInterface
+        {
+        }
+
+        class ComplexComponent : ITestComponent, IEquatable<ComplexComponent>
         {
             public int Integer;
             public float Float;
             public string String = string.Empty;
             public ComponentA Nested;
             public List<int> ListInteger = new List<int>();
+
+            public bool Equals(ComplexComponent other)
+            {
+                return Integer == other.Integer &&
+                    Float == other.Float &&
+                    String == other.String &&
+                    Nested.Equals(other.Nested) &&
+                    ListInteger.SequenceEqual(other.ListInteger);
+            }
         }
 
         class InvalidComponent { }
@@ -210,7 +227,7 @@ namespace Unity.Build.Tests
             component.Integer = 2;
             containerB.SetComponent(component);
 
-            Assert.That(containerB.IsComponentOverridden<ComponentA>(), Is.True);
+            Assert.That(containerB.IsComponentOverriding<ComponentA>(), Is.True);
             Assert.That(containerB.GetComponent<ComponentA>(), Is.EqualTo(new ComponentA
             {
                 Integer = 2,
@@ -218,7 +235,7 @@ namespace Unity.Build.Tests
                 String = "test"
             }));
 
-            Assert.That(containerB.IsComponentOverridden<ComponentB>(), Is.False);
+            Assert.That(containerB.IsComponentOverriding<ComponentB>(), Is.False);
             Assert.That(containerB.GetComponent<ComponentB>(), Is.EqualTo(new ComponentB
             {
                 Byte = 255,
@@ -511,12 +528,12 @@ namespace Unity.Build.Tests
 
             containerA.AddDependency(containerB);
 
-            Assert.That(containerA.IsComponentOverridden<ComponentA>(), Is.True);
-            Assert.That(containerB.IsComponentOverridden<ComponentA>(), Is.False);
+            Assert.That(containerA.IsComponentOverriding<ComponentA>(), Is.True);
+            Assert.That(containerB.IsComponentOverriding<ComponentA>(), Is.False);
 
-            Assert.Throws<ArgumentNullException>(() => containerA.IsComponentOverridden(null));
-            Assert.Throws<InvalidOperationException>(() => containerA.IsComponentOverridden(typeof(object)));
-            Assert.Throws<InvalidOperationException>(() => containerA.IsComponentOverridden(typeof(InvalidComponent)));
+            Assert.Throws<ArgumentNullException>(() => containerA.IsComponentOverriding(null));
+            Assert.Throws<InvalidOperationException>(() => containerA.IsComponentOverriding(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => containerA.IsComponentOverriding(typeof(InvalidComponent)));
         }
 
         [Test]
@@ -550,6 +567,95 @@ namespace Unity.Build.Tests
             Assert.Throws<ArgumentNullException>(() => container.GetComponentOrDefault(null));
             Assert.Throws<InvalidOperationException>(() => container.GetComponentOrDefault(typeof(object)));
             Assert.Throws<InvalidOperationException>(() => container.GetComponentOrDefault(typeof(InvalidComponent)));
+        }
+
+        [Test]
+        public void GetComponentSource()
+        {
+            var containerA = TestHierarchicalComponentContainer.CreateInstance(c =>
+            {
+                c.SetComponent<ComponentA>();
+            });
+            var containerB = TestHierarchicalComponentContainer.CreateInstance(c =>
+            {
+                c.SetComponent<ComponentA>();
+                c.SetComponent<ComponentB>();
+            });
+            var containerC = TestHierarchicalComponentContainer.CreateInstance(c =>
+            {
+                c.SetComponent<ComponentA>();
+                c.SetComponent<ComponentB>();
+                c.SetComponent<ComponentC>();
+            });
+            var containerD = TestHierarchicalComponentContainer.CreateInstance(c =>
+            {
+                c.SetComponent<ComponentA>();
+                c.SetComponent<ComponentB>();
+                c.SetComponent<ComponentC>();
+                c.SetComponent<ComponentD>();
+            });
+
+            containerA.AddDependency(containerB);
+            containerA.AddDependency(containerC);
+            containerC.AddDependency(containerD);
+
+            Assert.That(containerA.GetComponentSource<ComponentA>(false), Is.EqualTo(containerA));
+            Assert.That(containerB.GetComponentSource<ComponentA>(false), Is.EqualTo(containerB));
+            Assert.That(containerC.GetComponentSource<ComponentA>(false), Is.EqualTo(containerC));
+            Assert.That(containerD.GetComponentSource<ComponentA>(false), Is.EqualTo(containerD));
+
+            Assert.That(containerA.GetComponentSource<ComponentA>(true), Is.EqualTo(containerC));
+            Assert.That(containerB.GetComponentSource<ComponentA>(true), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComponentA>(true), Is.EqualTo(containerD));
+            Assert.That(containerD.GetComponentSource<ComponentA>(true), Is.Null);
+
+            Assert.That(containerA.GetComponentSource<ComponentB>(false), Is.EqualTo(containerC));
+            Assert.That(containerB.GetComponentSource<ComponentB>(false), Is.EqualTo(containerB));
+            Assert.That(containerC.GetComponentSource<ComponentB>(false), Is.EqualTo(containerC));
+            Assert.That(containerD.GetComponentSource<ComponentB>(false), Is.EqualTo(containerD));
+
+            Assert.That(containerA.GetComponentSource<ComponentB>(true), Is.EqualTo(containerC));
+            Assert.That(containerB.GetComponentSource<ComponentB>(true), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComponentB>(true), Is.EqualTo(containerD));
+            Assert.That(containerD.GetComponentSource<ComponentB>(true), Is.Null);
+
+            Assert.That(containerA.GetComponentSource<ComponentC>(false), Is.EqualTo(containerC));
+            Assert.That(containerB.GetComponentSource<ComponentC>(false), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComponentC>(false), Is.EqualTo(containerC));
+            Assert.That(containerD.GetComponentSource<ComponentC>(false), Is.EqualTo(containerD));
+
+            Assert.That(containerA.GetComponentSource<ComponentC>(true), Is.EqualTo(containerC));
+            Assert.That(containerB.GetComponentSource<ComponentC>(true), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComponentC>(true), Is.EqualTo(containerD));
+            Assert.That(containerD.GetComponentSource<ComponentC>(true), Is.Null);
+
+            Assert.That(containerA.GetComponentSource<ComponentD>(false), Is.EqualTo(containerD));
+            Assert.That(containerB.GetComponentSource<ComponentD>(false), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComponentD>(false), Is.EqualTo(containerD));
+            Assert.That(containerD.GetComponentSource<ComponentD>(false), Is.EqualTo(containerD));
+
+            Assert.That(containerA.GetComponentSource<ComponentD>(true), Is.EqualTo(containerD));
+            Assert.That(containerB.GetComponentSource<ComponentD>(true), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComponentD>(true), Is.EqualTo(containerD));
+            Assert.That(containerD.GetComponentSource<ComponentD>(true), Is.Null);
+
+            Assert.That(containerA.GetComponentSource<ComplexComponent>(false), Is.Null);
+            Assert.That(containerB.GetComponentSource<ComplexComponent>(false), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComplexComponent>(false), Is.Null);
+            Assert.That(containerD.GetComponentSource<ComplexComponent>(false), Is.Null);
+
+            Assert.That(containerA.GetComponentSource<ComplexComponent>(true), Is.Null);
+            Assert.That(containerB.GetComponentSource<ComplexComponent>(true), Is.Null);
+            Assert.That(containerC.GetComponentSource<ComplexComponent>(true), Is.Null);
+            Assert.That(containerD.GetComponentSource<ComplexComponent>(true), Is.Null);
+
+            Assert.Throws<ArgumentNullException>(() => containerA.GetComponentSource(null, false));
+            Assert.Throws<InvalidOperationException>(() => containerA.GetComponentSource(typeof(object), false));
+            Assert.Throws<InvalidOperationException>(() => containerA.GetComponentSource(typeof(InvalidComponent), false));
+
+            Assert.Throws<ArgumentNullException>(() => containerA.GetComponentSource(null, true));
+            Assert.Throws<InvalidOperationException>(() => containerA.GetComponentSource(typeof(object), true));
+            Assert.Throws<InvalidOperationException>(() => containerA.GetComponentSource(typeof(InvalidComponent), true));
         }
 
         [Test]
@@ -786,8 +892,8 @@ namespace Unity.Build.Tests
             Assert.That(container.HasComponent<ComponentB>(), Is.EqualTo(containerRO.HasComponent<ComponentB>()));
             Assert.That(container.IsComponentInherited<ComponentA>(), Is.EqualTo(containerRO.IsComponentInherited<ComponentA>()));
             Assert.That(container.IsComponentInherited<ComponentB>(), Is.EqualTo(containerRO.IsComponentInherited<ComponentB>()));
-            Assert.That(container.IsComponentOverridden<ComponentA>(), Is.EqualTo(containerRO.IsComponentOverridden<ComponentA>()));
-            Assert.That(container.IsComponentOverridden<ComponentB>(), Is.EqualTo(containerRO.IsComponentOverridden<ComponentB>()));
+            Assert.That(container.IsComponentOverriding<ComponentA>(), Is.EqualTo(containerRO.IsComponentOverriding<ComponentA>()));
+            Assert.That(container.IsComponentOverriding<ComponentB>(), Is.EqualTo(containerRO.IsComponentOverriding<ComponentB>()));
             Assert.That(container.GetComponent<ComponentA>(), Is.EqualTo(containerRO.GetComponent<ComponentA>()));
             Assert.Throws<InvalidOperationException>(() => containerRO.GetComponent<ComponentB>());
             Assert.That(container.TryGetComponent<ComponentA>(out _), Is.EqualTo(containerRO.TryGetComponent<ComponentA>(out _)));
@@ -810,6 +916,32 @@ namespace Unity.Build.Tests
 
             container.SetComponent<ComponentB>();
             Assert.That(containerRO.GetComponentTypes(), Is.EquivalentTo(new[] { typeof(ComponentA), typeof(ComponentB) }));
+        }
+
+        [Test]
+        public void CopyVisitor_DoesNotCopyCollectionReferences()
+        {
+            var list = new List<int> { 1, 2, 3 };
+            var component = new ComplexComponent { ListInteger = list };
+            var container = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent(component));
+            var value = container.GetComponent<ComplexComponent>();
+            Assert.That(value, Is.Not.SameAs(component));
+            Assert.That(value, Is.EqualTo(component));
+            Assert.That(value.ListInteger, Is.Not.SameAs(list));
+            Assert.That(value.ListInteger, Is.EqualTo(list));
+
+            list.AddRange(new int[] { 4, 5, 6 });
+            Assert.That(value.ListInteger, Is.Not.SameAs(list));
+            Assert.That(value.ListInteger, Is.Not.EqualTo(list));
+
+            value = container.GetComponent<ComplexComponent>();
+            Assert.That(value.ListInteger, Is.Not.SameAs(list));
+            Assert.That(value.ListInteger, Is.Not.EqualTo(list));
+
+            container.SetComponent(component);
+            value = container.GetComponent<ComplexComponent>();
+            Assert.That(value.ListInteger, Is.Not.SameAs(list));
+            Assert.That(value.ListInteger, Is.EqualTo(list));
         }
     }
 }

@@ -1,4 +1,5 @@
 using Unity.Properties;
+using Unity.Properties.UI;
 using Unity.Serialization;
 using UnityEditor;
 
@@ -10,7 +11,7 @@ namespace Unity.Build.Classic
         [CreateProperty]
         public ScriptingImplementation ScriptingBackend { get; set; } = ScriptingImplementation.Mono2x;
 
-        [CreateProperty]
+        [CreateProperty, DisplayName("IL2CPP Compiler Configuration")]
         public Il2CppCompilerConfiguration Il2CppCompilerConfiguration { get; set; } = Il2CppCompilerConfiguration.Release;
 
         [CreateProperty]

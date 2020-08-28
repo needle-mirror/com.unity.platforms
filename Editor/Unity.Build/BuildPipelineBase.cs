@@ -34,6 +34,26 @@ namespace Unity.Build
         }
 
         /// <summary>
+        /// Determine if component is used by the build pipeline.
+        /// Returns <see langword="false"/> if this build configuration does not have a build pipeline.
+        /// </summary>
+        /// <param name="type">The component type.</param>
+        /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentUsed(Type type)
+        {
+            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            return UsedComponents.Any(usedComponent => usedComponent.IsAssignableFrom(type));
+        }
+
+        /// <summary>
+        /// Determine if component is used by the build pipeline.
+        /// Returns <see langword="false"/> if this build configuration does not have a build pipeline.
+        /// </summary>
+        /// <typeparam name="T">The component type.</typeparam>
+        /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
+        public bool IsComponentUsed<T>() where T : IBuildComponent => IsComponentUsed(typeof(T));
+
+        /// <summary>
         /// Determine if the build pipeline satisfy requirements to build.
         /// </summary>
         /// <param name="config">The build configuration to be used by this build pipeline.</param>

@@ -1,29 +1,44 @@
+using System;
 using System.IO;
+using UnityEditor;
 
 namespace Unity.Build
 {
     internal class Package
     {
-        public static string PackageName => "com.unity.platforms";
-        public static string PackagePath => "Packages/" + PackageName;
+        public const string PackageName = "com.unity.platforms";
+        public const string PackagePath = "Packages/" + PackageName;
+        public const string EditorDefaultResourcesPath = PackagePath + "/Editor Default Resources";
 
-        public static T LoadAsset<T>(string path) where T : UnityEngine.Object
+        public static T LoadResource<T>(string path, bool required) where T : UnityEngine.Object
         {
-            var assetPath = Path.Combine(PackagePath, path).Replace('\\', '/');
-            if (!File.Exists(assetPath))
+            var resourcePath = Path.Combine(EditorDefaultResourcesPath, path).Replace('\\', '/');
+            if (!File.Exists(resourcePath))
             {
-                UnityEngine.Debug.LogError($"{typeof(T).Name} asset {assetPath.ToHyperLink()} not found.");
-                return null;
+                if (required)
+                {
+                    throw new FileNotFoundException($"Missing resource at {resourcePath.ToHyperLink()}.");
+                }
+                else
+                {
+                    return null;
+                }
             }
 
-            var asset = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(assetPath);
-            if (asset == null || !asset)
+            var resource = EditorGUIUtility.Load(resourcePath) as T;
+            if (resource == null || !resource)
             {
-                UnityEngine.Debug.LogError($"Failed to load {typeof(T).Name} asset {assetPath.ToHyperLink()}.");
-                return null;
+                if (required)
+                {
+                    throw new InvalidOperationException($"Failed to load resource at {resourcePath.ToHyperLink()}.");
+                }
+                else
+                {
+                    return null;
+                }
             }
 
-            return asset;
+            return resource;
         }
     }
 }

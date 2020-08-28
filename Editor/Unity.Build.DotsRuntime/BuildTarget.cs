@@ -5,6 +5,8 @@ using System.Linq;
 using System.Reflection;
 using Unity.Build.Internals;
 using Unity.Serialization.Json;
+using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Build.DotsRuntime
 {
@@ -83,6 +85,7 @@ namespace Unity.Build.DotsRuntime
         public abstract string ExecutableExtension { get; }
         public abstract string BeeTargetName { get; }
         public abstract bool UsesIL2CPP { get; }
+        public abstract Texture2D Icon { get; }
 
         public virtual bool SupportsManagedDebugging => true;
         public virtual bool HideInBuildTargetPopup => false;
@@ -124,13 +127,33 @@ namespace Unity.Build.DotsRuntime
 
         public virtual void WriteBuildConfiguration(BuildContext context, string path)
         {
+            var componentTypes = new HashSet<Type>();
+            foreach (var usedComponent in context.UsedComponents)
+            {
+                if (usedComponent.IsAbstract || usedComponent.IsInterface)
+                {
+                    var derivedComponents = TypeCache.GetTypesDerivedFrom(usedComponent);
+                    foreach (var derivedComponent in derivedComponents)
+                    {
+                        if (derivedComponent.IsAbstract || derivedComponent.IsInterface)
+                        {
+                            continue;
+                        }
+                        componentTypes.Add(derivedComponent);
+                    }
+                }
+                else
+                {
+                    componentTypes.Add(usedComponent);
+                }
+            }
+
             var realComponents = new List<IBuildComponent>();
             var defaultComponents = new List<IBuildComponent>();
-
-            foreach (var c in UsedComponents)
+            foreach (var componentType in componentTypes)
             {
-                var component = context.GetComponentOrDefault(c);
-                if (context.HasComponent(c))
+                var component = context.GetComponentOrDefault(componentType);
+                if (context.HasComponent(componentType))
                 {
                     realComponents.Add(component);
                 }
@@ -143,6 +166,12 @@ namespace Unity.Build.DotsRuntime
             var components = new IBuildComponent[][] { realComponents.ToArray(), defaultComponents.ToArray() };
             var json = JsonSerialization.ToJson(components);
             File.WriteAllText(Path.Combine(path, "buildconfiguration.json"), json);
+        }
+
+        protected static Texture2D LoadIcon(string path, string name)
+        {
+            var prefix = EditorGUIUtility.isProSkin ? "d_" : string.Empty;
+            return EditorGUIUtility.Load($"{path}/{prefix}{name}@2x.png") as Texture2D;
         }
     }
 
@@ -165,6 +194,7 @@ namespace Unity.Build.DotsRuntime
         public override string ExecutableExtension => null;
         public override string BeeTargetName => m_Name;
         public override bool UsesIL2CPP => false;
+        public override Texture2D Icon => null;
         public override bool Run(FileInfo buildTarget) => false;
     }
 
@@ -177,6 +207,7 @@ namespace Unity.Build.DotsRuntime
         public override string ExecutableExtension => null;
         public override string BeeTargetName => null;
         public override bool UsesIL2CPP => false;
+        public override Texture2D Icon => null;
         public override bool Run(FileInfo buildTarget) => false;
     }
 
