@@ -36,9 +36,9 @@ namespace Unity.Build.Classic
             if (Target.Pipeline == null && Target.Platform != null)
             {
                 string message;
-                if (KnownPlatforms.All.TryGetValue(Target.Platform.GetType(), out var packageName))
+                if (!string.IsNullOrEmpty(Target.Platform.PackageName))
                 {
-                    message = $"Platform {Target.Platform.DisplayName} requires package '{packageName}' to be installed.";
+                    message = $"Platform {Target.Platform.DisplayName} requires package '{Target.Platform.PackageName}' to be installed.";
                 }
                 else
                 {

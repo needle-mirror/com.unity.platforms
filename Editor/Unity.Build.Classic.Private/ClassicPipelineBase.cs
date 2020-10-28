@@ -1,18 +1,16 @@
-﻿using Bee.Core;
-using NiceIO;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using Unity.Build.Common;
 using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Build.Classic.Private
 {
     public abstract class ClassicPipelineBase : BuildPipelineBase
     {
-        // Note: we need pass false to ConstructTypesDerivedFrom to allow non-Unity types to be created.
         ClassicBuildPipelineCustomizer[] CreateCustomizers() =>
-            TypeCacheHelper.ConstructTypesDerivedFrom<ClassicBuildPipelineCustomizer>(false).ToArray();
+            TypeConstructionUtility.ConstructTypesDerivedFrom<ClassicBuildPipelineCustomizer>().ToArray();
 
         Type[] CustomizersUsedComponents =>
             CreateCustomizers().SelectMany(customizer => customizer.UsedComponents).Distinct().ToArray();
@@ -20,7 +18,8 @@ namespace Unity.Build.Classic.Private
         public override Type[] UsedComponents =>
             base.UsedComponents.Concat(CustomizersUsedComponents).Distinct().ToArray();
 
-        protected abstract BuildTarget BuildTarget { get; }
+        protected BuildTarget BuildTarget => Platform.GetBuildTarget();
+
         public abstract Platform Platform { get; }
 
         protected virtual void PrepareContext(BuildContext context)
@@ -32,8 +31,8 @@ namespace Unity.Build.Classic.Private
             var customizers = CreateCustomizers();
             foreach (var customizer in customizers)
                 customizer.m_Info = new CustomizerInfoImpl(context);
-            var workingDir = new NPath($"Library/BuildWorkingDir/{context.BuildConfigurationName}");
-            workingDir.MakeAbsolute().EnsureDirectoryExists();
+            var workingDir = Path.GetFullPath(Path.Combine(Application.dataPath, $"../Library/BuildWorkingDir/{context.BuildConfigurationName}"));
+            Directory.CreateDirectory(workingDir);
             context.SetValue(new ClassicSharedData()
             {
                 BuildTarget = BuildTarget,

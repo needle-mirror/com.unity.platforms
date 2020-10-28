@@ -66,6 +66,12 @@ namespace Unity.Build.Classic
         public virtual string[] ModifyEmbeddedScenes(string[] scenes) => scenes;
 
         /// <summary>
+        /// Override this method to prepare for copying additional files.
+        /// All customizers OnBeforeRegisterAdditionalFilesToDeploy will be invoked before the first RegisterAdditionalFilesToDeploy is invoked.
+        /// </summary>
+        public virtual void OnBeforeRegisterAdditionalFilesToDeploy() { }
+
+        /// <summary>
         /// Override this method to register additional files you want to copy into the build. You will not do the copy
         /// yourself, instead call the provided registerAdditionalFileToDeploy callback, with a sourcefile and a targetfile.
         /// You can use the WorkingDirectory property to find a good place to generate your source file. You can use the

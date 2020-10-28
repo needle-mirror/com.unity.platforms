@@ -15,6 +15,7 @@ namespace Unity.Build
     public sealed class BuildAssemblyCache
     {
         HashSet<Assembly> m_AssembliesCache = new HashSet<Assembly>();
+        List<string> m_AssembliesPath = new List<String>();
         bool m_IsDirty = true;
 
         /// <summary>
@@ -26,6 +27,15 @@ namespace Unity.Build
             {
                 RebuildCacheIfDirty();
                 return m_AssembliesCache.ToList();
+            }
+        }
+
+        public List<string> AssembliesPath
+        {
+            get
+            {
+                RebuildCacheIfDirty();
+                return m_AssembliesPath;
             }
         }
 
@@ -100,6 +110,7 @@ namespace Unity.Build
                 return;
 
             m_AssembliesCache.Clear();
+            m_AssembliesPath.Clear();
 
             var assemblyNames = new HashSet<string>();
             var assemblyDefinitions = new Stack<AssemblyDefinitionDescription>();
@@ -108,6 +119,7 @@ namespace Unity.Build
             //Add base assembly
             var assemblyDefinition = AssemblyDefinitionDescriptionUtility.Deserialize(assetPath);
             assemblyNames.Add(assemblyDefinition.name);
+            m_AssembliesPath.Add(assetPath);
             assemblyDefinitions.Push(assemblyDefinition);
 
             // Walk the assembly tree from main assemblies
@@ -137,6 +149,7 @@ namespace Unity.Build
                     if (assemblyNames.Add(referencedAssemblyDefinition.name) && AssemblyDefinitionDescriptionUtility.MatchPlatform(referencedAssemblyDefinition, m_PlatformName))
                     {
                         assemblyDefinitions.Push(referencedAssemblyDefinition);
+                        m_AssembliesPath.Add(assemblyDefinitionPath);
                     }
                 }
             }

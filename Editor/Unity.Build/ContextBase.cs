@@ -11,6 +11,7 @@ namespace Unity.Build
     {
         readonly Dictionary<Type, object> m_Values = new Dictionary<Type, object>();
         readonly Dictionary<Type, IBuildComponent> m_Components = new Dictionary<Type, IBuildComponent>();
+
         internal BuildPipelineBase BuildPipeline { get; }
         internal BuildConfiguration BuildConfiguration { get; }
 
@@ -47,14 +48,30 @@ namespace Unity.Build
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
         /// <returns><see langword="true"/> if value is found, <see langword="false"/> otherwise.</returns>
-        public bool HasValue<T>() where T : class => m_Values.Keys.Any(type => typeof(T).IsAssignableFrom(type));
+        public bool HasValue<T>() where T : class
+        {
+            ValidateValueTypeAndThrow(typeof(T));
+
+            if (typeof(IBuildArtifact).IsAssignableFrom(typeof(T)))
+                return HasBuildArtifact(typeof(T));
+
+            return m_Values.Keys.Any(type => typeof(T).IsAssignableFrom(type));
+        }
 
         /// <summary>
         /// Get value of type <typeparamref name="T"/> if found, otherwise <see langword="null"/>.
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
         /// <returns>The value of type <typeparamref name="T"/> if found, otherwise <see langword="null"/>.</returns>
-        public T GetValue<T>() where T : class => m_Values.FirstOrDefault(pair => typeof(T).IsAssignableFrom(pair.Key)).Value as T;
+        public T GetValue<T>() where T : class
+        {
+            ValidateValueTypeAndThrow(typeof(T));
+
+            if (typeof(IBuildArtifact).IsAssignableFrom(typeof(T)))
+                return (T)GetBuildArtifact(typeof(T));
+
+            return m_Values.FirstOrDefault(pair => typeof(T).IsAssignableFrom(pair.Key)).Value as T;
+        }
 
         /// <summary>
         /// Get value of type <typeparamref name="T"/> if found.
@@ -64,6 +81,7 @@ namespace Unity.Build
         /// <returns>The value or new instance of type <typeparamref name="T"/>.</returns>
         public T GetOrCreateValue<T>() where T : class
         {
+            ValidateValueTypeAndThrow(typeof(T));
             var value = GetValue<T>();
             if (value == null)
             {
@@ -80,7 +98,11 @@ namespace Unity.Build
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
         /// <returns>The value or new instance of type <typeparamref name="T"/>.</returns>
-        public T GetValueOrDefault<T>() where T : class => GetValue<T>() ?? TypeConstruction.Construct<T>();
+        public T GetValueOrDefault<T>() where T : class
+        {
+            ValidateValueTypeAndThrow(typeof(T));
+            return GetValue<T>() ?? TypeConstruction.Construct<T>();
+        }
 
         /// <summary>
         /// Set value of type <typeparamref name="T"/> to this build context.
@@ -90,31 +112,55 @@ namespace Unity.Build
         public void SetValue<T>(T value) where T : class
         {
             if (value == null)
-            {
-                return;
-            }
+                throw new ArgumentNullException(nameof(value));
 
             var type = value.GetType();
-            if (type == typeof(object))
-            {
-                return;
-            }
+            ValidateValueTypeAndThrow(type);
 
-            m_Values[type] = value;
+            if (typeof(IBuildArtifact).IsAssignableFrom(type))
+            {
+                if (this is BuildContext buildContext)
+                    buildContext.SetBuildArtifact((IBuildArtifact)value);
+                else
+                    throw new NotSupportedException($"Setting build artifact value on {GetType().FullName} is not supported.");
+            }
+            else
+            {
+                m_Values[type] = value;
+            }
         }
 
         /// <summary>
         /// Set value of type <typeparamref name="T"/> to this build context to its default using <see cref="TypeConstruction"/> utility.
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
-        public void SetValue<T>() where T : class => SetValue(TypeConstruction.Construct<T>());
+        public void SetValue<T>() where T : class
+        {
+            ValidateValueTypeAndThrow(typeof(T));
+            SetValue(TypeConstruction.Construct<T>());
+        }
 
         /// <summary>
         /// Remove value of type <typeparamref name="T"/> from this build context.
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
         /// <returns><see langword="true"/> if the value was removed, otherwise <see langword="false"/>.</returns>
-        public bool RemoveValue<T>() where T : class => m_Values.Remove(typeof(T));
+        public bool RemoveValue<T>() where T : class
+        {
+            ValidateValueTypeAndThrow(typeof(T));
+
+            if (typeof(IBuildArtifact).IsAssignableFrom(typeof(T)))
+            {
+                if (this is BuildContext buildContext)
+                    return buildContext.RemoveBuildArtifact(typeof(T));
+                else
+                    throw new NotSupportedException($"Removing build artifact value on {GetType().FullName} is not supported.");
+            }
+            else
+            {
+                return m_Values.Remove(typeof(T));
+            }
+        }
 
         /// <summary>
         /// Determine if a component type is stored in this container or its dependencies.
@@ -124,8 +170,8 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the is found, otherwise <see langword="false"/>.</returns>
         public bool HasComponent(Type type)
         {
-            CheckUsedComponentTypesAndThrowIfMissing(type);
-            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            ValidateUsedComponentTypesAndThrow(type);
+            BuildConfiguration.ValidateComponentTypeAndThrow(type);
             return m_Components.ContainsKey(type) || BuildConfiguration.HasComponent(type);
         }
 
@@ -145,7 +191,7 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the component is inherited from dependency, <see langword="false"/> otherwise.</returns>
         public bool IsComponentInherited(Type type)
         {
-            CheckUsedComponentTypesAndThrowIfMissing(type);
+            ValidateUsedComponentTypesAndThrow(type);
             return BuildConfiguration.IsComponentInherited(type);
         }
 
@@ -158,28 +204,6 @@ namespace Unity.Build
         public bool IsComponentInherited<T>() where T : IBuildComponent => IsComponentInherited(typeof(T));
 
         /// <summary>
-        /// Determine if a component type overrides a dependency.
-        /// Throws if component type is not in UsedComponents list.
-        /// </summary>
-        /// <param name="type">The component type.</param>
-        /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise</returns>
-        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
-        public bool IsComponentOverridden(Type type)
-        {
-            CheckUsedComponentTypesAndThrowIfMissing(type);
-            return BuildConfiguration.IsComponentOverriding(type);
-        }
-
-        /// <summary>
-        /// Determine if a component type overrides a dependency.
-        /// Throws if component type is not in UsedComponents list.
-        /// </summary>
-        /// <typeparam name="T">The component type.</typeparam>
-        /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise</returns>
-        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2020-11-30)")]
-        public bool IsComponentOverridden<T>() where T : IBuildComponent => IsComponentOverriding(typeof(T));
-
-        /// <summary>
         /// Determines if component overrides a dependency.
         /// Throws if component type is not in UsedComponents list.
         /// </summary>
@@ -187,7 +211,7 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the component overrides a dependency, <see langword="false"/> otherwise.</returns>
         public bool IsComponentOverriding(Type type)
         {
-            CheckUsedComponentTypesAndThrowIfMissing(type);
+            ValidateUsedComponentTypesAndThrow(type);
             return BuildConfiguration.IsComponentOverriding(type);
         }
 
@@ -222,9 +246,9 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the component is found, otherwise <see langword="false"/>.</returns>
         public bool TryGetComponent(Type type, out IBuildComponent value)
         {
-            CheckUsedComponentTypesAndThrowIfMissing(type);
+            ValidateUsedComponentTypesAndThrow(type);
 
-            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            BuildConfiguration.ValidateComponentTypeAndThrow(type);
             if (m_Components.TryGetValue(type, out value))
             {
                 return true;
@@ -262,13 +286,13 @@ namespace Unity.Build
         /// <returns>The component value.</returns>
         public IBuildComponent GetComponentOrDefault(Type type)
         {
-            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            BuildConfiguration.ValidateComponentTypeAndThrow(type);
             if (m_Components.TryGetValue(type, out var value))
             {
                 return value;
             }
 
-            CheckUsedComponentTypesAndThrowIfMissing(type);
+            ValidateUsedComponentTypesAndThrow(type);
             return BuildConfiguration.GetComponentOrDefault(type);
         }
 
@@ -294,7 +318,7 @@ namespace Unity.Build
             foreach (var component in components)
             {
                 var componentType = component.GetType();
-                CheckUsedComponentTypesAndThrowIfMissing(componentType);
+                ValidateUsedComponentTypesAndThrow(componentType);
                 lookup[componentType] = component;
             }
 
@@ -314,7 +338,7 @@ namespace Unity.Build
         /// <returns>The list of components.</returns>
         public IEnumerable<IBuildComponent> GetComponents(Type type)
         {
-            CheckUsedComponentTypesAndThrowIfMissing(type);
+            ValidateUsedComponentTypesAndThrow(type);
 
             var lookup = new Dictionary<Type, IBuildComponent>();
             var components = BuildConfiguration.GetComponents(type);
@@ -360,7 +384,7 @@ namespace Unity.Build
         /// <param name="value">Value of the component to set.</param>
         public void SetComponent(Type type, IBuildComponent value)
         {
-            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            BuildConfiguration.ValidateComponentTypeAndThrow(type);
             if (type.IsInterface || type.IsAbstract)
             {
                 throw new InvalidOperationException($"{nameof(type)} cannot be interface or abstract.");
@@ -397,7 +421,7 @@ namespace Unity.Build
         /// <param name="type"><see cref="Type"/> of the component.</param>
         public bool RemoveComponent(Type type)
         {
-            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            BuildConfiguration.ValidateComponentTypeAndThrow(type);
             return m_Components.RemoveAll((key, value) => type.IsAssignableFrom(key)) > 0;
         }
 
@@ -408,27 +432,40 @@ namespace Unity.Build
         public bool RemoveComponent<T>() where T : IBuildComponent => RemoveComponent(typeof(T));
 
         /// <summary>
-        /// Get the value of the first build artifact that is assignable to type <see cref="Type"/>.
+        /// Determine if a build artifact that is assignable to the specified type is present.
         /// </summary>
-        /// <param name="config">The build configuration that was used to store the build artifact.</param>
-        /// <param name="type">The type of the build artifact.</param>
-        /// <returns>The build artifact if found, otherwise <see langword="null"/>.</returns>
-        public IBuildArtifact GetLastBuildArtifact(Type type) => BuildConfiguration.GetLastBuildArtifact(type);
+        /// <param name="buildArtifactType">The build artifact type.</param>
+        /// <returns><see langword="true"/> if a matching build artifact is found, <see langword="false"/> otherwise.</returns>
+        public virtual bool HasBuildArtifact(Type buildArtifactType) => BuildConfiguration.HasBuildArtifact(buildArtifactType);
 
         /// <summary>
-        /// Get the value of the first build artifact that is assignable to type <typeparamref name="T"/>.
+        /// Determine if a build artifact that is assignable to the specified type is present.
         /// </summary>
-        /// <typeparam name="T">The type of the build artifact.</typeparam>
-        /// <param name="config">The build configuration that was used to store the build artifact.</param>
-        /// <returns>The build artifact if found, otherwise <see langword="null"/>.</returns>
-        public T GetLastBuildArtifact<T>() where T : class, IBuildArtifact => BuildConfiguration.GetLastBuildArtifact<T>();
+        /// <typeparam name="T">The build artifact type.</typeparam>
+        /// <returns><see langword="true"/> if a matching build artifact is found, <see langword="false"/> otherwise.</returns>
+        public virtual bool HasBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildConfiguration.HasBuildArtifact<T>();
 
         /// <summary>
-        /// Get the last build result for this build configuration.
+        /// Get the first build artifact value that is assignable to specified type.
+        /// Multiple build artifact value can be stored per build configuration.
         /// </summary>
-        /// <param name="config">The build configuration that was used to store the build artifact.</param>
-        /// <returns>The build result if found, otherwise <see langword="null"/>.</returns>
-        public BuildResult GetLastBuildResult() => BuildConfiguration.GetLastBuildResult();
+        /// <param name="buildArtifactType">The build artifact type.</param>
+        /// <returns>A build artifact value if found, <see langword="null"/> otherwise.</returns>
+        public virtual IBuildArtifact GetBuildArtifact(Type buildArtifactType) => BuildConfiguration.GetBuildArtifact(buildArtifactType);
+
+        /// <summary>
+        /// Get the first build artifact value that is assignable to specified type.
+        /// Multiple build artifact value can be stored per build configuration.
+        /// </summary>
+        /// <typeparam name="T">The build artifact type.</typeparam>
+        /// <returns>A build artifact value if found, <see langword="null"/> otherwise.</returns>
+        public virtual T GetBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildConfiguration.GetBuildArtifact<T>();
+
+        /// <summary>
+        /// Get all build artifact values.
+        /// </summary>
+        /// <returns>Enumeration of all build artifact values.</returns>
+        public virtual IEnumerable<IBuildArtifact> GetAllBuildArtifacts() => BuildConfiguration.GetAllBuildArtifacts();
 
         /// <summary>
         /// Get the output build directory override used in this build context.
@@ -456,7 +493,19 @@ namespace Unity.Build
             BuildConfiguration.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
         }
 
-        void CheckUsedComponentTypesAndThrowIfMissing(Type type)
+        void ValidateValueTypeAndThrow(Type valueType)
+        {
+            if (valueType == null)
+                throw new ArgumentNullException(nameof(valueType));
+
+            if (valueType == typeof(object))
+                throw new InvalidOperationException("Value type cannot be object.");
+
+            if (!valueType.IsClass)
+                throw new InvalidOperationException("Value type is not a class.");
+        }
+
+        void ValidateUsedComponentTypesAndThrow(Type type)
         {
             if (type == null)
             {
@@ -468,6 +517,29 @@ namespace Unity.Build
             {
                 throw new InvalidOperationException($"Type '{type.Name}' is missing / is not derived from any type in build pipeline '{BuildPipeline.GetType().Name}' {nameof(BuildPipeline.UsedComponents)} list.");
             }
+        }
+
+        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2021-01-01)")]
+        public bool IsComponentOverridden(Type type) => IsComponentOverriding(type);
+
+        [Obsolete("IsComponentOverridden has been renamed to IsComponentOverriding. (RemovedAfter 2021-01-01)")]
+        public bool IsComponentOverridden<T>() where T : IBuildComponent => IsComponentOverriding(typeof(T));
+
+        [Obsolete("GetLastBuildArtifact has been renamed to GetBuildArtifact. (RemovedAfter 2021-02-01)")]
+        public IBuildArtifact GetLastBuildArtifact(Type type) => GetBuildArtifact(type);
+
+        [Obsolete("GetLastBuildArtifact has been renamed to GetBuildArtifact. (RemovedAfter 2021-02-01)")]
+        public T GetLastBuildArtifact<T>() where T : class, IBuildArtifact => (T)GetBuildArtifact(typeof(T));
+
+        [Obsolete("GetLastBuildResult will be removed from ContextBase to be re-introduced as GetBuildResult in RunContext and CleanContext. (RemovedAfter 2021-02-01)")]
+        public BuildResult GetLastBuildResult()
+        {
+            if (this is RunContext runContext)
+                return runContext.GetBuildResult();
+            else if (this is CleanContext cleanContext)
+                return cleanContext.GetBuildResult();
+
+            throw new NotSupportedException($"Retrieving {nameof(BuildResult)} on {GetType().FullName} is not supported.");
         }
     }
 }

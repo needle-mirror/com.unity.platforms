@@ -13,8 +13,11 @@ namespace Unity.Build.Editor
 {
     class BuildConfigurationInspector : Inspector<BuildConfigurationInspectorData>
     {
+        const string k_ShowPipelineUsedComponentsKey = nameof(BuildConfigurationInspector) + "." + nameof(ShowUsedComponents);
         const string k_CurrentActionIndexKey = nameof(BuildConfigurationInspector) + "." + nameof(CurrentActionIndex);
         const string k_DependenciesFoldoutOpenKey = nameof(BuildConfigurationInspector) + "." + nameof(DependenciesFoldoutOpen);
+
+        static readonly string k_ShowUsedComponents = L10n.Tr("Show Suggested Components");
 
         struct Classes
         {
@@ -72,6 +75,12 @@ namespace Unity.Build.Editor
         Dictionary<BuildComponentInspectorData, PropertyElement> m_ComponentsMap;
         bool m_SearchBindingRegistered;
 
+        public static bool ShowUsedComponents
+        {
+            get => EditorPrefs.GetBool(k_ShowPipelineUsedComponentsKey, false);
+            set => EditorPrefs.SetBool(k_ShowPipelineUsedComponentsKey, value);
+        }
+
         bool DependenciesFoldoutOpen
         {
             get => SessionState.GetBool(k_DependenciesFoldoutOpenKey, false);
@@ -94,6 +103,19 @@ namespace Unity.Build.Editor
             root.AddToClassList(Classes.BaseClass);
 
             var header = root.Q("header");
+            var optionsButton = header.Q<Button>("options");
+            optionsButton.RegisterCallback<ClickEvent>(e =>
+            {
+                var menu = new GenericMenu();
+                menu.AddItem(new GUIContent(k_ShowUsedComponents), ShowUsedComponents, () =>
+                {
+                    ShowUsedComponents = !ShowUsedComponents;
+                    Target.RefreshComponents();
+                });
+                menu.DropDown(optionsButton.worldBound);
+                e.StopPropagation();
+            });
+
             var actions = header.Q("actions");
             var actionButton = actions.Q<Button>("action");
             actionButton.text = CurrentAction.Name;

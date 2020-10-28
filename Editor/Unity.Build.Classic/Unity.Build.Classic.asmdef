@@ -15,9 +15,6 @@
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
-    "precompiledReferences": [
-        "bee.dll"
-    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

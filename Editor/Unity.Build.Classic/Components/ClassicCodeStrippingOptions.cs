@@ -3,7 +3,7 @@ using UnityEditor;
 
 namespace Unity.Build.Classic
 {
-    public sealed class ClassicCodeStrippingOptions : IBuildComponent, ICustomBuildComponentConstructor
+    public sealed class ClassicCodeStrippingOptions : IBuildComponent, IBuildComponentInitialize
     {
         [CreateProperty]
         public bool StripEngineCode { get; set; } = true;
@@ -11,7 +11,7 @@ namespace Unity.Build.Classic
         [CreateProperty]
         public ManagedStrippingLevel ManagedStrippingLevel { get; set; } = ManagedStrippingLevel.Disabled;
 
-        void ICustomBuildComponentConstructor.Construct(BuildConfiguration.ReadOnly config)
+        public void Initialize(BuildConfiguration.ReadOnly config)
         {
             var group = config.GetBuildTargetGroup();
             if (group == BuildTargetGroup.Unknown)

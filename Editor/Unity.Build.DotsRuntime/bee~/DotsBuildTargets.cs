@@ -25,6 +25,6 @@ namespace DotsBuildTargets
         // DotsConfigs.MakeConfigs() method for details.
         public virtual DotsBuildSystemTarget ComplementaryTarget => null;
 
-        public virtual bool ValidateManagedDebugging(bool mdb) { return mdb; }
+        public virtual bool ValidateManagedDebugging(ref bool mdb) { return true; }
     }
 }

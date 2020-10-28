@@ -33,7 +33,7 @@ namespace Unity.Build
                 return null;
             }
 
-            if (TypeConstructionHelper.TryConstructFromAssemblyQualifiedTypeName<BuildPipelineBase>(json, out var step))
+            if (TypeConstructionUtility.TryConstructFromAssemblyQualifiedTypeName<BuildPipelineBase>(json, out var step))
             {
                 return step;
             }

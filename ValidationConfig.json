@@ -1,13 +1,11 @@
 {
-	"FilenameValidation": {
-		"Filenames": [{
-				"Filename": "Editor/Unity.Build.Classic.Private/NonIncremental/MissingPipelines/*ClassicNonIncrementalPipeline.cs*",
-				"Targets": "+Switch,+XboxOne,+PS4"
-			},
-			{
-				"Filename": "Editor/Unity.Build.Classic.Private/NonIncremental/Steps/SwitchPlatfomStep.cs*",
-				"Targets": "+Switch"
-			}
-		]
-	}
+    "FileContentKeywordValidation":
+    {
+        "IgnoreFilenames":
+        [
+            "Editor/Unity.Build/Platform.cs",
+            "Editor/Unity.Build/KnownPlatforms.cs",
+            "Editor/Unity.Build/Extensions/BuildTargetExtensions.cs"
+        ]
+    }
 }

@@ -31,7 +31,7 @@ namespace Unity.Build
         /// <summary>
         /// Implicit conversion to <see cref="bool"/>.
         /// </summary>
-        /// <param name="canBuild">The result.</param>
-        public static implicit operator bool(BoolResult canBuild) => canBuild.Result;
+        /// <param name="value">The result.</param>
+        public static implicit operator bool(BoolResult value) => value.Result;
     }
 }

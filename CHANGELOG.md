@@ -4,11 +4,38 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.9.0] - 2020-08-28
+## [0.10.0] - 2020-10-28
+### Added
+- Static class `TypeConstructionUtility` is now public and provides various utilities to help instantiate types.
+- Some `System.Type` extensions have been made public for convenience.
+- Added missing inline documentation for `Platform`, `PlatformInfo` and `KnownPlatforms` classes.
+
+### Changed
+- Bump minimum Unity version to `2020.1.2f1`.
+- Changed how "known platforms" are exposed in `KnownPlatforms` class.
+- Provided platform classes are now sealed.
+- Refactoring of build artifact concept:
+  - Build artifacts file names are now based on the hash of the build configuration content, to prevent the same build configuration with different settings to overwrite itself.
+  - Build artifacts can only be set/removed in `BuildContext`, and will be serialized to disk when the build completes, regardless if it succeeded or failed.
+  - Build artifacts can be queried in any class deriving from `ContextBase`.
+  - Added new API entry points to handle build artifacts on `ContextBase`, `BuildContext`, `RunContext`, `CleanContext` and `BuildConfiguration`. They should be used instead of `ContextBase` methods `GetValue`, `SetValue`, etc.
+  - The new API entry points requires build artifacts to be classes deriving from `IBuildArtifact` and have default constructor.
+  - Retrieving `BuildResult` on `BuildContext` is now clearly stated as unsupported (unavailable until build is completed).
+  - It is still possible to retrieve `BuildResult` from `RunContext` and `CleanContext` using new method `GetBuildResult`.
+
+### Deprecated
+- Method `GetLastBuildArtifact` of class `ContextBase` has been renamed to `GetBuildArtifact`.
+- Method `GetLastBuildResult` will be removed from `ContextBase` to be re-introduced as `GetBuildResult` in `RunContext` and `CleanContext`.
+
+### Fixed
+- Error dialog box in `ClassicBuildProfile` inspector should now expand properly.
+
+## [0.9.0] - 2020-10-07
 ### Added
 - New `BuildConfiguration` APIs:
- - `GetComponentSource` allows to retrieve which container a component value comes from.
- - `IsComponentUsed` determine if a component is used by the build pipeline of a build configuration.
+  - `GetComponentSource` allows to retrieve which container a component value comes from.
+  - `IsComponentUsed` determine if a component is used by the build pipeline of a build configuration.
+  - New interface `IBuildComponentInitialize` can be used to provide build components inititalization method.
 
 ### Changed
 - Update platforms packages to 0.9.0-preview
@@ -21,8 +48,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   - `Shared Configurations` list can now be re-ordered.
   - Build components styling improved for readability.
   - `Suggested Components` are now listed with other components, with a read-only greyed out style.
+  - `Suggested Components` are hidden by default; they can be shown from the option menu on build configuration inspector, next to the asset name.
   - Added option button to build components, allowing to reset value, remove component/overrides, or go to the configuration from which the value is inherited.
   - Made the `Add Component` button the same as other Unity inspectors.
+- Method `BuildConfiguration.IsComponentOverridden` is now obsolete; it has been renamed to `BuildConfiguration.IsComponentOverriding`.
+- Method `BuildConfiguration.SetComponent(Type, IBuildComponent)` is now obsolete. Use `BuildConfiguration.SetComponent(IBuildComponent)` instead.
+- Remove bee.dll assembly, the platforms are now implemented in Unity.Build.Classic namespace
+
 
 ### Fixed
 - Reverting removing build component overrides for array fields will properly bring back previous value.
@@ -30,6 +62,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed "Unapplied import settings" popup in Unity 2020.2.
 - When a build configuration is read-only, foldouts of build component fields will remain functional to allow inspection.
 - Fixed several refresh issues.
+- Optimized component lookup performance when build configurations have one or more dependencies.
+- Fixed no error reported when build configuration failed to deserialize build components.
+- Fixed create build configuration menu items that were sometimes disabled.
+
+### Removed
+- Obsolete class `BuildTypeCache` has expired; it has been removed.
 
 ## [0.8.0] - 2020-08-27
 ### Changed

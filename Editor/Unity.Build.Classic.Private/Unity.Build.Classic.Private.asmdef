@@ -19,10 +19,6 @@
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
-    "precompiledReferences": [
-        "bee.dll",
-        "Bee.Toolchain.IOS.dll"
-    ],
     "autoReferenced": false,
     "defineConstraints": [],
     "versionDefines": [],

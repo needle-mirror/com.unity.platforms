@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.IO;
+using System.Text;
 using Assert = UnityEngine.Assertions.Assert;
 
 namespace Unity.Build.Internals

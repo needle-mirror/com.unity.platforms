@@ -2,7 +2,6 @@ using System;
 using Unity.Properties;
 using Unity.Serialization;
 using UnityEngine;
-using BuildTarget = Unity.Build.DotsRuntime.BuildTarget;
 
 namespace Unity.Build.DotsRuntime
 {
@@ -20,13 +19,14 @@ namespace Unity.Build.DotsRuntime
                 m_Pipeline = null;
                 return;
             }
+
             if (PipelineConstructor != null)
             {
                 m_Pipeline = PipelineConstructor.GetPipeline(m_Target);
             }
-            else
+            else if (TypeConstructionUtility.TryConstructTypeDerivedFrom<DotsRuntimeBuildPipelineSelectorBase>(out var selector))
             {
-                m_Pipeline = TypeCacheHelper.ConstructTypeDerivedFrom<DotsRuntimeBuildPipelineSelectorBase>().SelectFor(m_Pipeline, m_Target, m_UseNewPipeline);
+                m_Pipeline = selector.SelectFor(m_Pipeline, m_Target, m_UseNewPipeline);
             }
         }
 

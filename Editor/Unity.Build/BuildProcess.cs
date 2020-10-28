@@ -14,6 +14,7 @@ namespace Unity.Build
         readonly Func<BuildContext, BuildResult> m_OnBuild;
         readonly BuildContext m_Context;
         readonly Stopwatch m_Timer = new Stopwatch();
+        DateTime m_StartTime;
 
         /// <summary>
         /// Event fired when a build is completed.
@@ -45,6 +46,7 @@ namespace Unity.Build
             if (!m_Timer.IsRunning)
             {
                 m_Timer.Restart();
+                m_StartTime = DateTime.Now;
             }
 
             try
@@ -62,8 +64,9 @@ namespace Unity.Build
             }
 
             m_Timer.Stop();
+            Result.StartTime = m_StartTime;
             Result.Duration = m_Timer.Elapsed;
-            BuildArtifacts.Store(Result, m_Context.Values.OfType<IBuildArtifact>().ToArray());
+            BuildArtifacts.Serialize(Result, m_Context.GetAllBuildArtifacts().ToArray());
             return false;
         }
 

@@ -40,6 +40,11 @@ namespace Unity.Build
         [CreateProperty] public BuildConfiguration BuildConfiguration { get; internal set; }
 
         /// <summary>
+        /// The start time of the operation
+        /// </summary>
+        [CreateProperty] public DateTime StartTime { get; internal set; }
+
+        /// <summary>
         /// The duration of the operation.
         /// </summary>
         [CreateProperty] public TimeSpan Duration { get; internal set; }

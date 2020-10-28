@@ -132,6 +132,70 @@ namespace Unity.Build.Tests
             public override Type[] UsedComponents { get; } = { typeof(TestBuildComponentInvalid) };
         }
 
+        [HideInInspector]
+        protected class TestBuildPipelineWithBuildArtifact : TestBuildPipeline
+        {
+            protected override BuildResult OnBuild(BuildContext context)
+            {
+                Assert.That(context.HasBuildArtifact<TestBuildArtifactA>(), Is.False);
+                Assert.That(context.GetOrCreateBuildArtifact<TestBuildArtifactA>(), Is.Not.Null);
+                Assert.That(context.HasBuildArtifact<TestBuildArtifactA>(), Is.True);
+                Assert.That(context.RemoveValue<TestBuildArtifactA>(), Is.True);
+                Assert.DoesNotThrow(() => context.SetValue<TestBuildArtifactA>());
+                Assert.That(context.HasValue<TestBuildArtifactA>(), Is.True);
+
+                Assert.That(context.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+                context.SetBuildArtifact(new TestBuildArtifactB());
+                Assert.That(context.HasBuildArtifact<TestBuildArtifactB>(), Is.True);
+                Assert.That(context.RemoveBuildArtifact<TestBuildArtifactB>(), Is.True);
+                Assert.That(context.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+
+                return context.Success();
+            }
+
+            protected override BoolResult OnCanRun(RunContext context)
+            {
+                var result = context.GetBuildResult();
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Succeeded, Is.True);
+
+                var artifact = context.GetBuildArtifact<TestBuildArtifactA>();
+                Assert.That(artifact, Is.Not.Null);
+                Assert.Throws<NotSupportedException>(() => context.SetValue<TestBuildArtifactB>());
+                Assert.Throws<NotSupportedException>(() => context.RemoveValue<TestBuildArtifactB>());
+
+                return result.Succeeded && artifact != null ? BoolResult.True() : BoolResult.False(nameof(artifact));
+            }
+
+            protected override RunResult OnRun(RunContext context)
+            {
+                var result = context.GetBuildResult();
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Succeeded, Is.True);
+
+                var artifact = context.GetBuildArtifact<TestBuildArtifactA>();
+                Assert.That(artifact, Is.Not.Null);
+                Assert.Throws<NotSupportedException>(() => context.SetValue<TestBuildArtifactB>());
+                Assert.Throws<NotSupportedException>(() => context.RemoveValue<TestBuildArtifactB>());
+
+                return result.Succeeded && artifact != null ? context.Success(new TestRunInstance()) : context.Failure(nameof(artifact));
+            }
+
+            protected override CleanResult OnClean(CleanContext context)
+            {
+                var result = context.GetBuildResult();
+                Assert.That(result, Is.Not.Null);
+                Assert.That(result.Succeeded, Is.True);
+
+                var artifact = context.GetBuildArtifact<TestBuildArtifactA>();
+                Assert.That(artifact, Is.Not.Null);
+                Assert.Throws<NotSupportedException>(() => context.SetValue<TestBuildArtifactB>());
+                Assert.Throws<NotSupportedException>(() => context.RemoveValue<TestBuildArtifactB>());
+
+                return result.Succeeded && artifact != null ? context.Success() : context.Failure(nameof(artifact));
+            }
+        }
+
         protected class TestBuildStepA : BuildStepBase
         {
             public override BuildResult Run(BuildContext context) => context.Success();
@@ -169,18 +233,20 @@ namespace Unity.Build.Tests
 
         protected class TestBuildArtifactB : IBuildArtifact { }
 
-        protected class TestBuildArtifactInvalid { }
+        protected class TestBuildArtifactInvalidA { }
+
+        protected struct TestBuildArtifactInvalidB : IBuildArtifact { }
 
         [SetUp]
         public void SetUp()
         {
-            BuildArtifacts.Clean();
+            BuildArtifacts.CleanAllBuildArtifacts();
         }
 
         [TearDown]
         public void TearDown()
         {
-            BuildArtifacts.Clean();
+            BuildArtifacts.CleanAllBuildArtifacts();
         }
     }
 }

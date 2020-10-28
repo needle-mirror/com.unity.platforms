@@ -49,9 +49,9 @@ namespace Unity.Build.Editor
             RefreshComponents();
         }
 
-        public void SetComponent(Type type, IBuildComponent value)
+        public void SetComponent(IBuildComponent value)
         {
-            Target.SetComponent(type, value);
+            Target.SetComponent(value);
         }
 
         public void RemoveComponent(Type type)
@@ -63,13 +63,16 @@ namespace Unity.Build.Editor
         public void RefreshComponents()
         {
             var components = Target.GetComponents();
-            var pipeline = Target.GetBuildPipeline();
-            if (pipeline != null)
+            if (BuildConfigurationInspector.ShowUsedComponents)
             {
-                components = components.Concat(pipeline.UsedComponents
-                    .Where(c => !c.IsAbstract && !c.IsInterface)
-                    .Where(c => !Target.HasComponent(c))
-                    .Select(c => Target.GetComponentOrDefault(c)));
+                var pipeline = Target.GetBuildPipeline();
+                if (pipeline != null)
+                {
+                    components = components.Concat(pipeline.UsedComponents
+                        .Where(c => !c.IsAbstract && !c.IsInterface)
+                        .Where(c => !Target.HasComponent(c))
+                        .Select(c => Target.GetComponentOrDefault(c)));
+                }
             }
 
             Components = components.Select(c => new BuildComponentInspectorData(this, c)).ToArray();

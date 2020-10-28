@@ -1,10 +1,8 @@
 using NUnit.Framework;
 using System;
-using Bee.Core;
 using Unity.Build.Classic.Private;
 using Unity.Build.MockPlatform;
 using Unity.Build.MockPlatform.Classic;
-using UnityEditor;
 using UnityEngine;
 
 namespace Unity.Build.MockPlatform
@@ -12,7 +10,6 @@ namespace Unity.Build.MockPlatform
     class TestPlatformClassicNonIncrementalPipeline_WrongNamespace : ClassicNonIncrementalPipelineBase
     {
         protected override RunResult OnRun(RunContext context) => throw new NotImplementedException();
-        protected override BuildTarget BuildTarget { get; } = BuildTarget.NoTarget;
         public override Platform Platform { get; } = Classic.MockPlatform.Instance;
     }
 }
@@ -22,14 +19,13 @@ namespace Unity.Build.MockPlatform.Classic
     [HideInInspector]
     class MockPlatform : Platform
     {
-        public override bool HasPosix => false;
         public static MockPlatform Instance = new MockPlatform();
+        public MockPlatform() : base(new PlatformInfo("mock", "Mock Platform", "com.unity.platforms", "Standalone")) { }
     }
 
     class TestPlatformClassicNonIncrementalPipeline : ClassicNonIncrementalPipelineBase
     {
         protected override RunResult OnRun(RunContext context) => throw new NotImplementedException();
-        protected override BuildTarget BuildTarget { get; } = BuildTarget.NoTarget;
         public override Platform Platform { get; } = MockPlatform.Instance;
     }
 }
@@ -50,7 +46,7 @@ namespace Unity.Build.Classic.Tests
             Assert.IsFalse(BuildPipelineSelector.IsBuildPipelineValid(new TestPlatformClassicNonIncrementalPipeline_WrongNamespace(), MockPlatform.Classic.MockPlatform.Instance));
 
             var selector = new BuildPipelineSelector();
-            Assert.AreEqual(selector.SelectFor(MockPlatform.Classic.MockPlatform.Instance, false).GetType(), typeof(TestPlatformClassicNonIncrementalPipeline));
+            Assert.AreEqual(selector.SelectFor(MockPlatform.Classic.MockPlatform.Instance).GetType(), typeof(TestPlatformClassicNonIncrementalPipeline));
         }
     }
 }

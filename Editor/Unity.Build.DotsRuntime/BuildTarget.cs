@@ -125,6 +125,15 @@ namespace Unity.Build.DotsRuntime
         // List of build components used by this build target.
         public virtual Type[] UsedComponents { get; } = Array.Empty<Type>();
 
+        // Default asset file name
+        public virtual string DefaultAssetFileName { get; set; } = string.Empty;
+
+        // List of required platform specific components to build this target
+        public virtual Type[] DefaultComponents { get; } = Array.Empty<Type>();
+
+        // Should be created by default from the editor
+        public virtual bool ShouldCreateBuildTargetByDefault => false;
+
         public virtual void WriteBuildConfiguration(BuildContext context, string path)
         {
             var componentTypes = new HashSet<Type>();

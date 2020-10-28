@@ -1,6 +1,7 @@
 ﻿using NUnit.Framework;
 using System;
 using System.IO;
+using System.Linq;
 using Unity.Serialization.Json;
 using Unity.Serialization.Json.Adapters;
 using UnityEditor;
@@ -245,6 +246,107 @@ namespace Unity.Build.Tests
             }
         }
 
+        [Test]
+        public void HasBuildArtifact()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+
+            Assert.That(config.HasBuildArtifact<TestBuildArtifactA>(), Is.False);
+            Assert.That(config.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+
+            config.Build();
+            Assert.That(config.HasBuildArtifact<TestBuildArtifactA>(), Is.True);
+            Assert.That(config.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(config.HasBuildArtifact<TestBuildArtifactA>(), Is.False);
+            Assert.That(config.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+
+            Assert.Throws<ArgumentNullException>(() => config.HasBuildArtifact(null));
+            Assert.Throws<InvalidOperationException>(() => config.HasBuildArtifact(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => config.HasBuildArtifact(typeof(TestBuildArtifactInvalidA)));
+            Assert.Throws<InvalidOperationException>(() => config.HasBuildArtifact(typeof(TestBuildArtifactInvalidB)));
+        }
+
+        [Test]
+        public void GetBuildArtifact()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactA>(), Is.Null);
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactB>(), Is.Null);
+
+            config.Build();
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactA>(), Is.Not.Null);
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactB>(), Is.Null);
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactA>(), Is.Null);
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactB>(), Is.Null);
+
+            Assert.Throws<ArgumentNullException>(() => config.GetBuildArtifact(null));
+            Assert.Throws<InvalidOperationException>(() => config.GetBuildArtifact(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => config.GetBuildArtifact(typeof(TestBuildArtifactInvalidA)));
+            Assert.Throws<InvalidOperationException>(() => config.GetBuildArtifact(typeof(TestBuildArtifactInvalidB)));
+        }
+
+        [Test]
+        public void GetAllBuildArtifacts()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+
+            Assert.That(config.GetAllBuildArtifacts(), Is.Empty);
+
+            config.Build();
+            Assert.That(config.GetAllBuildArtifacts().Select(a => a.GetType()), Is.EquivalentTo(new[] { typeof(TestBuildArtifactA) }));
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(config.GetAllBuildArtifacts(), Is.Empty);
+        }
+
+        [Test]
+        public void GetBuildResult()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+
+            Assert.That(config.GetBuildResult(), Is.Null);
+
+            var buildResult = config.Build();
+            var artifactResult = config.GetBuildResult();
+            Assert.That(artifactResult, Is.Not.Null);
+            Assert.That(artifactResult.Succeeded, Is.EqualTo(buildResult.Succeeded));
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(config.GetBuildResult(), Is.Null);
+        }
+
+        [Test]
+        public void CleanBuildArtifact()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactA>(), Is.Null);
+            Assert.That(config.GetBuildResult(), Is.Null);
+
+            config.Build();
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactA>(), Is.Not.Null);
+            Assert.That(config.GetBuildResult(), Is.Not.Null);
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(config.GetBuildArtifact<TestBuildArtifactA>(), Is.Null);
+            Assert.That(config.GetBuildResult(), Is.Null);
+        }
+
         class TestMigrationContext : IJsonMigration<TestBuildComponentA>
         {
             public const string k_AssetPath = "Assets/" + nameof(BuildConfigurationTests) + BuildConfiguration.AssetExtension;
@@ -285,25 +387,25 @@ namespace Unity.Build.Tests
         }
 
         [HideInInspector]
-        class ComponentConstruct : IBuildComponent, ICustomBuildComponentConstructor
+        class ComponentInitialize : IBuildComponent, IBuildComponentInitialize
         {
             public int Integer;
-            void ICustomBuildComponentConstructor.Construct(BuildConfiguration.ReadOnly config) => Integer = 255;
+            public void Initialize(BuildConfiguration.ReadOnly config) => Integer = 255;
         }
 
         [Test]
-        public void BuildComponentConstruct()
+        public void BuildComponentInitialize()
         {
             var container = BuildConfiguration.CreateInstance();
-            Assert.That(container.GetComponentOrDefault<ComponentConstruct>().Integer, Is.EqualTo(255));
+            Assert.That(container.GetComponentOrDefault<ComponentInitialize>().Integer, Is.EqualTo(255));
 
-            container.SetComponent<ComponentConstruct>();
-            Assert.That(container.GetComponent<ComponentConstruct>().Integer, Is.EqualTo(255));
-            Assert.That(container.GetComponentOrDefault<ComponentConstruct>().Integer, Is.EqualTo(255));
+            container.SetComponent<ComponentInitialize>();
+            Assert.That(container.GetComponent<ComponentInitialize>().Integer, Is.EqualTo(255));
+            Assert.That(container.GetComponentOrDefault<ComponentInitialize>().Integer, Is.EqualTo(255));
 
-            container.SetComponent(new ComponentConstruct());
-            Assert.That(container.GetComponent<ComponentConstruct>().Integer, Is.EqualTo(0));
-            Assert.That(container.GetComponentOrDefault<ComponentConstruct>().Integer, Is.EqualTo(0));
+            container.SetComponent(new ComponentInitialize());
+            Assert.That(container.GetComponent<ComponentInitialize>().Integer, Is.EqualTo(0));
+            Assert.That(container.GetComponentOrDefault<ComponentInitialize>().Integer, Is.EqualTo(0));
         }
     }
 }

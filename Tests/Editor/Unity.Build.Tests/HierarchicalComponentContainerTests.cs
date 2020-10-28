@@ -316,7 +316,7 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidJson_DoesNotThrow()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-            LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
+            LogAssert.Expect(LogType.Exception, new Regex("InvalidJsonException: Input json was invalid.*"));
             TestHierarchicalComponentContainer.DeserializeFromJson(container, "{\"Dependencies\": [], \"Components\": [{\"$type\": }, {\"$type\": }]}");
         }
 
@@ -325,6 +325,7 @@ namespace Unity.Build.Tests
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}, {{\"$type\": \"Some.InvalidComponent.Name, Unknown.Assembly\"}}]}}");
+            LogAssert.Expect(LogType.Exception, new Regex("While deserializing memory container of type.*"));
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
 
@@ -332,7 +333,7 @@ namespace Unity.Build.Tests
         public void DeserializeInvalidDependencies_ComponentsArePreserved()
         {
             var container = TestHierarchicalComponentContainer.CreateInstance();
-            LogAssert.Expect(LogType.Error, new Regex("Failed to deserialize memory container.*"));
+            LogAssert.Expect(LogType.Error, new Regex("While deserializing memory container of type.*"));
             TestHierarchicalComponentContainer.DeserializeFromJson(container, $"{{\"Dependencies\": [123, \"abc\"], \"Components\": [{{\"$type\": {typeof(ComponentA).GetAssemblyQualifiedTypeName().DoubleQuotes()}}}]}}");
             Assert.That(container.HasComponent<ComponentA>(), Is.True);
         }
@@ -382,8 +383,8 @@ namespace Unity.Build.Tests
             var containerD = TestHierarchicalComponentContainer.CreateInstance(c => c.SetComponent<ComplexComponent>());
 
             containerA.AddDependency(containerB);
-            containerA.AddDependency(containerC);
-            containerA.AddDependency(containerD);
+            containerB.AddDependency(containerC);
+            containerC.AddDependency(containerD);
 
             Assert.That(containerA.HasComponent<ITestInterface>(), Is.True);
             Assert.That(containerA.TryGetComponent<ITestInterface>(out var value), Is.True);
@@ -404,46 +405,6 @@ namespace Unity.Build.Tests
             Assert.That(instance.Integer, Is.EqualTo(2));
             Assert.That(instance.Float, Is.EqualTo(654.321f));
             Assert.That(container.RemoveComponent(typeof(AbstractClass)), Is.True);
-        }
-
-        [Test]
-        public void CannotSet_NullType()
-        {
-            var container = TestHierarchicalComponentContainer.CreateInstance();
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                container.SetComponent(null, new ComponentA());
-            });
-        }
-
-        [Test]
-        public void CannotSet_ObjectType()
-        {
-            var container = TestHierarchicalComponentContainer.CreateInstance();
-            Assert.Throws<InvalidOperationException>(() =>
-            {
-                container.SetComponent(typeof(object), new ComponentA());
-            });
-        }
-
-        [Test]
-        public void CannotSet_InterfaceType()
-        {
-            var container = TestHierarchicalComponentContainer.CreateInstance();
-            Assert.Throws<InvalidOperationException>(() =>
-            {
-                container.SetComponent(typeof(ITestInterface), new ComponentA());
-            });
-        }
-
-        [Test]
-        public void CannotSet_AbstractType()
-        {
-            var container = TestHierarchicalComponentContainer.CreateInstance();
-            Assert.Throws<InvalidOperationException>(() =>
-            {
-                container.SetComponent(typeof(AbstractClass), new DerivedClass());
-            });
         }
 
         [Test]
@@ -732,14 +693,10 @@ namespace Unity.Build.Tests
                 c.SetComponent<ComponentB>();
             });
             Assert.That(container.GetComponentTypes(), Is.EquivalentTo(new[] { typeof(ComponentA), typeof(ComponentB) }));
-            Assert.Throws<ArgumentNullException>(() => container.SetComponent(null));
-            Assert.Throws<ArgumentNullException>(() => container.SetComponent(null, default));
+            Assert.Throws<ArgumentNullException>(() => container.SetComponent(default(ComplexComponent)));
             Assert.Throws<InvalidOperationException>(() => container.SetComponent(typeof(object)));
-            Assert.Throws<InvalidOperationException>(() => container.SetComponent(typeof(object), default));
             Assert.Throws<InvalidOperationException>(() => container.SetComponent(typeof(InvalidComponent)));
-            Assert.Throws<InvalidOperationException>(() => container.SetComponent(typeof(InvalidComponent), default));
             Assert.Throws<InvalidOperationException>(() => container.SetComponent(typeof(ITestInterface)));
-            Assert.Throws<InvalidOperationException>(() => container.SetComponent(typeof(ITestInterface), default));
         }
 
         [Test]
@@ -791,7 +748,7 @@ namespace Unity.Build.Tests
             Assert.That(containerC.HasDependency(containerB), Is.False);
             Assert.That(containerC.HasDependency(containerC), Is.False);
 
-            Assert.That(containerA.HasDependency(null), Is.False);
+            Assert.Throws<ArgumentNullException>(() => containerA.HasDependency(null));
         }
 
         [Test]
@@ -841,14 +798,14 @@ namespace Unity.Build.Tests
             containerA.AddDependency(containerB);
             containerB.AddDependency(containerC);
 
-            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerC, containerB }));
+            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerB, containerC }));
             Assert.That(containerB.GetDependencies(), Is.EqualTo(new[] { containerC }));
             Assert.That(containerC.GetDependencies(), Is.Empty);
 
             var containerD = TestHierarchicalComponentContainer.CreateInstance();
             containerA.AddDependency(containerD);
             containerC.AddDependency(containerD);
-            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerD, containerC, containerB, containerD }));
+            Assert.That(containerA.GetDependencies(), Is.EqualTo(new[] { containerB, containerC, containerD, containerD }));
         }
 
         [Test]

@@ -1,9 +1,8 @@
 ﻿namespace Unity.Build
 {
     /// <summary>
-    /// Interface for information about a build.
+    /// Base interface for build artifacts.
+    /// Build artifacts are used to stores build results and retrieve them later.
     /// </summary>
-    public interface IBuildArtifact
-    {
-    }
+    public interface IBuildArtifact { }
 }

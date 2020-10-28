@@ -24,6 +24,7 @@
 
 .classic-build-profile__message
 {
+    flex-grow: 1;
     flex-shrink: 1;
     white-space: normal;
     padding: 0px;

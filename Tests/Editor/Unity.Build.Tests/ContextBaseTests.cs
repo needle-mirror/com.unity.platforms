@@ -22,6 +22,7 @@ namespace Unity.Build.Tests
             context.SetValue(new TestValueA());
             Assert.That(context.HasValue<TestValueA>(), Is.True);
             Assert.That(context.HasValue<TestValueB>(), Is.False);
+            Assert.Throws<InvalidOperationException>(() => context.HasValue<object>());
         }
 
         [Test]
@@ -31,6 +32,7 @@ namespace Unity.Build.Tests
             var value = new TestValueA();
             context.SetValue(value);
             Assert.That(context.GetValue<TestValueA>(), Is.EqualTo(value));
+            Assert.Throws<InvalidOperationException>(() => context.GetValue<object>());
         }
 
         [Test]
@@ -48,6 +50,7 @@ namespace Unity.Build.Tests
             Assert.That(context.HasValue<TestValueA>(), Is.True);
             Assert.That(context.GetValue<TestValueA>(), Is.Not.Null);
             Assert.That(context.Values.Length, Is.EqualTo(1));
+            Assert.Throws<InvalidOperationException>(() => context.GetOrCreateValue<object>());
         }
 
         [Test]
@@ -64,6 +67,7 @@ namespace Unity.Build.Tests
             var context = new TestContextBase();
             Assert.That(context.GetValueOrDefault<TestValueA>(), Is.Not.Null);
             Assert.That(context.HasValue<TestValueA>(), Is.False);
+            Assert.Throws<InvalidOperationException>(() => context.GetValueOrDefault<object>());
         }
 
         [Test]
@@ -77,22 +81,8 @@ namespace Unity.Build.Tests
             Assert.That(context.HasValue<TestValueB>(), Is.True);
             Assert.That(context.GetValue<TestValueB>(), Is.Not.Null);
             Assert.That(context.Values.Length, Is.EqualTo(2));
-        }
-
-        [Test]
-        public void SetValue_SkipObjectType()
-        {
-            var context = new TestContextBase();
-            Assert.DoesNotThrow(() => context.SetValue(new object()));
-            Assert.That(context.Values.Length, Is.Zero);
-        }
-
-        [Test]
-        public void SetValue_SkipNullValues()
-        {
-            var context = new TestContextBase();
-            Assert.DoesNotThrow(() => context.SetValue<object>(null));
-            Assert.That(context.Values.Length, Is.Zero);
+            Assert.Throws<ArgumentNullException>(() => context.SetValue<TestValueA>(null));
+            Assert.Throws<InvalidOperationException>(() => context.SetValue(new object()));
         }
 
         [Test]
@@ -117,6 +107,7 @@ namespace Unity.Build.Tests
             Assert.That(context.Values.Length, Is.EqualTo(1));
             Assert.That(context.RemoveValue<TestValueA>(), Is.True);
             Assert.That(context.Values.Length, Is.Zero);
+            Assert.Throws<InvalidOperationException>(() => context.RemoveValue<object>());
         }
 
         [Test]
@@ -257,6 +248,73 @@ namespace Unity.Build.Tests
             });
             var context = new TestContextBase(pipeline, configA);
             Assert.That(context.GetComponentTypes(), Is.EquivalentTo(new[] { typeof(TestBuildComponentA), typeof(TestBuildComponentB) }));
+        }
+
+        [Test]
+        public void HasBuildArtifact()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            var context = new TestContextBase(pipeline, config);
+
+            Assert.That(context.HasBuildArtifact<TestBuildArtifactA>(), Is.False);
+            Assert.That(context.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+
+            config.Build();
+            Assert.That(context.HasBuildArtifact<TestBuildArtifactA>(), Is.True);
+            Assert.That(context.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(context.HasBuildArtifact<TestBuildArtifactA>(), Is.False);
+            Assert.That(context.HasBuildArtifact<TestBuildArtifactB>(), Is.False);
+
+            Assert.Throws<ArgumentNullException>(() => context.HasBuildArtifact(null));
+            Assert.Throws<InvalidOperationException>(() => context.HasBuildArtifact(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => context.HasBuildArtifact(typeof(TestBuildArtifactInvalidA)));
+            Assert.Throws<InvalidOperationException>(() => context.HasBuildArtifact(typeof(TestBuildArtifactInvalidB)));
+        }
+
+        [Test]
+        public void GetBuildArtifact()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            var context = new TestContextBase(pipeline, config);
+
+            Assert.That(context.GetBuildArtifact<TestBuildArtifactA>(), Is.Null);
+            Assert.That(context.GetBuildArtifact<TestBuildArtifactB>(), Is.Null);
+
+            config.Build();
+            Assert.That(context.GetBuildArtifact<TestBuildArtifactA>(), Is.Not.Null);
+            Assert.That(context.GetBuildArtifact<TestBuildArtifactB>(), Is.Null);
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(context.GetBuildArtifact<TestBuildArtifactA>(), Is.Null);
+            Assert.That(context.GetBuildArtifact<TestBuildArtifactB>(), Is.Null);
+
+            Assert.Throws<ArgumentNullException>(() => context.GetBuildArtifact(null));
+            Assert.Throws<InvalidOperationException>(() => context.GetBuildArtifact(typeof(object)));
+            Assert.Throws<InvalidOperationException>(() => context.GetBuildArtifact(typeof(TestBuildArtifactInvalidA)));
+            Assert.Throws<InvalidOperationException>(() => context.GetBuildArtifact(typeof(TestBuildArtifactInvalidB)));
+        }
+
+        [Test]
+        public void GetAllBuildArtifacts()
+        {
+            var pipeline = new TestBuildPipelineWithBuildArtifact();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
+            var context = new TestContextBase(pipeline, config);
+
+            Assert.That(context.GetAllBuildArtifacts(), Is.Empty);
+
+            config.Build();
+            Assert.That(context.GetAllBuildArtifacts().Select(a => a.GetType()), Is.EquivalentTo(new[] { typeof(TestBuildArtifactA) }));
+            Assert.That(config.Run().Succeeded, Is.True);
+
+            config.CleanBuildArtifact();
+            Assert.That(context.GetAllBuildArtifacts(), Is.Empty);
         }
     }
 }

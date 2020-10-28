@@ -123,7 +123,13 @@ namespace Unity.Build.Editor
             Rebuild();
         }
 
-        public override bool HasModified() => Source.SerializeToJson() != Target.SerializeToJson();
+        public override bool HasModified()
+        {
+            if (Source == null || !Source || Target == null || !Target)
+                return false;
+
+            return Source.SerializeToJson() != Target.SerializeToJson();
+        }
 
         VisualElement Build()
         {
@@ -132,10 +138,14 @@ namespace Unity.Build.Editor
                 m_Root = new VisualElement();
             }
 
-            var configRoot = new PropertyElement();
-            configRoot.SetTarget(new BuildConfigurationInspectorData(Source, Target));
-            configRoot.AddContext(new BuildConfigurationContext(this));
-            m_Root.contentContainer.Add(configRoot);
+            if (Source != null && Source && Target != null && Target)
+            {
+                var configRoot = new PropertyElement();
+                configRoot.SetTarget(new BuildConfigurationInspectorData(Source, Target));
+                configRoot.AddContext(new BuildConfigurationContext(this));
+                m_Root.contentContainer.Add(configRoot);
+            }
+
             m_Root.contentContainer.Add(new IMGUIContainer(ApplyRevertGUI));
             return m_Root;
         }

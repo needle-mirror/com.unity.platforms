@@ -27,7 +27,11 @@ namespace Unity.Build
         /// <returns>A new clean result instance.</returns>
         public CleanResult Failure(Exception exception) => CleanResult.Failure(BuildPipeline, BuildConfiguration, exception);
 
-        internal CleanContext() : base() { }
+        /// <summary>
+        /// Get the build result of the last <see cref="BuildConfiguration.Build"/> performed.
+        /// </summary>
+        /// <returns>The build result if found, <see langword="null"/> otherwise.</returns>
+        public BuildResult GetBuildResult() => BuildConfiguration.GetBuildResult();
 
         internal CleanContext(BuildPipelineBase pipeline, BuildConfiguration config)
             : base(pipeline, config)

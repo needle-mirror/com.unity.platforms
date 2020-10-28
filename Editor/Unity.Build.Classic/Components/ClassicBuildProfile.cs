@@ -1,5 +1,4 @@
-﻿using Bee.Core;
-using System;
+﻿using System;
 using Unity.Properties;
 using Unity.Serialization;
 using Unity.Serialization.Json;
@@ -13,11 +12,14 @@ namespace Unity.Build.Classic
     public sealed class ClassicBuildProfile : IBuildPipelineComponent
     {
         Platform m_Platform;
-        bool m_Incremental;
         BuildPipelineBase m_Pipeline;
 
+        /// <summary>
+        /// Gets or sets which <see cref="Build.Platform"/> this profile is going to use for the build.
+        /// Used for building classic players.
+        /// </summary>
         [CreateProperty]
-        internal Platform Platform
+        public Platform Platform
         {
             get => m_Platform;
             set
@@ -27,10 +29,10 @@ namespace Unity.Build.Classic
                     m_Platform = null;
                     m_Pipeline = null;
                 }
-                else if (value.GetType() != m_Platform?.GetType())
+                else if (!value.Equals(m_Platform))
                 {
                     m_Platform = value;
-                    m_Pipeline = ConstructPipeline(m_Platform, m_Incremental);
+                    m_Pipeline = ConstructPipeline(m_Platform);
                 }
             }
         }
@@ -41,34 +43,10 @@ namespace Unity.Build.Classic
         [CreateProperty]
         public BuildType Configuration { get; set; } = BuildType.Develop;
 
-#if !ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-        // Hide this property instead of removing, since when saving json
-        // We'll loose incremental value
-        [HideInInspector]
-#endif
-        [CreateProperty]
-        public bool Incremental
-        {
-            get => m_Incremental;
-            set
-            {
-                if (m_Incremental != value)
-                {
-                    m_Incremental = value;
-                    m_Pipeline = ConstructPipeline(m_Platform, m_Incremental);
-                }
-            }
-        }
-
-
         public BuildPipelineBase Pipeline
         {
             get => m_Pipeline;
-#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-            set => throw new InvalidOperationException($"Cannot explicitly set {nameof(Pipeline)}, set {nameof(Platform)} and/or {nameof(Incremental)} properties instead.");
-#else
             set => throw new InvalidOperationException($"Cannot explicitly set {nameof(Pipeline)}, set {nameof(Platform)} property instead.");
-#endif
         }
 
         public int SortingIndex => throw new NotImplementedException();
@@ -78,14 +56,13 @@ namespace Unity.Build.Classic
         public ClassicBuildProfile()
         {
 #if UNITY_EDITOR_WIN
-            m_Platform = new WindowsPlatform();
+            m_Platform = BuildTarget.StandaloneWindows64.GetPlatform();
 #elif UNITY_EDITOR_OSX
-            m_Platform = new MacOSXPlatform();
+            m_Platform = BuildTarget.StandaloneOSX.GetPlatform();
 #elif UNITY_EDITOR_LINUX
-            m_Platform = new LinuxPlatform();
+            m_Platform = BuildTarget.StandaloneLinux64.GetPlatform();
 #endif
-            m_Incremental = false;
-            m_Pipeline = ConstructPipeline(m_Platform, m_Incremental);
+            m_Pipeline = ConstructPipeline(m_Platform);
         }
 
         internal static string GetExecutableExtension(BuildTarget target)
@@ -121,52 +98,22 @@ namespace Unity.Build.Classic
 #pragma warning restore 618
         }
 
-        static Platform ConstructPlatform(BuildTarget target)
+        /// <summary>
+        /// Attempt to map a given <see cref="Platforms.BuildTarget"/>
+        /// to its corresponding <see cref="Build.Platform"/>.
+        /// </summary>
+        public static Platform ConstructPlatform(BuildTarget target)
         {
-#pragma warning disable 618
-            switch (target)
-            {
-                case BuildTarget.StandaloneWindows:
-                case BuildTarget.StandaloneWindows64:
-                    return new WindowsPlatform();
-                case BuildTarget.StandaloneOSX:
-                case BuildTarget.StandaloneOSXIntel:
-                case BuildTarget.StandaloneOSXIntel64:
-                    return new MacOSXPlatform();
-                case BuildTarget.StandaloneLinux:
-                case BuildTarget.StandaloneLinux64:
-                case BuildTarget.StandaloneLinuxUniversal:
-                    return new LinuxPlatform();
-                case BuildTarget.WSAPlayer:
-                    return new UniversalWindowsPlatform();
-                case BuildTarget.Android:
-                    return new AndroidPlatform();
-                case BuildTarget.iOS:
-                    return new IosPlatform();
-                case BuildTarget.tvOS:
-                    return new TvosPlatform();
-                case BuildTarget.WebGL:
-                    return new WebGLPlatform();
-                case BuildTarget.PS4:
-                    return new PS4Platform();
-                case BuildTarget.XboxOne:
-                    return new XboxOnePlatform();
-                case BuildTarget.Switch:
-                    return new SwitchPlatform();
-                default:
-                    throw new NotImplementedException($"Could not map {nameof(BuildTarget)} '{target.ToString()}' to a known {nameof(Platform)}.");
-            }
-#pragma warning restore 618
+            var platform = target.GetPlatform();
+            if (platform == null)
+                throw new NotImplementedException($"Could not map {nameof(BuildTarget)} '{target}' to a known {nameof(Platform)}. (are you missing an assembly or package reference?)");
+
+            return platform;
         }
 
-        static BuildPipelineBase ConstructPipeline(Platform platform, bool incremental)
+        static BuildPipelineBase ConstructPipeline(Platform platform)
         {
-            if (platform == null)
-            {
-                return null;
-            }
-
-            return TypeCacheHelper.ConstructTypeDerivedFrom<BuildPipelineSelectorBase>().SelectFor(platform, incremental);
+            return platform != null && TypeConstructionUtility.TryConstructTypeDerivedFrom<BuildPipelineSelectorBase>(out var selector) ? selector.SelectFor(platform) : null;
         }
 
         class ClassicBuildProfileMigration : IJsonMigration<ClassicBuildProfile>
@@ -220,9 +167,9 @@ namespace Unity.Build.Classic
                             var config = string.Empty;
                             if (!string.IsNullOrEmpty(deserializationContext.AssetPath))
                             {
-                                config = deserializationContext.AssetPath.ToHyperLink();
+                                config = deserializationContext.AssetPath;
                             }
-                            Debug.LogWarning($"{config} uses custom build pipeline {deserializationContext.AssetPath.ToHyperLink()}. Custom build pipelines are no longer supported.\n" +
+                            Debug.LogWarning($"{config} uses custom build pipeline {deserializationContext.AssetPath}. Custom build pipelines are no longer supported.\n" +
                                 $"Several options can be set using build components (like {nameof(PlayerConnectionSettings)}, {nameof(EnableHeadlessMode)}, etc).");
                         }
                     }
@@ -294,15 +241,10 @@ namespace Unity.Build.Classic
             void CheckForHybridLiveLinkBuildPipeline(BuildConfiguration.DeserializationContext deserializationContext, string assetGuid)
             {
                 if (string.IsNullOrEmpty(assetGuid))
-                {
                     return;
-                }
 
-                var migration = TypeCacheHelper.ConstructTypeDerivedFrom<HybridBuildPipelineMigrationBase>();
-                if (migration != null)
-                {
+                if (TypeConstructionUtility.TryConstructTypeDerivedFrom<HybridBuildPipelineMigrationBase>(out var migration))
                     migration.Migrate(deserializationContext.Asset, assetGuid);
-                }
             }
         }
     }
@@ -312,7 +254,7 @@ namespace Unity.Build.Classic
     /// </summary>
     internal abstract class BuildPipelineSelectorBase
     {
-        public abstract BuildPipelineBase SelectFor(Platform platform, bool incremental);
+        public abstract BuildPipelineBase SelectFor(Platform platform);
     }
 
     /// <summary>

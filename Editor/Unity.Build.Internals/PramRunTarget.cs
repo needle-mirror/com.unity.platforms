@@ -5,7 +5,7 @@ namespace Unity.Build.Internals
 {
     internal class PramRunTarget : RunTargetBase
     {
-        public override string DisplayName { get; protected set;  }
+        public override string DisplayName { get; protected set; }
         public override string UniqueId => $"{ProviderName}-{EnvironmentId}";
 
         private Pram Pram { get; }

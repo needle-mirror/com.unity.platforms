@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace Unity.Build
 {
@@ -101,27 +101,56 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Get the value of the first build artifact that is assignable to type <see cref="Type"/>.
+        /// Determine if a build artifact that is assignable to the specified type is present.
         /// </summary>
-        /// <param name="config">The build configuration that was used to store the build artifact.</param>
-        /// <param name="type">The type of the build artifact.</param>
-        /// <returns>The build artifact if found, otherwise <see langword="null"/>.</returns>
-        public IBuildArtifact GetLastBuildArtifact(Type type) => BuildArtifacts.GetBuildArtifact(this, type);
+        /// <param name="buildArtifactType">The build artifact type.</param>
+        /// <returns><see langword="true"/> if a matching build artifact is found, <see langword="false"/> otherwise.</returns>
+        public bool HasBuildArtifact(Type buildArtifactType) => BuildArtifacts.HasBuildArtifact(this, buildArtifactType);
 
         /// <summary>
-        /// Get the value of the first build artifact that is assignable to type <typeparamref name="T"/>.
+        /// Determine if a build artifact that is assignable to the specified type is present.
         /// </summary>
-        /// <typeparam name="T">The type of the build artifact.</typeparam>
-        /// <param name="config">The build configuration that was used to store the build artifact.</param>
-        /// <returns>The build artifact if found, otherwise <see langword="null"/>.</returns>
-        public T GetLastBuildArtifact<T>() where T : class, IBuildArtifact => BuildArtifacts.GetBuildArtifact<T>(this);
+        /// <typeparam name="T">The build artifact type.</typeparam>
+        /// <returns><see langword="true"/> if a matching build artifact is found, <see langword="false"/> otherwise.</returns>
+        public bool HasBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildArtifacts.HasBuildArtifact<T>(this);
 
         /// <summary>
-        /// Get the last build result for this build configuration.
+        /// Get the first build artifact value that is assignable to specified type.
+        /// Multiple build artifact value can be stored per build configuration.
         /// </summary>
-        /// <param name="config">The build configuration that was used to store the build artifact.</param>
-        /// <returns>The build result if found, otherwise <see langword="null"/>.</returns>
-        public BuildResult GetLastBuildResult() => BuildArtifacts.GetBuildResult(this);
+        /// <param name="buildArtifactType">The build artifact type.</param>
+        /// <returns>A build artifact value if found, <see langword="null"/> otherwise.</returns>
+        public IBuildArtifact GetBuildArtifact(Type buildArtifactType) => BuildArtifacts.GetBuildArtifact(this, buildArtifactType);
+
+        /// <summary>
+        /// Get the first build artifact value that is assignable to specified type.
+        /// Multiple build artifact value can be stored per build configuration.
+        /// </summary>
+        /// <typeparam name="T">The build artifact type.</typeparam>
+        /// <returns>A build artifact value if found, <see langword="null"/> otherwise.</returns>
+        public T GetBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildArtifacts.GetBuildArtifact<T>(this);
+
+        /// <summary>
+        /// Get all build artifact values.
+        /// </summary>
+        /// <returns>Enumeration of all build artifact values.</returns>
+        public IEnumerable<IBuildArtifact> GetAllBuildArtifacts() => BuildArtifacts.GetAllBuildArtifacts(this);
+
+        /// <summary>
+        /// Get the build result of the last <see cref="Build"/> performed.
+        /// </summary>
+        /// <returns>The build result if found, <see langword="null"/> otherwise.</returns>
+        public BuildResult GetBuildResult() => BuildArtifacts.GetBuildResult(this);
+
+        /// <summary>
+        /// Clean the build result of the last <see cref="Build"/> performed.
+        /// </summary>
+        public void CleanBuildArtifact() => BuildArtifacts.CleanBuildArtifact(this);
+
+        /// <summary>
+        /// Clean all build results.
+        /// </summary>
+        public static void CleanAllBuildArtifacts() => BuildArtifacts.CleanAllBuildArtifacts();
 
         /// <summary>
         /// Get the output build directory override for this build configuration.
@@ -137,14 +166,6 @@ namespace Unity.Build
             return pipeline.GetOutputBuildDirectory(this).ToString();
         }
 
-        protected override void OnComponentConstruct(ref IBuildComponent component)
-        {
-            if (component is ICustomBuildComponentConstructor constructible)
-            {
-                constructible.Construct(AsReadOnly());
-            }
-        }
-
         BoolResult CanUsePipeline(BuildPipelineBase pipeline)
         {
             if (pipeline == null)
@@ -153,6 +174,15 @@ namespace Unity.Build
             }
             return BoolResult.True();
         }
+
+        [Obsolete("GetLastBuildArtifact has been renamed to GetBuildArtifact. (RemovedAfter 2021-02-01)")]
+        public IBuildArtifact GetLastBuildArtifact(Type type) => GetBuildArtifact(type);
+
+        [Obsolete("GetLastBuildArtifact has been renamed to GetBuildArtifact. (RemovedAfter 2021-02-01)")]
+        public T GetLastBuildArtifact<T>() where T : class, IBuildArtifact => (T)GetBuildArtifact(typeof(T));
+
+        [Obsolete("GetLastBuildResult has been renamed to GetBuildResult. (RemovedAfter 2021-02-01)")]
+        public BuildResult GetLastBuildResult() => GetBuildResult();
     }
 
     public static class BuildConfigurationReadOnlyExtensions

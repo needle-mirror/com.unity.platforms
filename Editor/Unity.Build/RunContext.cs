@@ -33,7 +33,11 @@ namespace Unity.Build
         /// <returns>A new run result instance.</returns>
         public RunResult Failure(Exception exception) => RunResult.Failure(BuildPipeline, BuildConfiguration, exception);
 
-        internal RunContext() : base() { }
+        /// <summary>
+        /// Get the build result of the last <see cref="BuildConfiguration.Build"/> performed.
+        /// </summary>
+        /// <returns>The build result if found, <see langword="null"/> otherwise.</returns>
+        public BuildResult GetBuildResult() => BuildConfiguration.GetBuildResult();
 
         internal RunContext(BuildPipelineBase pipeline, BuildConfiguration config, params RunTargetBase[] runTargets)
             : base(pipeline, config)

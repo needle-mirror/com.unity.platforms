@@ -18,3 +18,6 @@
 [assembly: InternalsVisibleTo("Unity.Entities.Editor")]
 [assembly: InternalsVisibleTo("Unity.Entities.Editor.Tests")]
 [assembly: InternalsVisibleTo("Unity.Scenes.Editor")]
+
+[assembly: InternalsVisibleTo("Unity.Build.Classic.Tests")]
+[assembly: InternalsVisibleTo("Build.Tests.Common")]

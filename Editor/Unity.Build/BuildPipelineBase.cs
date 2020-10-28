@@ -41,7 +41,7 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the component is used by the build pipeline, <see langword="false"/> otherwise.</returns>
         public bool IsComponentUsed(Type type)
         {
-            BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+            BuildConfiguration.ValidateComponentTypeAndThrow(type);
             return UsedComponents.Any(usedComponent => usedComponent.IsAssignableFrom(type));
         }
 
@@ -164,12 +164,14 @@ namespace Unity.Build
                         return RunResult.Failure(this, config, canRun.Reason);
                     }
 
+                    var startTime = DateTime.Now;
                     var timer = Stopwatch.StartNew();
                     result = OnRun(context);
                     timer.Stop();
 
                     if (result != null)
                     {
+                        result.StartTime = startTime;
                         result.Duration = timer.Elapsed;
                     }
                 }
@@ -207,14 +209,16 @@ namespace Unity.Build
             {
                 using (var context = new CleanContext(this, config))
                 {
+                    var startTime = DateTime.Now;
                     var timer = Stopwatch.StartNew();
                     result = OnClean(context);
                     // Clean artifacts after OnClean, since OnClean might use artifacts to determine build directory
-                    BuildArtifacts.CleanBuildArtifact(config);
+                    config.CleanBuildArtifact();
                     timer.Stop();
 
                     if (result != null)
                     {
+                        result.StartTime = startTime;
                         result.Duration = timer.Elapsed;
                     }
                 }
@@ -306,7 +310,7 @@ namespace Unity.Build
 
             foreach (var type in UsedComponents)
             {
-                BuildConfiguration.CheckComponentTypeAndThrowIfInvalid(type);
+                BuildConfiguration.ValidateComponentTypeAndThrow(type);
             }
 
             return OnCanBuild(context);

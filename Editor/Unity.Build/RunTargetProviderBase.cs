@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Unity.Build
 {
@@ -7,21 +8,22 @@ namespace Unity.Build
     // Unity.Build namespace doesn't contain bee references, hence why we provide an interface here for now.
     internal abstract class RunTargetProviderBase
     {
-        private static RunTargetProviderBase[] m_Providers;
-        /// <summary>
-        /// Discover all available run targets.
-        /// </summary>
-        public abstract RunTargetBase[] Discover();
+        static RunTargetProviderBase[] m_Providers;
 
         /// <summary>
         /// Discover all available run targets.
         /// </summary>
-        public static RunTargetBase[] DiscoverFromAllProviders()
+        public static IEnumerable<RunTargetBase> DiscoverFromAllProviders()
         {
             if (m_Providers == null)
-                m_Providers = TypeCacheHelper.ConstructTypesDerivedFrom<RunTargetProviderBase>().ToArray();
+                m_Providers = TypeConstructionUtility.ConstructTypesDerivedFrom<RunTargetProviderBase>().ToArray();
 
-            return m_Providers.SelectMany(x => x.Discover()).ToArray();
+            return m_Providers.SelectMany(x => x.Discover());
         }
+
+        /// <summary>
+        /// Discover all available run targets.
+        /// </summary>
+        public abstract IEnumerable<RunTargetBase> Discover();
     }
 }

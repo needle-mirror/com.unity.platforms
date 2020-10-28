@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Bee.Core;
 using Unity.Build.Classic;
 using Unity.Build.Common;
 using UnityEditor;
@@ -35,36 +34,7 @@ namespace Unity.Build.Playmode.TestRunner
             m_Settings = settings;
             m_JobData = jobData;
             m_TargetPlatform = ExecutionSettings.targetPlatform ?? EditorUserBuildSettings.activeBuildTarget;
-
-            switch (m_TargetPlatform)
-            {
-                case BuildTarget.StandaloneWindows64:
-                    m_BuildConfigurationPlatform = new WindowsPlatform();
-                    break;
-                case BuildTarget.StandaloneOSX:
-                    m_BuildConfigurationPlatform = new MacOSXPlatform();
-                    break;
-                case BuildTarget.StandaloneLinux64:
-                    m_BuildConfigurationPlatform = new LinuxPlatform();
-                    break;
-                case BuildTarget.Android:
-                    m_BuildConfigurationPlatform = new AndroidPlatform();
-                    break;
-                case BuildTarget.iOS:
-                    m_BuildConfigurationPlatform = new IosPlatform();
-                    break;
-                case BuildTarget.XboxOne:
-                    m_BuildConfigurationPlatform = new XboxOnePlatform();
-                    break;
-                case BuildTarget.PS4:
-                    m_BuildConfigurationPlatform = new PS4Platform();
-                    break;
-                case BuildTarget.WSAPlayer:
-                    m_BuildConfigurationPlatform = new UniversalWindowsPlatform();
-                    break;
-                default:
-                    throw new Exception($"Cannot resolve platform for {m_TargetPlatform}");
-            }
+            m_BuildConfigurationPlatform = m_TargetPlatform.GetPlatform() ?? throw new Exception($"Cannot resolve platform for {m_TargetPlatform}");
         }
 
         private static SceneList.SceneInfo GetSceneInfo(string path)
@@ -81,7 +51,7 @@ namespace Unity.Build.Playmode.TestRunner
 
         private BuildConfiguration CreateBuildConfiguration(string name, string firstScenePath)
         {
-            var config = BuildConfiguration.CreateInstance<BuildConfiguration>();
+            var config = BuildConfiguration.CreateInstance();
 
             config.name = name;
 
@@ -107,13 +77,10 @@ namespace Unity.Build.Playmode.TestRunner
 
             var profile = new ClassicBuildProfile()
             {
-                Configuration = BuildType.Develop
+                Configuration = BuildType.Develop,
+                Platform = m_BuildConfigurationPlatform
             };
-
-            // The property is not yet exposed, use reflection for now
-            var platformSettter = typeof(ClassicBuildProfile).GetProperty("Platform", BindingFlags.Instance | BindingFlags.NonPublic);
-            platformSettter.SetValue(profile, m_BuildConfigurationPlatform);
-
+            
             config.SetComponent(profile);
 
             config.SetComponent(new PlayerConnectionSettings()

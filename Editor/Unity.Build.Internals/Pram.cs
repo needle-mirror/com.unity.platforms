@@ -1,6 +1,6 @@
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -24,25 +24,25 @@ namespace Unity.Build.Internals
         {
             var platformAssemblyLoadPath = new Dictionary<string, string>();
             var environment = new Dictionary<string, IReadOnlyDictionary<string, string>>();
-
-            var plugins = TypeCacheHelper.ConstructTypesDerivedFrom<PramPlatformPlugin>();
-
+            var plugins = TypeConstructionUtility.ConstructTypesDerivedFrom<PramPlatformPlugin>();
             foreach (var plugin in plugins)
+            {
                 foreach (var provider in plugin.Providers)
                 {
                     platformAssemblyLoadPath[provider] = plugin.PlatformAssemblyLoadPath;
                     environment[provider] = plugin.Environment;
                 }
+            }
 
             PlatformAssemblyLoadPath = platformAssemblyLoadPath;
             Environment = environment;
         }
 
-        public override RunTargetBase[] Discover() => Discover(Array.Empty<string>());
+        public override IEnumerable<RunTargetBase> Discover() => Discover(Array.Empty<string>());
 
         public RunTargetBase[] GetDefault(params string[] providers) => QueryTargets("env-default", providers);
 
-        public RunTargetBase[] Discover(params string[] providers) =>  QueryTargets("env-detect", providers);
+        public RunTargetBase[] Discover(params string[] providers) => QueryTargets("env-detect", providers);
 
         public void Deploy(string provider, string environmentId, string applicationId, string path) =>
             ExecuteEnvironmentCommand(provider, "app-deploy", environmentId, applicationId, $"\"{path}\"");
@@ -78,7 +78,7 @@ namespace Unity.Build.Internals
                 .ToArray<RunTargetBase>();
 
         private string ExecuteEnvironmentCommand(string provider, string command, string environmentId, params string[] args) =>
-            Execute(new[] { provider }, new[] {command, $"-e {environmentId}", provider}.Concat(args).ToArray());
+            Execute(new[] { provider }, new[] { command, $"-e {environmentId}", provider }.Concat(args).ToArray());
 
         private string Execute(string[] providers, params string[] args)
         {
@@ -127,7 +127,7 @@ namespace Unity.Build.Internals
                 Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "{0}", result.ErrorOutput);
 
             if (!result.Succeeded)
-                throw new Exception($"Failed {result}\n{result.ErrorOutput}");
+                throw new Exception($"Failed {result.Command}\n{result.ErrorOutput}");
             return result.FullOutput;
         }
     }

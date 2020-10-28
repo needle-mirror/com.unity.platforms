@@ -3,7 +3,10 @@
     <ui:VisualElement style="flex-direction: row; flex-grow: 1">
       <ui:BindableElement name="icon" class="build-configuration__icon"/>
       <ui:VisualElement style="flex-direction: column; flex-grow: 1">
-        <ui:Label name="name" class="build-configuration__name" binding-path="Name"/>
+        <ui:VisualElement style="flex-direction: row; justify-content: space-between; margin-bottom: 3px">
+          <ui:Label name="name" class="build-configuration__name" binding-path="Name"/>
+          <ui:Button name="options" class="build-configuration__options"/>
+        </ui:VisualElement>
         <ui:VisualElement name="actions" class="build-configuration__actions">
           <ui:Button name="action" class="build-configuration__action"/>
         </ui:VisualElement>
@@ -18,7 +21,7 @@
       </ui:VisualElement>
     </ui:VisualElement>
   </ui:Foldout>
-  <ui:VisualElement name="options" class="build-configuration__options">
+  <ui:VisualElement name="search-container" class="build-configuration__search-container">
     <uip:SearchElement name="search" handler-type="async" search-filters="c:ComponentName f:FieldNames" source-data="Components" filtered-data="FilteredComponents"/>
   </ui:VisualElement>
   <ui:VisualElement name="components" class="build-configuration__components"/>

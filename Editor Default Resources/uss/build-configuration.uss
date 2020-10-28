@@ -1,12 +1,12 @@
 .build-configuration
 {
-    margin: 0px -6px 0px -15px;
+    margin: 0px 0px 0px -15px;
 }
 
 .build-configuration__header
 {
     flex-direction: row;
-    padding: 5px;
+    margin: 3px;
 }
 
 .build-configuration__icon
@@ -14,12 +14,29 @@
     flex-shrink: 0;
     width: 32px;
     height: 32px;
-    margin-right: 5px;
+    margin: 0px 5px;
 }
 
 .build-configuration__name
 {
+    flex-grow: 1;
+    flex-shrink: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
     font-size: 13px;
+}
+
+.build-configuration__options
+{
+    flex-shrink: 0;
+    background-color: transparent;
+    width: 16px;
+    height: 16px;
+    padding: 0px;
+    border-width: 0px;
+    border-radius: 0px;
+    border-color: transparent;
+    margin: 0px;
 }
 
 .build-configuration__actions
@@ -86,7 +103,7 @@
     margin: 0px;
 }
 
-.build-configuration__options
+.build-configuration__search-container
 {
     margin: 5px;
 }

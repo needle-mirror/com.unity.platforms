@@ -67,7 +67,7 @@ namespace Unity.Build.Editor
 
         public void SetComponent(IBuildComponent value)
         {
-            m_Config.SetComponent(ComponentType, value);
+            m_Config.SetComponent(value);
             Update(); // Update since we're not rebuilding
         }
 

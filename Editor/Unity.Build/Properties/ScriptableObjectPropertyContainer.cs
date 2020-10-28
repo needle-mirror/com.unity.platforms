@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Unity.Properties;
 using Unity.Serialization.Json;
 using UnityEditor;
@@ -91,23 +90,15 @@ namespace Unity.Build
         /// <returns>The new asset instance.</returns>
         public static TContainer CreateAssetInActiveDirectory(string assetName, Action<TContainer> mutator = null)
         {
-            string path = null;
-            if (Selection.activeObject != null)
+            var path = Path.Combine(GetCurrentAssetDirectory(), assetName);
+            var asset = CreateInstance(mutator);
+            if (asset != null && asset)
             {
-                var activeObjectPath = AssetDatabase.GetAssetPath(Selection.activeObject);
-                if (!string.IsNullOrEmpty(activeObjectPath))
-                {
-                    if (Directory.Exists(activeObjectPath))
-                    {
-                        path = Path.Combine(activeObjectPath, assetName);
-                    }
-                    else
-                    {
-                        path = Path.Combine(Path.GetDirectoryName(activeObjectPath), assetName);
-                    }
-                }
+                var assetPath = AssetDatabase.GenerateUniqueAssetPath(path);
+                ProjectWindowUtil.CreateAssetWithContent(assetPath, asset.SerializeToJson(), AssetPreview.GetMiniThumbnail(asset));
+                return asset;
             }
-            return CreateAsset(AssetDatabase.GenerateUniqueAssetPath(path), mutator);
+            return null;
         }
 
         /// <summary>
@@ -274,13 +265,12 @@ namespace Unity.Build
                     UserData = new DeserializationContext(container, assetPath)
                 });
 
-                if (!result.DidSucceed())
+                foreach (var deserializeEvent in result.Events)
                 {
-                    var errors = result.Errors.Select(e => e.ToString());
-                    if (errors.Count() > 0)
-                    {
-                        LogDeserializeError(string.Join("\n", errors), container, assetPath);
-                    }
+                    if (deserializeEvent.Type == Serialization.Json.EventType.Log)
+                        continue;
+
+                    LogDeserializeEvent(deserializeEvent, container, assetPath);
                 }
 
                 container.Sanitize();
@@ -288,18 +278,56 @@ namespace Unity.Build
             }
             catch (Exception e)
             {
-                LogDeserializeError(e.Message, container, assetPath);
+                Debug.LogException(e, container);
                 container.Sanitize();
                 return false;
             }
         }
 
-        static void LogDeserializeError(string message, TContainer container, string assetPath)
+        static void LogDeserializeEvent(DeserializationEvent deserializationEvent, TContainer container, string assetPath)
         {
-            var what = !string.IsNullOrEmpty(assetPath) ?
-                assetPath.ToHyperLink() :
-                $"memory container of type '{container.GetType().FullName}'";
-            Debug.LogError($"Failed to deserialize {what}:\n{message}");
+            var what = !string.IsNullOrEmpty(assetPath) ? assetPath.ToHyperLink() : $"memory container of type '{container.GetType().FullName}'";
+            var message = $"While deserializing {what}:\n{deserializationEvent}";
+            if (deserializationEvent.ToString().ToLowerInvariant().Contains("could not resolve type"))
+            {
+                message += " (are you missing an assembly or package reference?)";
+            }
+            Debug.LogFormat(GetLogType(deserializationEvent.Type), LogOption.NoStacktrace, container, "{0}", message);
+        }
+
+        static LogType GetLogType(Serialization.Json.EventType type)
+        {
+            switch (type)
+            {
+                case Serialization.Json.EventType.Error:
+                    return LogType.Error;
+                case Serialization.Json.EventType.Assert:
+                    return LogType.Assert;
+                case Serialization.Json.EventType.Warning:
+                    return LogType.Warning;
+                case Serialization.Json.EventType.Log:
+                    return LogType.Log;
+                case Serialization.Json.EventType.Exception:
+                    return LogType.Exception;
+                default:
+                    throw new NotImplementedException(type.ToString());
+            }
+        }
+
+        static string GetCurrentAssetDirectory()
+        {
+            foreach (var obj in Selection.GetFiltered<UnityEngine.Object>(SelectionMode.Assets))
+            {
+                var path = AssetDatabase.GetAssetPath(obj);
+                if (string.IsNullOrEmpty(path))
+                    continue;
+
+                if (Directory.Exists(path))
+                    return path;
+                else if (File.Exists(path))
+                    return Path.GetDirectoryName(path);
+            }
+            return "Assets";
         }
     }
 }

@@ -63,7 +63,8 @@ namespace Unity.Build.Classic.Private
             var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
             context.SetValue(report);
 
-            return context.FromReport(report);
+            return report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ?
+                context.Success() : context.Failure("See console log for more details.");
         }
     }
 }

@@ -1,8 +1,5 @@
-﻿using Bee.Core;
-
-#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-using Unity.Build.Classic.Private.IncrementalClassicPipeline;
-#endif
+﻿using Unity.Build.Classic.Private.MissingPipelines;
+using UnityEngine;
 
 namespace Unity.Build.Classic.Private
 {
@@ -15,28 +12,41 @@ namespace Unity.Build.Classic.Private
             if (string.IsNullOrEmpty(namezpace))
                 return false;
 
-            return pipeline.Platform.GetType() == platform.GetType() &&
+            return pipeline.Platform.Equals(platform) &&
                    namezpace.StartsWith("Unity.Build.") &&
                    (namezpace.EndsWith(".Classic") || namezpace.EndsWith(".Classic.Private.MissingPipelines")) &&
                    !namezpace.Contains("Test");
         }
 
-        public override BuildPipelineBase SelectFor(Platform platform, bool incremental)
+        private BuildPipelineBase ConstructPipeline(Platform platform)
+        {
+            return TypeConstructionUtility.TryConstructTypeDerivedFrom<ClassicNonIncrementalPipelineBase>(p =>
+                p.GetType() != typeof(MissingNonIncrementalPipeline) && IsBuildPipelineValid(p, platform), out var pipeline) ? pipeline : null;
+        }
+
+        public override BuildPipelineBase SelectFor(Platform platform)
         {
             if (platform == null)
             {
                 return null;
             }
-#if ENABLE_EXPERIMENTAL_INCREMENTAL_PIPELINE
-            if (incremental)
+
+            if (string.IsNullOrEmpty(platform.PackageName))
             {
-                return TypeCacheHelper.ConstructTypeDerivedFrom<ClassicIncrementalPipelineBase>(p => IsBuildPipelineValid(p, platform));
+                // Sanity check
+                var potentialPipeline = ConstructPipeline(platform);
+                if (potentialPipeline != null)
+                    Debug.LogWarning($"{platform.Name} specifies that its platform is not implemented, yet a pipeline {potentialPipeline.GetType().FullName} was found");
+
+                return new MissingNonIncrementalPipeline(platform);
             }
-            else
-#endif
-            {
-                return TypeCacheHelper.ConstructTypeDerivedFrom<ClassicNonIncrementalPipelineBase>(p => IsBuildPipelineValid(p, platform));
-            }
+
+            // This platform requires its package to be included
+            // Since the package was not include, we won't be able to find the platform pipeline
+            if (platform.GetType() == typeof(MissingPlatform))
+                return null;
+
+            return ConstructPipeline(platform);
         }
     }
 }

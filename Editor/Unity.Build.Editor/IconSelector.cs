@@ -1,10 +1,8 @@
 using System;
-using Unity.Properties.UI;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
-using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-using System.IO;
 
 namespace Unity.Build.Editor
 {
