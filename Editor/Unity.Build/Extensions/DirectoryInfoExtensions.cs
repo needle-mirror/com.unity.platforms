@@ -1,7 +1,10 @@
 using System.IO;
 using System.Linq;
-using Unity.Build.Bridge;
 using UnityEditor;
+
+#if !UNITY_2021_2_OR_NEWER
+using Unity.Build.Bridge;
+#endif
 
 namespace Unity.Build
 {
@@ -12,6 +15,15 @@ namespace Unity.Build
         [InitializeOnLoadMethod]
         static void Register()
         {
+#if UNITY_2021_2_OR_NEWER
+            EditorGUI.hyperLinkClicked += (window, args) =>
+            {
+                if (args.hyperLinkData.TryGetValue(k_Directory, out var outputFolder))
+                {
+                    EditorUtility.RevealInFinder(outputFolder);
+                }
+            };
+#else
             EditorGUIBridge.HyperLinkClicked += (args) =>
             {
                 if (args.TryGetValue(k_Directory, out var outputFolder))
@@ -19,6 +31,7 @@ namespace Unity.Build
                     EditorUtility.RevealInFinder(outputFolder);
                 }
             };
+#endif
         }
 
 

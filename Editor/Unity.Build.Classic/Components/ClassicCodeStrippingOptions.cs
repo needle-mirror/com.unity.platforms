@@ -13,7 +13,11 @@ namespace Unity.Build.Classic
 
         public void Initialize(BuildConfiguration.ReadOnly config)
         {
-            var group = config.GetBuildTargetGroup();
+            var platform = config.GetPlatform();
+            if (platform == null)
+                return;
+
+            var group = platform.GetBuildTargetGroup();
             if (group == BuildTargetGroup.Unknown)
                 return;
 

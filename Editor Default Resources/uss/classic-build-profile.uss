@@ -1,13 +1,13 @@
 .classic-build-profile__helpbox
 {
     flex-direction: row;
+    flex-grow: 1;
     flex-shrink: 0;
     align-items: center;
     padding: 0px;
     border-width: 1px;
     border-radius: 5px;
     margin: 2px 3px;
-    overflow: hidden;
 }
 
 .classic-build-profile__icon
@@ -25,11 +25,17 @@
 .classic-build-profile__message
 {
     flex-grow: 1;
-    flex-shrink: 1;
-    white-space: normal;
-    padding: 0px;
+    padding: 0px 2px;
     border-width: 0px;
     border-radius: 0px;
     border-color: transparent;
-    margin: 5px 5px 5px 0px;
+    margin: 0px;
+}
+
+.classic-build-profile__install
+{
+    flex-grow: 1;
+    padding: 0px;
+    margin: 3px 0px 0px 0px;
+    height: 24px;
 }

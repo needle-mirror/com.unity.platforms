@@ -150,10 +150,18 @@ namespace Unity.Build.Editor
             return m_Root;
         }
 
-        void Rebuild()
+        public void Rebuild()
         {
             m_Root.Clear();
             Build();
+        }
+
+        public Platform GetPlatform()
+        {
+            var uiBuildConfiguration = Target;
+            if (uiBuildConfiguration != null)
+                return uiBuildConfiguration.GetPlatform();
+            return null;
         }
 
         internal BuildConfiguration HandleUnappliedImportSettings()

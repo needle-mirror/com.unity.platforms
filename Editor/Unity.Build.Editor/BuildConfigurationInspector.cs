@@ -13,12 +13,6 @@ namespace Unity.Build.Editor
 {
     class BuildConfigurationInspector : Inspector<BuildConfigurationInspectorData>
     {
-        const string k_ShowPipelineUsedComponentsKey = nameof(BuildConfigurationInspector) + "." + nameof(ShowUsedComponents);
-        const string k_CurrentActionIndexKey = nameof(BuildConfigurationInspector) + "." + nameof(CurrentActionIndex);
-        const string k_DependenciesFoldoutOpenKey = nameof(BuildConfigurationInspector) + "." + nameof(DependenciesFoldoutOpen);
-
-        static readonly string k_ShowUsedComponents = L10n.Tr("Show Suggested Components");
-
         struct Classes
         {
             public const string BaseClass = "build-configuration";
@@ -27,53 +21,68 @@ namespace Unity.Build.Editor
 
         struct BuildAction : IEquatable<BuildAction>
         {
+            readonly Func<BuildConfiguration, ResultBase> m_Action;
+
             public string Name { get; }
-            public Action<BuildConfiguration> Action { get; }
-            public BuildAction(string name, Action<BuildConfiguration> action)
+
+            public BuildAction(string name, Func<BuildConfiguration, ResultBase> action)
             {
                 Name = name;
-                Action = action;
+                m_Action = action;
             }
+
+            public void Execute(BuildConfiguration config)
+            {
+                var result = m_Action(config);
+                if (!result)
+                {
+                    if (result is ResultPackageNotInstalled)
+                    {
+                        var platform = config.GetPlatform();
+                        var title = "Missing Platform Package";
+                        var message = $"The selected build configuration platform requires {platform.DisplayName} platform package to be installed.";
+                        if (EditorUtility.DisplayDialog(title, message, "Install Package", "Close"))
+                            platform.InstallPackage();
+
+                        return;
+                    }
+                }
+
+                if (BuildConfigurationInspectorEvents.OnAfterBuildAction(config, result))
+                    return;
+
+                result.LogResult();
+            }
+
             public bool Equals(BuildAction other) => Name == other.Name;
         }
 
-        static readonly BuildAction s_BuildAction = new BuildAction(L10n.Tr("Build"), config =>
-        {
-            config.Build()?.LogResult();
-        });
+        const string k_ShowPipelineUsedComponentsKey = nameof(BuildConfigurationInspector) + "." + nameof(ShowUsedComponents);
+        const string k_CurrentActionIndexKey = nameof(BuildConfigurationInspector) + "." + nameof(CurrentActionIndex);
+        const string k_DependenciesFoldoutOpenKey = nameof(BuildConfigurationInspector) + "." + nameof(DependenciesFoldoutOpen);
+        const string k_AvailableActionsKey = nameof(BuildConfigurationInspector) + "." + nameof(AvailableActionsKey);
+        private const int k_AvailableActions_NoRun = 0;
+        private const int k_AvailableActions_Run = 1;
 
-        static readonly BuildAction s_BuildAndRunAction = new BuildAction(L10n.Tr("Build and Run"), config =>
-        {
-            var buildResult = config.Build();
-            buildResult.LogResult();
-            if (buildResult.Failed)
-            {
-                return;
-            }
+        static readonly string s_Show = L10n.Tr("Show");
+        static readonly string s_ShowUsedComponents = L10n.Tr("Show Suggested Components");
+        static readonly string s_Dependencies = L10n.Tr("Shared Configurations");
+        static readonly string s_AddDependency = L10n.Tr("Add Configuration");
+        static readonly string s_AddComponent = L10n.Tr("Add Component");
 
-            using (var runResult = config.Run())
-            {
-                runResult.LogResult();
-            }
-        });
-
-        static readonly BuildAction s_RunAction = new BuildAction(L10n.Tr("Run"), config =>
-        {
-            using (var result = config.Run())
-            {
-                result.LogResult();
-            }
-        });
-
-        static readonly BuildAction[] s_Actions = new[] { s_BuildAction, s_BuildAndRunAction, s_RunAction };
-        static readonly string k_Dependencies = L10n.Tr("Shared Configurations");
-        static readonly string k_AddDependency = L10n.Tr("Add Configuration");
-        static readonly string k_AddComponent = L10n.Tr("Add Component");
+        static readonly BuildAction s_BuildAction = new BuildAction(L10n.Tr("Build"), Build);
+        static readonly BuildAction s_BuildAndRunAction = new BuildAction(L10n.Tr("Build and Run"), BuildAndRun);
+        static readonly BuildAction s_RunAction = new BuildAction(L10n.Tr("Run"), Run);
+        static readonly BuildAction s_CleanAction = new BuildAction(L10n.Tr("Clean"), Clean);
+        static readonly BuildAction[] s_Actions = new[] { s_BuildAction, s_BuildAndRunAction, s_RunAction, s_CleanAction };
+        static readonly BuildAction[] s_ActionsNoRun = new[] { s_BuildAction, s_BuildAndRunAction, s_CleanAction };
+        static Platform lastPlatform;
 
         SearchElement m_Search;
         VisualElement m_Components;
         Dictionary<BuildComponentInspectorData, PropertyElement> m_ComponentsMap;
         bool m_SearchBindingRegistered;
+        bool actionsEnabled;
 
         public static bool ShowUsedComponents
         {
@@ -89,25 +98,128 @@ namespace Unity.Build.Editor
 
         static int CurrentActionIndex
         {
-            get => EditorPrefs.GetInt(k_CurrentActionIndexKey, Array.IndexOf(s_Actions, s_BuildAndRunAction));
-            set => EditorPrefs.SetInt(k_CurrentActionIndexKey, value);
+            get
+            {
+                var actions = AvaliableActions;
+
+                // The selected index is always relative to the whole list of actions,
+                // so we can keep the same option across different sets of actions
+                int internalDefaultValue = Array.IndexOf(s_Actions, s_BuildAndRunAction);
+
+                var internalSelectedIndex = EditorPrefs.GetInt(k_CurrentActionIndexKey, internalDefaultValue);
+                var selectedAction = s_Actions[internalSelectedIndex];
+
+                // We need to find the selected action relative to our current list
+                int selectedIndex = Array.IndexOf(actions, selectedAction);
+
+                // If the action is not valid, then we need to select a default
+                if (selectedIndex == -1)
+                {
+                    // The stored value is not right, select a valid one
+                    selectedIndex = Array.IndexOf(actions, s_BuildAndRunAction);
+                    CurrentActionIndex = selectedIndex;
+                }
+                return selectedIndex;
+            }
+            set
+            {
+                // We need to store the index relative to the whole list, not the current one
+                // so we can keep the same option across different sets of actions
+                var actions = AvaliableActions;
+                int internalValue;
+                if (value == -1 || value > actions.Length)
+                {
+                    internalValue = Array.IndexOf(s_Actions, s_BuildAndRunAction);
+                }
+                else
+                {
+                    BuildAction currentAction = actions[value];
+                    internalValue = Array.IndexOf(s_Actions, currentAction);
+                }
+                EditorPrefs.SetInt(k_CurrentActionIndexKey, internalValue);
+            }
         }
 
-        static BuildAction CurrentAction => s_Actions[CurrentActionIndex];
+        static int AvailableActionsKey
+        {
+            get => EditorPrefs.GetInt(k_AvailableActionsKey, k_AvailableActions_NoRun);
+            set => EditorPrefs.SetInt(k_AvailableActionsKey, value);
+        }
+
+        static BuildAction[] AvaliableActions => AvailableActionsKey == k_AvailableActions_NoRun ? s_ActionsNoRun : s_Actions;
+        static BuildAction CurrentAction => AvaliableActions[CurrentActionIndex];
 
         public static bool IsCurrentActionBuildAndRun => CurrentAction.Equals(s_BuildAndRunAction);
+
+        static ResultBase Build(BuildConfiguration config)
+        {
+            var result = config.CanBuild();
+            return result ? config.Build() : result;
+        }
+
+        static ResultBase Run(BuildConfiguration config)
+        {
+            var canRun = config.CanRun();
+            if (!canRun)
+                return canRun;
+
+            using (var result = config.Run())
+            {
+                return result;
+            }
+        }
+
+        static ResultBase BuildAndRun(BuildConfiguration config)
+        {
+            var result = Build(config);
+            if (result && config.GetPlatform().HasPackage)
+            {
+                return Run(config);
+            }
+            return result;
+        }
+
+        static ResultBase Clean(BuildConfiguration config)
+        {
+            var result = config.Clean();
+            if (!result)
+                result.LogResult();
+
+            return result;
+        }
+
+        private void UpdateAvaliableActions()
+        {
+            actionsEnabled = true;
+            var context = GetContext<BuildConfigurationContext>();
+            if (context != null)
+            {
+                var platform = context.ImporterEditor.GetPlatform();
+                if (platform != null)
+                {
+                    AvailableActionsKey = platform.HasPackage ? k_AvailableActions_Run : k_AvailableActions_NoRun;
+                }
+                else
+                {
+                    actionsEnabled = false;
+                }
+            }
+        }
 
         public override VisualElement Build()
         {
             var root = Resources.BuildConfiguration.Clone();
             root.AddToClassList(Classes.BaseClass);
 
+            UpdateAvaliableActions();
+
             var header = root.Q("header");
             var optionsButton = header.Q<Button>("options");
             optionsButton.RegisterCallback<ClickEvent>(e =>
             {
                 var menu = new GenericMenu();
-                menu.AddItem(new GUIContent(k_ShowUsedComponents), ShowUsedComponents, () =>
+                menu.AddItem(new GUIContent(s_Show), Target.Show, () => Target.Show = !Target.Show);
+                menu.AddItem(new GUIContent(s_ShowUsedComponents), ShowUsedComponents, () =>
                 {
                     ShowUsedComponents = !ShowUsedComponents;
                     Target.RefreshComponents();
@@ -124,23 +236,22 @@ namespace Unity.Build.Editor
                 var context = GetContext<BuildConfigurationContext>();
                 var config = context.ImporterEditor.HandleUnappliedImportSettings();
                 if (config != null && config)
-                {
-                    CurrentAction.Action(config);
-                }
+                    EditorApplication.delayCall += () => CurrentAction.Execute(config);
             };
+            actionButton.SetEnabled(actionsEnabled);
 
-            var actionPopup = new PopupField<BuildAction>(s_Actions.ToList(), CurrentActionIndex, a => string.Empty, a => a.Name);
+            var actionPopup = new PopupField<BuildAction>(AvaliableActions.ToList(), CurrentActionIndex, a => string.Empty, a => a.Name);
             actionPopup.AddToClassList(Classes.ActionPopup);
             actionPopup.RegisterValueChangedCallback(evt =>
             {
-                CurrentActionIndex = Array.IndexOf(s_Actions, evt.newValue);
+                CurrentActionIndex = Array.IndexOf(AvaliableActions, evt.newValue);
                 actionButton.text = CurrentAction.Name;
             });
             actions.Add(actionPopup);
 
             var dependenciesFoldout = root.Q<Foldout>("dependencies");
             dependenciesFoldout.RegisterValueChangedCallback(e => DependenciesFoldoutOpen = e.newValue);
-            dependenciesFoldout.text = k_Dependencies;
+            dependenciesFoldout.text = s_Dependencies;
             dependenciesFoldout.value = DependenciesFoldoutOpen;
 
             var dependencies = dependenciesFoldout.Q<ListView>();
@@ -174,7 +285,7 @@ namespace Unity.Build.Editor
 
             var addDependency = dependenciesFoldout.Q<Button>("add");
             addDependency.SetEnabled(!Target.IsReadOnly);
-            addDependency.text = "+ " + k_AddDependency;
+            addDependency.text = "+ " + s_AddDependency;
             addDependency.clickable.clicked += () =>
             {
                 Target.Dependencies.Add(default);
@@ -191,7 +302,7 @@ namespace Unity.Build.Editor
 
             var addComponentButton = root.Q<Button>("add-component");
             addComponentButton.SetEnabled(!Target.IsReadOnly);
-            addComponentButton.text = k_AddComponent;
+            addComponentButton.text = s_AddComponent;
             addComponentButton.clickable.clicked += () =>
             {
                 var items = new List<SearchView.Item>();
@@ -252,8 +363,26 @@ namespace Unity.Build.Editor
             return root;
         }
 
+        private void UpdatePlatform()
+        {
+            var context = GetContext<BuildConfigurationContext>();
+            if (context != null)
+            {
+                var importer = context.ImporterEditor;
+                var platform = importer.GetPlatform();
+                if (lastPlatform != platform)
+                {
+                    // We need to rebuild
+                    importer.Rebuild();
+                    lastPlatform = platform;
+                }
+            }
+        }
+
         public override void Update()
         {
+            UpdatePlatform();
+
             if (!m_SearchBindingRegistered)
             {
                 var handler = m_Search.GetUxmlSearchHandler() as SearchHandler<BuildComponentInspectorData>;

@@ -11,6 +11,11 @@ namespace Unity.Build
         BuildPipelineBase Pipeline { get; set; }
 
         /// <summary>
+        /// The platform used by this build configuration.
+        /// </summary>
+        Platform Platform { get; set; }
+
+        /// <summary>
         /// Returns index which is used for sorting builds when they're batch in build queue
         /// </summary>
         int SortingIndex { get; }

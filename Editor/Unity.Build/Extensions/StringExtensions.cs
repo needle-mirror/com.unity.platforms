@@ -1,6 +1,9 @@
 using System.IO;
-using Unity.Build.Bridge;
 using UnityEditor;
+
+#if !UNITY_2021_2_OR_NEWER
+using Unity.Build.Bridge;
+#endif
 
 namespace Unity.Build
 {
@@ -11,6 +14,19 @@ namespace Unity.Build
         [InitializeOnLoadMethod]
         static void Register()
         {
+#if UNITY_2021_2_OR_NEWER
+            EditorGUI.hyperLinkClicked += (window, args) =>
+            {
+                if (args.hyperLinkData.TryGetValue(k_FilePath, out var assetPath) && !string.IsNullOrEmpty(assetPath))
+                {
+                    var obj = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                    if (obj != null && obj)
+                    {
+                        Selection.objects = new[] { obj };
+                    }
+                }
+            };
+#else
             EditorGUIBridge.HyperLinkClicked += (args) =>
             {
                 if (args.TryGetValue(k_FilePath, out var assetPath) && !string.IsNullOrEmpty(assetPath))
@@ -22,6 +38,7 @@ namespace Unity.Build
                     }
                 }
             };
+#endif
         }
 
         public static string TrimStart(this string str, string value)

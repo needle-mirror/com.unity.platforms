@@ -54,14 +54,14 @@ namespace Unity.Build.Tests
         {
             var pipeline = new TestBuildPipeline();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
-            Assert.That(config.CanBuild().Result, Is.True);
+            Assert.That(config.CanBuild().Succeeded, Is.True);
         }
 
         [Test]
         public void CanBuild_WithoutPipeline_IsFalse()
         {
             var config = BuildConfiguration.CreateInstance();
-            Assert.That(config.CanBuild().Result, Is.False);
+            Assert.That(config.CanBuild().Succeeded, Is.False);
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace Unity.Build.Tests
         {
             var pipeline = new TestBuildPipelineCantBuild();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
-            Assert.That(config.CanBuild().Result, Is.False);
+            Assert.That(config.CanBuild().Succeeded, Is.False);
         }
 
         [Test]
@@ -117,7 +117,7 @@ namespace Unity.Build.Tests
             var pipeline = new TestBuildPipeline();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
-            Assert.That(config.CanRun().Result, Is.True);
+            Assert.That(config.CanRun().Succeeded, Is.True);
         }
 
         [Test]
@@ -125,7 +125,7 @@ namespace Unity.Build.Tests
         {
             var pipeline = new TestBuildPipeline();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
-            Assert.That(config.CanRun().Result, Is.False);
+            Assert.That(config.CanRun().Succeeded, Is.False);
         }
 
         [Test]
@@ -133,7 +133,7 @@ namespace Unity.Build.Tests
         {
             var config = BuildConfiguration.CreateInstance();
             Assert.That(config.Build().Succeeded, Is.False);
-            Assert.That(config.CanRun().Result, Is.False);
+            Assert.That(config.CanRun().Succeeded, Is.False);
         }
 
         [Test]
@@ -144,7 +144,7 @@ namespace Unity.Build.Tests
             Assert.That(config.Build().Succeeded, Is.True);
 
             config.RemoveComponent<TestBuildPipelineComponent>();
-            Assert.That(config.CanRun().Result, Is.False);
+            Assert.That(config.CanRun().Succeeded, Is.False);
         }
 
         [Test]
@@ -153,7 +153,7 @@ namespace Unity.Build.Tests
             var pipeline = new TestBuildPipelineCantRun();
             var config = BuildConfiguration.CreateInstance(c => c.SetComponent(new TestBuildPipelineComponent { Pipeline = pipeline }));
             Assert.That(config.Build().Succeeded, Is.True);
-            Assert.That(config.CanRun().Result, Is.False);
+            Assert.That(config.CanRun().Succeeded, Is.False);
         }
 
         [Test]

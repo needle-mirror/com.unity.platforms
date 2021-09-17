@@ -8,6 +8,7 @@ using Unity.Build.Classic;
 using Unity.Build.Common;
 using UnityEditor;
 using UnityEditor.TestRunner.TestLaunchers;
+using UnityEditor.TestTools;
 using UnityEditor.TestTools.TestRunner;
 using UnityEditor.TestTools.TestRunner.Api;
 using UnityEditor.TestTools.TestRunner.TestRun;
@@ -21,26 +22,24 @@ using UnityEngine.TestTools.TestRunner.Callbacks;
 namespace Unity.Build.Playmode.TestRunner
 {
     [Serializable]
-    internal class BuildConfigurationPlayerLauncher : RuntimeTestLauncherBase
+    internal class BuildConfigurationPlayerLauncher
     {
-        private readonly PlaymodeTestsControllerSettings m_Settings;
-        private readonly TestJobData m_JobData;
         private readonly BuildTarget m_TargetPlatform;
         private readonly Platform m_BuildConfigurationPlatform;
-        private ExecutionSettings ExecutionSettings => m_JobData.executionSettings;
+        private readonly BuildPlayerOptions m_BuildOptions;
 
-        public BuildConfigurationPlayerLauncher(PlaymodeTestsControllerSettings settings, TestJobData jobData)
+        public BuildConfigurationPlayerLauncher(ExecutionSettings executionSettings, BuildPlayerOptions buildOptions)
         {
-            m_Settings = settings;
-            m_JobData = jobData;
-            m_TargetPlatform = ExecutionSettings.targetPlatform ?? EditorUserBuildSettings.activeBuildTarget;
+            m_BuildOptions = buildOptions;
+            m_TargetPlatform = executionSettings.targetPlatform ?? EditorUserBuildSettings.activeBuildTarget;
             m_BuildConfigurationPlatform = m_TargetPlatform.GetPlatform() ?? throw new Exception($"Cannot resolve platform for {m_TargetPlatform}");
         }
 
         private static SceneList.SceneInfo GetSceneInfo(string path)
         {
             var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
-            return new SceneList.SceneInfo() { AutoLoad = true, Scene = GlobalObjectId.GetGlobalObjectIdSlow(sceneAsset) };
+            // Note: Don't ever set AutoLoad to true, the tests are responsible for loading scenes
+            return new SceneList.SceneInfo() { AutoLoad = false, Scene = GlobalObjectId.GetGlobalObjectIdSlow(sceneAsset) };
         }
 
         private string GetBuildConfiguratioName()
@@ -49,120 +48,68 @@ namespace Unity.Build.Playmode.TestRunner
             return name;
         }
 
-        private BuildConfiguration CreateBuildConfiguration(string name, string firstScenePath)
+        private BuildConfiguration CreateBuildConfiguration(string name)
         {
             var config = BuildConfiguration.CreateInstance();
 
             config.name = name;
 
-            config.SetComponent<GeneralSettings>();
-
-            var scenes = new List<string>() { firstScenePath };
-            scenes.AddRange(EditorBuildSettings.scenes.Select(x => x.path));
-
-            // It's important to keep these as it is, since UTR uses this info
-            // To resolve path to Player.log
-            // Otherwise there will be a warning in TestRunnerLog.txt "warning: C:\Users\bokken\appdata\locallow\DefaultCompany\UnityTestFramework\Player.log doesn't exist at expected location."
-            config.SetComponent(new GeneralSettings()
-            {
-                CompanyName = "DefaultCompany",
-                ProductName = "UnityTestFramework"
-            });
 
             config.SetComponent(new SceneList
             {
-                SceneInfos = new List<SceneList.SceneInfo>(scenes.Select(s => GetSceneInfo(s)))
+                SceneInfos = new List<SceneList.SceneInfo>(m_BuildOptions.scenes.Select(GetSceneInfo))
             });
-
 
             var profile = new ClassicBuildProfile()
             {
                 Configuration = BuildType.Develop,
                 Platform = m_BuildConfigurationPlatform
             };
-            
-            config.SetComponent(profile);
 
-            config.SetComponent(new PlayerConnectionSettings()
+            config.SetComponent(profile);
+            config.SetComponent(new PlaymodeTestRunnerComponent());
+
+            config.SetComponent<OutputBuildDirectory>(new OutputBuildDirectory()
             {
-                Mode = Unity.Build.Classic.PlayerConnectionInitiateMode.Connect
+                OutputDirectory = m_BuildOptions.locationPathName
             });
 
-            config.SetComponent(new PlaymodeTestRunnerComponent());
-            config.SetComponent(new OutputBuildDirectory()
+            config.SetComponent(new GeneralSettings()
             {
-                OutputDirectory = Path.Combine("Temp", name + DateTime.Now.Ticks.ToString())
+                CompanyName = PlayerSettings.companyName,
+                ProductName = PlayerSettings.productName
             });
 
             return config;
         }
 
-        private Scene PrepareScene(Scene scene, string scenePath)
-        {
-            var runner = GameObject.Find(PlaymodeTestsController.kPlaymodeTestControllerName).GetComponent<PlaymodeTestsController>();
-            runner.AddEventHandlerMonoBehaviour<PlayModeRunnerCallback>();
-            runner.settings = m_Settings;
-            runner.AddEventHandlerMonoBehaviour<RemoteTestResultSender>();
-            runner.includedObjects = new ScriptableObject[]
-                {ScriptableObject.CreateInstance<RuntimeTestRunCallbackListener>()};
-            SaveScene(scene, scenePath);
-            return scene;
-        }
-
         public virtual void Run()
         {
-            var editorConnectionTestCollector = RemoteTestRunController.instance;
-            editorConnectionTestCollector.hideFlags = HideFlags.HideAndDontSave;
-            editorConnectionTestCollector.Init(m_TargetPlatform, ExecutionSettings.playerHeartbeatTimeout);
+            var name = GetBuildConfiguratioName();
+            var path = $"Assets/{m_BuildConfigurationPlatform.Name}.buildConfiguration";
+            Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, $"Creating build configuration at path {path}");
+            var config = CreateBuildConfiguration(name);
 
-            var remotePlayerLogController = RemotePlayerLogController.instance;
-            remotePlayerLogController.hideFlags = HideFlags.HideAndDontSave;
+            // In basic scenarios you can build without saving build configuration to disk
+            // But dots related systems, require build configuration to be present on disk
+            config.SerializeToPath(path);
+            AssetDatabase.Refresh();
 
-            using (var settings = new BuildConfigurationPlayerLauncherContextSettings(ExecutionSettings.overloadTestRunSettings))
+            var buildResult = config.Build();
+            AssetDatabase.DeleteAsset(path);
+            buildResult.LogResult();
+
+            if (buildResult.Failed)
             {
-                PrepareScene(m_JobData.InitTestScene, m_JobData.InitTestScenePath);
+                Debug.LogError("Player build failed");
+                throw new TestLaunchFailedException("Player build failed");
+            }
 
-                var filter = m_Settings.BuildNUnitFilter();
-                var runner = LoadTests(filter);
-                var exceptionThrown = ExecutePreBuildSetupMethods(runner.LoadedTest, filter);
-                if (exceptionThrown)
-                {
-                    CallbacksDelegator.instance.RunFailed("Run Failed: One or more errors in a prebuild setup. See the editor log for details.");
-                    return;
-                }
-
-                var name = GetBuildConfiguratioName();
-                var path = $"Assets/{m_BuildConfigurationPlatform.Name}.buildConfiguration";
-                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, $"Creating build configuration at path {path}");
-                var config = CreateBuildConfiguration(name, m_JobData.InitTestScenePath);
-
-                // In basic scenarios you can build without saving build configuration to disk
-                // But dots related systems, require build configuration to be present on disk
-                config.SerializeToPath(path);
-                AssetDatabase.Refresh();
-
-                var buildResult = config.Build();
-                AssetDatabase.DeleteAsset(path);
-                buildResult.LogResult();
-                
-                editorConnectionTestCollector.PostBuildAction();
-                ExecutePostBuildCleanupMethods(runner.LoadedTest, filter);
-
-
-                if (buildResult.Failed)
-                {
-                    ScriptableObject.DestroyImmediate(editorConnectionTestCollector);
-                    Debug.LogError("Player build failed");
-                    throw new TestLaunchFailedException("Player build failed");
-                }
-
-                editorConnectionTestCollector.PostSuccessfulBuildAction();
-
-                var runResult = config.Run();
-                runResult.LogResult();
-                if (runResult.Failed)
-                    throw new TestLaunchFailedException("Player run failed");
-                editorConnectionTestCollector.PostSuccessfulLaunchAction();
+            var runResult = config.Run();
+            runResult.LogResult();
+            if (runResult.Failed)
+            {
+                throw new TestLaunchFailedException("Player run failed");
             }
         }
     }

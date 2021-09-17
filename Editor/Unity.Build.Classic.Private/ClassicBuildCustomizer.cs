@@ -14,7 +14,7 @@ namespace Unity.Build.Classic.Private
             typeof(IncludeTestAssemblies),
             typeof(InstallInBuildFolder),
             typeof(PlayerConnectionSettings),
-            typeof(ScriptingDebuggerSettings),
+            typeof(EnableScriptDebugging),
             typeof(PlayerScriptingDefines)
         };
 
@@ -52,7 +52,8 @@ namespace Unity.Build.Classic.Private
                 if (value.WaitForConnection)
                     options |= BuildOptions.WaitForPlayerConnection;
             }
-            if (Context.HasComponent<ScriptingDebuggerSettings>())
+
+            if (Context.HasComponent<EnableScriptDebugging>())
                 options |= BuildOptions.AllowDebugging;
             return options;
         }

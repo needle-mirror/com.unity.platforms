@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Unity.Build.Editor
@@ -13,18 +12,6 @@ namespace Unity.Build.Editor
         public static UITemplate TypeInspector = new UITemplate("type-inspector");
 
         // UI Icons
-        public static Texture2D BuildComponentIcon = UIIcon.LoadPackageIcon("Component");
-
-        private static Dictionary<string, Texture2D> m_PlatformIcons = new Dictionary<string, Texture2D>();
-        public static Texture2D GetPlatformIcon(string name)
-        {
-            if (string.IsNullOrEmpty(name))
-                return null;
-            if (m_PlatformIcons.TryGetValue(name, out var value))
-                return value;
-            value = UIIcon.LoadIcon("Icons", "BuildSettings." + name);
-            m_PlatformIcons[name] = value;
-            return value;
-        }
+        public static Texture2D BuildComponentIcon = Package.LoadResource<Texture2D>("icons/component.png", true);
     }
 }

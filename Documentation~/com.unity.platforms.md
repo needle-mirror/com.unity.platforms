@@ -1,20 +1,10 @@
-# About com.unity.platforms;
+# About Entities Platforms package
 
-This package provides base support for build targets in DOTS.
+This package provides functionality for building an [Entities project](https://docs.unity3d.com/Packages/com.unity.entities@latest).
 
 
-# Installing com.unity.platforms;
+## Installation
+The Entities Platforms package is experimental and isn't visible in the Package Manager by default. To install this package, follow the instructions in the [Installing hidden packages](https://docs.unity3d.com/Packages/Installation/manual/index.html) documentation.
 
-To install this package, follow the instructions in the [Package Manager documentation](https://docs.unity3d.com/Packages/com.unity.package-manager-ui@latest/index.html). 
-
-# Technical details
-## Requirements
-
-This version of the package is compatible with the following versions of the Unity Editor:
-
-* 2019.2 and later
-
-|Date|Reason|
-|---|---|
-|June 4, 2019|Document created.|
->>>
+## Using the Entities Platforms package
+For information on how to use this package, see the documentation on [Building an Entities project](https://docs.unity3d.com/Packages/com.unity.entities@latest?subfolder=/manual/ecs_building_projects.html) in the Entities documentation.

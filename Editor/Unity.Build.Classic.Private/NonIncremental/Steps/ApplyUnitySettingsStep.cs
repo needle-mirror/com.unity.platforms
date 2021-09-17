@@ -10,7 +10,7 @@ namespace Unity.Build.Classic.Private
         {
             typeof(GeneralSettings),
             typeof(ClassicScriptingSettings),
-            typeof(ScriptingDebuggerSettings),
+            typeof(EnableScriptDebugging),
             typeof(ClassicCodeStrippingOptions)
         };
 
@@ -37,6 +37,7 @@ namespace Unity.Build.Classic.Private
 
             PlayerSettings.productName = generalSettings.ProductName;
             PlayerSettings.companyName = generalSettings.CompanyName;
+            PlayerSettings.bundleVersion = generalSettings.Version.ToString();
 
             // Scripting Settings
             PlayerSettings.SetScriptingBackend(targetGroup, scriptingSettings.ScriptingBackend);
@@ -46,7 +47,7 @@ namespace Unity.Build.Classic.Private
             PlayerSettings.stripEngineCode = strippingOptions.StripEngineCode;
             PlayerSettings.SetManagedStrippingLevel(targetGroup, strippingOptions.ManagedStrippingLevel);
 
-            if (context.TryGetComponent<ScriptingDebuggerSettings>(out var debuggerSettings))
+            if (context.TryGetComponent<EnableScriptDebugging>(out var debuggerSettings))
             {
                 // Don't set EditorUserBuildSettings.allowDebugging, since it gets overriden by BuildOptions we provide in BuildPlayerStep
                 EditorUserBuildSettings.waitForManagedDebugger = debuggerSettings.WaitForManagedDebugger;

@@ -1,10 +1,39 @@
 # Changelog
-All notable changes to this package will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
-and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
+## [0.50.0] - 2021-09-17
+### Changed
+- Renamed `ScriptingDebuggerSettings` to `EnableScriptDebugging` to better represent its behaviour.
 
-## [0.10.0] - 2020-10-28
+### Fixed
+- Correctly initialize PlayerSettings.bundleVersion from GeneralSettings component.
+
+## [0.12.0] - 2021-03-03
+### Changed 
+- Updated `com.unity.platforms` package dependency.
+
+### Fixed
+- Playmode tests via build configurations will correctly support split build and run.
+
+## [0.11.0] - 2020-11-26
+### Added
+- Added method `GetIcon` on `Platform` as an extension available in `Unity.Build.Editor` namespace.
+- Added `Show` serialized property to build configurations, which can be used to determine if it should appear in some areas of the user interface.
+- The inspector for `ClassicBuildProfile` will now show if a platform package/module is missing and offer ways to install these missing dependencies.
+- Added "active build configuration" functionality to `BuildConfiguration` class. See `SetActive` and `GetActive` for details.
+
+### Changed
+- Platform `WebGL` renamed to `Web` for consistency.
+- Made `BuildTarget` derived classes sealed and private.
+- Interface `IBuildPipelineComponent` now has a `Platform` property.
+- Class `BoolResult` is now obsolete; it has been replaced by `ResultBase` and its derived classes.
+- All build pipeline will report when the selected platform package is missing.
+- Classic build pipeline will report when the selected platform module is missing.
+- A `Platform` property is now available in `ContextBase` derived classes.
+
+### Fixed
+- Fix possible null reference exception when deleting build configuration asset with inspector open.
+
+## [0.10.0] - 2020-11-12
 ### Added
 - Static class `TypeConstructionUtility` is now public and provides various utilities to help instantiate types.
 - Some `System.Type` extensions have been made public for convenience.

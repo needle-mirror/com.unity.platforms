@@ -5,8 +5,23 @@ namespace Unity.Build
     /// <summary>
     /// Container for results happening when building a build pipeline.
     /// </summary>
-    public sealed class BuildResult : ResultBase
+    public sealed class BuildResult : BuildPipelineResult
     {
+        /// <summary>
+        /// Construct a <see cref="BuildResult"/> from a <see cref="ResultBase"/>.
+        /// </summary>
+        /// <param name="pipeline">The build pipeline.</param>
+        /// <param name="config">The build configuration.</param>
+        /// <param name="result">The original result.</param>
+        public BuildResult(BuildPipelineBase pipeline, BuildConfiguration config, ResultBase result)
+        {
+            Succeeded = result.Succeeded;
+            BuildPipeline = pipeline;
+            BuildConfiguration = config;
+            Message = result.Message;
+            Exception = result.Exception;
+        }
+
         /// <summary>
         /// Get a build result representing a success.
         /// </summary>
@@ -50,10 +65,11 @@ namespace Unity.Build
             Exception = exception
         };
 
-        private string GetOpenBuildDirectory()
+        string GetOpenBuildDirectory()
         {
             if (Failed)
                 return string.Empty;
+
             var directory = BuildPipeline.GetOutputBuildDirectory(BuildConfiguration);
             return directory != null ? $"\nResult can be found in {directory.ToHyperLink()}." : string.Empty;
         }

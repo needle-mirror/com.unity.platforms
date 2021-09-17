@@ -44,6 +44,11 @@ namespace Unity.Build
         public string BuildConfigurationAssetGUID => AssetDatabase.AssetPathToGUID(BuildConfigurationAssetPath);
 
         /// <summary>
+        /// The build configuration platform.
+        /// </summary>
+        public Platform Platform { get; }
+
+        /// <summary>
         /// Determine if the value of type <typeparamref name="T"/> exists.
         /// </summary>
         /// <typeparam name="T">The value type.</typeparam>
@@ -436,14 +441,14 @@ namespace Unity.Build
         /// </summary>
         /// <param name="buildArtifactType">The build artifact type.</param>
         /// <returns><see langword="true"/> if a matching build artifact is found, <see langword="false"/> otherwise.</returns>
-        public virtual bool HasBuildArtifact(Type buildArtifactType) => BuildConfiguration.HasBuildArtifact(buildArtifactType);
+        public virtual bool HasBuildArtifact(Type buildArtifactType) => BuildArtifacts.HasBuildArtifact(BuildPipeline, BuildConfiguration, buildArtifactType);
 
         /// <summary>
         /// Determine if a build artifact that is assignable to the specified type is present.
         /// </summary>
         /// <typeparam name="T">The build artifact type.</typeparam>
         /// <returns><see langword="true"/> if a matching build artifact is found, <see langword="false"/> otherwise.</returns>
-        public virtual bool HasBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildConfiguration.HasBuildArtifact<T>();
+        public virtual bool HasBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildArtifacts.HasBuildArtifact<T>(BuildPipeline, BuildConfiguration);
 
         /// <summary>
         /// Get the first build artifact value that is assignable to specified type.
@@ -451,7 +456,7 @@ namespace Unity.Build
         /// </summary>
         /// <param name="buildArtifactType">The build artifact type.</param>
         /// <returns>A build artifact value if found, <see langword="null"/> otherwise.</returns>
-        public virtual IBuildArtifact GetBuildArtifact(Type buildArtifactType) => BuildConfiguration.GetBuildArtifact(buildArtifactType);
+        public virtual IBuildArtifact GetBuildArtifact(Type buildArtifactType) => BuildArtifacts.GetBuildArtifact(BuildPipeline, BuildConfiguration, buildArtifactType);
 
         /// <summary>
         /// Get the first build artifact value that is assignable to specified type.
@@ -459,13 +464,13 @@ namespace Unity.Build
         /// </summary>
         /// <typeparam name="T">The build artifact type.</typeparam>
         /// <returns>A build artifact value if found, <see langword="null"/> otherwise.</returns>
-        public virtual T GetBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildConfiguration.GetBuildArtifact<T>();
+        public virtual T GetBuildArtifact<T>() where T : class, IBuildArtifact, new() => BuildArtifacts.GetBuildArtifact<T>(BuildPipeline, BuildConfiguration);
 
         /// <summary>
         /// Get all build artifact values.
         /// </summary>
         /// <returns>Enumeration of all build artifact values.</returns>
-        public virtual IEnumerable<IBuildArtifact> GetAllBuildArtifacts() => BuildConfiguration.GetAllBuildArtifacts();
+        public virtual IEnumerable<IBuildArtifact> GetAllBuildArtifacts() => BuildArtifacts.GetAllBuildArtifacts(BuildPipeline, BuildConfiguration);
 
         /// <summary>
         /// Get the output build directory override used in this build context.
@@ -491,6 +496,8 @@ namespace Unity.Build
 
             // Prevent the build configuration asset from being destroyed during a build
             BuildConfiguration.hideFlags |= HideFlags.DontUnloadUnusedAsset | HideFlags.HideAndDontSave;
+
+            Platform = config.GetPlatform() ?? throw new NullReferenceException("Selected build configuration does not have a platform specified.");
         }
 
         void ValidateValueTypeAndThrow(Type valueType)

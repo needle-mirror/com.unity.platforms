@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Unity.Build.Editor;
 using Unity.Build.Internals;
 using Unity.Serialization.Json;
 using UnityEditor;
@@ -26,7 +27,9 @@ namespace Unity.Build.DotsRuntime
             if (buildTargetTypes.Count == 0)
             {
                 // If UnityEditor.TypeCache wasn't ready, manually find all BuildTarget types
-                var assemblies = AppDomain.CurrentDomain.GetAssemblies().Where(x => x.GetName().Name.Contains(typeof(BuildTarget).Assembly.GetName().Name));
+                var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                    .Where(x => x.GetName().Name.Contains(typeof(BuildTarget).Assembly.GetName().Name));
+
                 foreach (var assembly in assemblies)
                 {
                     foreach (var type in assembly.GetLoadableTypes())
@@ -78,20 +81,20 @@ namespace Unity.Build.DotsRuntime
         public static IReadOnlyList<BuildTarget> AvailableBuildTargets => m_AvailableBuildTargets.Concat(m_UnknownBuildTargets.Values).ToList();
         public static BuildTarget DefaultBuildTarget { get; }
 
+        public abstract Platform Platform { get; }
         public abstract bool CanBuild { get; }
         public virtual bool CanRun => true;
-        public abstract string DisplayName { get; }
-        public abstract string UnityPlatformName { get; }
         public abstract string ExecutableExtension { get; }
         public abstract string BeeTargetName { get; }
         public abstract bool UsesIL2CPP { get; }
-        public abstract Texture2D Icon { get; }
-
         public virtual bool SupportsManagedDebugging => true;
         public virtual bool HideInBuildTargetPopup => false;
         protected virtual bool IsDefaultBuildTarget => false;
+        public virtual string DisplayName => Platform?.DisplayName;
+        public virtual string UnityPlatformName => Platform?.GetBuildTarget().ToString();
+        public virtual Texture2D Icon => Platform?.GetIcon();
 
-        public abstract bool Run(FileInfo buildTarget);
+        public abstract bool Run(FileInfo buildTarget, Type[] usedComponents);
         public static BuildTarget GetBuildTargetFromUnityPlatformName(string name) => GetBuildTargetFromName(name, (target) => target.UnityPlatformName);
         public static BuildTarget GetBuildTargetFromBeeTargetName(string name) => GetBuildTargetFromName(name, (target) => target.BeeTargetName);
         public override string ToString() => DisplayName;
@@ -117,7 +120,7 @@ namespace Unity.Build.DotsRuntime
         }
 
         // this method requires default implementation to resolve problem with Samples project
-        internal virtual ShellProcessOutput RunTestMode(string exeName, string workingDirPath, int timeout)
+        internal virtual ShellProcessOutput RunTestMode(string exeName, string workingDirPath, string[] args, int timeout)
         {
             throw new NotImplementedException();
         }
@@ -128,13 +131,28 @@ namespace Unity.Build.DotsRuntime
         // Default asset file name
         public virtual string DefaultAssetFileName { get; set; } = string.Empty;
 
-        // List of required platform specific components to build this target
+        // List of platform specific build components for the current BuildTarget. This list is used by the Tiny Control Panel to create default build configurations for first time users
         public virtual Type[] DefaultComponents { get; } = Array.Empty<Type>();
 
         // Should be created by default from the editor
         public virtual bool ShouldCreateBuildTargetByDefault => false;
 
-        public virtual void WriteBuildConfiguration(BuildContext context, string path)
+        // True if the build target is asmjs/wasm build target
+        public virtual bool IsWebBuildTarget => false;
+
+        public enum WebTargetType
+        {
+            Wasm,
+            Asmjs
+        }
+
+        // Create the right web build target (Wasm, Asmjs) depending on the WebTargetType
+        public virtual BuildTarget CreateWebBuildTargetFromType(WebTargetType type = WebTargetType.Wasm)
+        {
+            return new UnknownBuildTarget();
+        }
+
+        public virtual void WriteBuildConfiguration(BuildContext context, string dest)
         {
             var componentTypes = new HashSet<Type>();
             foreach (var usedComponent in context.UsedComponents)
@@ -174,7 +192,13 @@ namespace Unity.Build.DotsRuntime
 
             var components = new IBuildComponent[][] { realComponents.ToArray(), defaultComponents.ToArray() };
             var json = JsonSerialization.ToJson(components);
-            File.WriteAllText(Path.Combine(path, "buildconfiguration.json"), json);
+
+            // This is the "old/obsolete" location, because it's just a single file
+            var legacyPath = Path.Combine(Path.GetDirectoryName(dest), "..", "buildconfiguration.json");
+            File.WriteAllText(legacyPath, json);
+
+            // And the new one, which is per-build-config
+            File.WriteAllText(dest, json);
         }
 
         protected static Texture2D LoadIcon(string path, string name)
@@ -197,27 +221,26 @@ namespace Unity.Build.DotsRuntime
             m_Name = name;
         }
 
+        public override Platform Platform => null;
         public override bool CanBuild => false;
-        public override string DisplayName => $"Unknown ({m_Name})";
-        public override string UnityPlatformName => m_Name;
         public override string ExecutableExtension => null;
         public override string BeeTargetName => m_Name;
         public override bool UsesIL2CPP => false;
+        public override string DisplayName => $"Unknown ({m_Name})";
+        public override string UnityPlatformName => m_Name;
         public override Texture2D Icon => null;
-        public override bool Run(FileInfo buildTarget) => false;
+        public override bool Run(FileInfo buildTarget, Type[] usedComponents) => false;
     }
 
     internal sealed class EditorBuildTarget : BuildTarget
     {
+        public override Platform Platform => EditorUserBuildSettings.activeBuildTarget.GetPlatform();
         public override bool CanBuild => false;
         public override bool HideInBuildTargetPopup => true;
-        public override string DisplayName => "Editor";
-        public override string UnityPlatformName => UnityEditor.EditorUserBuildSettings.activeBuildTarget.ToString();
         public override string ExecutableExtension => null;
         public override string BeeTargetName => null;
         public override bool UsesIL2CPP => false;
-        public override Texture2D Icon => null;
-        public override bool Run(FileInfo buildTarget) => false;
+        public override bool Run(FileInfo buildTarget, Type[] usedComponents) => false;
     }
 
     static class AssemblyExtensions

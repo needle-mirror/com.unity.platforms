@@ -36,6 +36,12 @@ namespace Unity.Build.Editor
             RefreshComponents();
         }
 
+        public bool Show
+        {
+            get => Target.Show;
+            set => Target.Show = value;
+        }
+
         public bool HasPipeline => Target.GetBuildPipeline() != null;
         public bool HasComponent(Type type) => Target.HasComponent(type);
         public bool IsComponentInherited(Type type) => Target.IsComponentInherited(type);

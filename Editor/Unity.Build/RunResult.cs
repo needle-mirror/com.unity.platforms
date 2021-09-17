@@ -5,12 +5,27 @@ namespace Unity.Build
     /// <summary>
     /// Container for results happening when running a build pipeline.
     /// </summary>
-    public sealed class RunResult : ResultBase, IDisposable
+    public sealed class RunResult : BuildPipelineResult, IDisposable
     {
         /// <summary>
         /// The run process instance.
         /// </summary>
         public IRunInstance RunInstance { get; internal set; }
+
+        /// <summary>
+        /// Construct a <see cref="RunResult"/> from a <see cref="ResultBase"/>.
+        /// </summary>
+        /// <param name="pipeline">The build pipeline.</param>
+        /// <param name="config">The build configuration.</param>
+        /// <param name="result">The original result.</param>
+        public RunResult(BuildPipelineBase pipeline, BuildConfiguration config, ResultBase result)
+        {
+            Succeeded = result.Succeeded;
+            BuildPipeline = pipeline;
+            BuildConfiguration = config;
+            Message = result.Message;
+            Exception = result.Exception;
+        }
 
         /// <summary>
         /// Get a run result representing a success.

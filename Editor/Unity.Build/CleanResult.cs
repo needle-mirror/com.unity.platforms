@@ -5,8 +5,23 @@ namespace Unity.Build
     /// <summary>
     /// Container for results happening when cleaning a build.
     /// </summary>
-    public sealed class CleanResult : ResultBase
+    public sealed class CleanResult : BuildPipelineResult
     {
+        /// <summary>
+        /// Construct a <see cref="CleanResult"/> from a <see cref="ResultBase"/>.
+        /// </summary>
+        /// <param name="pipeline">The build pipeline.</param>
+        /// <param name="config">The build configuration.</param>
+        /// <param name="result">The original result.</param>
+        public CleanResult(BuildPipelineBase pipeline, BuildConfiguration config, ResultBase result)
+        {
+            Succeeded = result.Succeeded;
+            BuildPipeline = pipeline;
+            BuildConfiguration = config;
+            Message = result.Message;
+            Exception = result.Exception;
+        }
+
         /// <summary>
         /// Get a clean result representing a success.
         /// </summary>

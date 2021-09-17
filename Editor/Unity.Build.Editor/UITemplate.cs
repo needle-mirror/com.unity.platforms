@@ -9,13 +9,11 @@ namespace Unity.Build.Editor
         StyleSheet m_StyleSheet;
         StyleSheet m_StyleSheetSkinVariant;
 
-        string SkinVariantSuffix => EditorGUIUtility.isProSkin ? "_dark" : "_light";
-
-        public UITemplate(string path)
+        public UITemplate(string name)
         {
-            m_Template = Package.LoadResource<VisualTreeAsset>($"uxml/{path}.uxml", true);
-            m_StyleSheet = Package.LoadResource<StyleSheet>($"uss/{path}.uss", false);
-            m_StyleSheetSkinVariant = Package.LoadResource<StyleSheet>($"uss/{path}{SkinVariantSuffix}.uss", false);
+            m_Template = Package.LoadResource<VisualTreeAsset>($"uxml/{name}.uxml", true);
+            m_StyleSheet = Package.LoadResource<StyleSheet>($"uss/{name}.uss", false);
+            m_StyleSheetSkinVariant = Package.LoadResource<StyleSheet>($"uss/{name}{(EditorGUIUtility.isProSkin ? "_dark" : "_light")}.uss", false);
         }
 
         public VisualElement Clone(VisualElement root = null)

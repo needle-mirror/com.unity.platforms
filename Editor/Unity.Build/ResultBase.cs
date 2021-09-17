@@ -30,53 +30,57 @@ namespace Unity.Build
         public Exception Exception { get; internal set; }
 
         /// <summary>
-        /// The build pipeline used in the operation.
-        /// </summary>
-        [CreateProperty] public BuildPipelineBase BuildPipeline { get; internal set; }
-
-        /// <summary>
-        /// The build configuration used in the operation.
-        /// </summary>
-        [CreateProperty] public BuildConfiguration BuildConfiguration { get; internal set; }
-
-        /// <summary>
-        /// The start time of the operation
-        /// </summary>
-        [CreateProperty] public DateTime StartTime { get; internal set; }
-
-        /// <summary>
-        /// The duration of the operation.
-        /// </summary>
-        [CreateProperty] public TimeSpan Duration { get; internal set; }
-
-        /// <summary>
         /// Log the result to the console window.
         /// </summary>
-        public void LogResult()
+        public virtual void LogResult()
         {
             if (Succeeded)
             {
-                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, BuildConfiguration, "{0}", ToString());
+                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "{0}", ToString());
             }
             else
             {
                 if (Exception == null)
-                {
-                    Debug.LogError(ToString(), BuildConfiguration);
-                }
+                    Debug.LogError(ToString(), null);
                 else
-                {
-                    Debug.LogException(Exception, BuildConfiguration);
-                }
+                    Debug.LogException(Exception, null);
             }
+        }
+
+        /// <summary>
+        /// Implicit conversion to <see cref="bool"/>.
+        /// </summary>
+        /// <param name="result">The result.</param>
+        public static implicit operator bool(ResultBase result)
+        {
+            return result.Succeeded;
         }
 
         public override string ToString()
         {
-            var what = BuildConfiguration.ToHyperLink();
-            var result = Succeeded ? "succeeded" : "failed";
-            var message = Failed && !string.IsNullOrEmpty(Message) ? "\n" + Message : string.Empty;
-            return $"{what} {result} after {Duration.ToShortString()}.{message}".Trim(' ');
+            var result = Succeeded ? "Succeeded" : "Failed";
+            var message = Failed && !string.IsNullOrEmpty(Message) ? ": " + Message : string.Empty;
+            return (result + message).Trim(' ');
         }
+
+        [Obsolete("Result has been replaced by Succeeded. (RemovedAfter 2021-03-01)")]
+        public bool Result
+        {
+            get => Succeeded;
+            private set => Succeeded = value;
+        }
+
+        [Obsolete("Reason has been replaced by Message. (RemovedAfter 2021-03-01)")]
+        public string Reason
+        {
+            get => Message;
+            private set => Message = value;
+        }
+    }
+
+    public static class Result
+    {
+        public static ResultBase Success() => new ResultSuccess();
+        public static ResultBase Failure(string message) => new ResultFailure(message);
     }
 }

@@ -12,6 +12,7 @@ namespace Unity.Build.Tests
         protected class TestBuildPipelineComponent : IBuildPipelineComponent
         {
             [CreateProperty] public BuildPipelineBase Pipeline { get; set; }
+            public Platform Platform { get; set; } = new TestPlatform();
             public int SortingIndex => 0;
             public bool SetupEnvironment() => false;
         }
@@ -39,7 +40,7 @@ namespace Unity.Build.Tests
         [HideInInspector]
         protected class TestBuildPipelineCantBuild : TestBuildPipeline
         {
-            protected override BoolResult OnCanBuild(BuildContext context) => BoolResult.False(nameof(TestBuildPipelineCantBuild));
+            protected override ResultBase OnCanBuild(BuildContext context) => Result.Failure(nameof(TestBuildPipelineCantBuild));
         }
 
         [HideInInspector]
@@ -63,7 +64,7 @@ namespace Unity.Build.Tests
         [HideInInspector]
         protected class TestBuildPipelineCantRun : TestBuildPipeline
         {
-            protected override BoolResult OnCanRun(RunContext context) => BoolResult.False(nameof(TestBuildPipelineCantRun));
+            protected override ResultBase OnCanRun(RunContext context) => Result.Failure(nameof(TestBuildPipelineCantRun));
         }
 
         [HideInInspector]
@@ -89,6 +90,7 @@ namespace Unity.Build.Tests
         {
             public override Type[] UsedComponents { get; } =
             {
+                typeof(TestBuildPipelineComponent),
                 typeof(TestBuildComponentA),
                 typeof(TestBuildComponentB)
             };
@@ -153,7 +155,7 @@ namespace Unity.Build.Tests
                 return context.Success();
             }
 
-            protected override BoolResult OnCanRun(RunContext context)
+            protected override ResultBase OnCanRun(RunContext context)
             {
                 var result = context.GetBuildResult();
                 Assert.That(result, Is.Not.Null);
@@ -164,7 +166,7 @@ namespace Unity.Build.Tests
                 Assert.Throws<NotSupportedException>(() => context.SetValue<TestBuildArtifactB>());
                 Assert.Throws<NotSupportedException>(() => context.RemoveValue<TestBuildArtifactB>());
 
-                return result.Succeeded && artifact != null ? BoolResult.True() : BoolResult.False(nameof(artifact));
+                return result.Succeeded && artifact != null ? Result.Success() : Result.Failure(nameof(artifact));
             }
 
             protected override RunResult OnRun(RunContext context)
@@ -218,15 +220,20 @@ namespace Unity.Build.Tests
 
         protected class TestBuildStepInvalid { }
 
-        protected class TestRunInstance : IRunInstance
+        protected class TestRunInstance : DefaultRunInstance
         {
+            bool m_IsRunning;
+
+            public override bool IsRunning => m_IsRunning;
+
             public TestRunInstance()
             {
-                IsRunning = true;
+                m_IsRunning = true;
             }
 
-            public bool IsRunning { get; private set; }
-            public void Dispose() { IsRunning = false; }
+            public override void Kill() => m_IsRunning = false;
+
+            public new void Dispose() => m_IsRunning = false;
         }
 
         protected class TestBuildArtifactA : IBuildArtifact { }

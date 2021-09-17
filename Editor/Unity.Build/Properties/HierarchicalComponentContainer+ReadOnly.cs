@@ -26,6 +26,8 @@ namespace Unity.Build
         {
             readonly HierarchicalComponentContainer<TContainer, TComponent> m_Container;
 
+            internal TContainer Container => (TContainer)m_Container;
+
             internal ReadOnly(HierarchicalComponentContainer<TContainer, TComponent> container)
             {
                 m_Container = container;

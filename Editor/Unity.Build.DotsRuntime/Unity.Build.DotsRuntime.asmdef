@@ -2,6 +2,7 @@
     "name": "Unity.Build.DotsRuntime",
     "references": [
         "Unity.Build",
+        "Unity.Build.Editor",
         "Unity.Build.Internals",
         "Unity.Serialization",
         "Unity.Serialization.Properties",

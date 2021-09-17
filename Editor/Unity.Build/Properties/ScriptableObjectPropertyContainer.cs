@@ -83,12 +83,11 @@ namespace Unity.Build
         }
 
         /// <summary>
-        /// Create a new asset instance saved to disk, in the active directory.
+        /// Create a new asset instance saved to disk, in the active directory, and focus it for renaming.
         /// </summary>
         /// <param name="assetName">The asset file name with extension.</param>
         /// <param name="mutator">Optional mutator that can be used to modify the asset.</param>
-        /// <returns>The new asset instance.</returns>
-        public static TContainer CreateAssetInActiveDirectory(string assetName, Action<TContainer> mutator = null)
+        public static void CreateAssetInActiveDirectory(string assetName, Action<TContainer> mutator = null)
         {
             var path = Path.Combine(GetCurrentAssetDirectory(), assetName);
             var asset = CreateInstance(mutator);
@@ -96,9 +95,7 @@ namespace Unity.Build
             {
                 var assetPath = AssetDatabase.GenerateUniqueAssetPath(path);
                 ProjectWindowUtil.CreateAssetWithContent(assetPath, asset.SerializeToJson(), AssetPreview.GetMiniThumbnail(asset));
-                return asset;
             }
-            return null;
         }
 
         /// <summary>
@@ -217,6 +214,9 @@ namespace Unity.Build
         /// <returns><see langword="true"/> if the operation is successful, <see langword="false"/> otherwise.</returns>
         public static bool DeserializeFromPath(TContainer container, string path)
         {
+            if (!File.Exists(path))
+                return false;
+
             return TryDeserialize(container, File.ReadAllText(path), path);
         }
 

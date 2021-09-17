@@ -19,41 +19,41 @@ namespace Unity.Build
             public IBuildArtifact[] Artifacts;
         }
 
-        public static bool HasBuildArtifact(BuildConfiguration config, Type buildArtifactType)
+        public static bool HasBuildArtifact(BuildPipelineBase pipeline, BuildConfiguration config, Type buildArtifactType)
         {
             ValidateBuildArtifactTypeAndThrow(buildArtifactType);
-            return GetAllBuildArtifacts(config).Any(a => buildArtifactType.IsAssignableFrom(a.GetType()));
+            return GetAllBuildArtifacts(pipeline, config).Any(a => buildArtifactType.IsAssignableFrom(a.GetType()));
         }
 
-        public static bool HasBuildArtifact<T>(BuildConfiguration config) where T : class, IBuildArtifact, new()
+        public static bool HasBuildArtifact<T>(BuildPipelineBase pipeline, BuildConfiguration config) where T : class, IBuildArtifact, new()
         {
-            return GetAllBuildArtifacts(config).Any(a => typeof(T).IsAssignableFrom(a.GetType()));
+            return GetAllBuildArtifacts(pipeline, config).Any(a => typeof(T).IsAssignableFrom(a.GetType()));
         }
 
-        public static IBuildArtifact GetBuildArtifact(BuildConfiguration config, Type buildArtifactType)
+        public static IBuildArtifact GetBuildArtifact(BuildPipelineBase pipeline, BuildConfiguration config, Type buildArtifactType)
         {
             ValidateBuildArtifactTypeAndThrow(buildArtifactType);
-            return GetAllBuildArtifacts(config)?.FirstOrDefault(a => buildArtifactType.IsAssignableFrom(a.GetType()));
+            return GetAllBuildArtifacts(pipeline, config)?.FirstOrDefault(a => buildArtifactType.IsAssignableFrom(a.GetType()));
         }
 
-        public static T GetBuildArtifact<T>(BuildConfiguration config) where T : class, IBuildArtifact, new()
+        public static T GetBuildArtifact<T>(BuildPipelineBase pipeline, BuildConfiguration config) where T : class, IBuildArtifact, new()
         {
-            return (T)GetAllBuildArtifacts(config)?.FirstOrDefault(a => typeof(T).IsAssignableFrom(a.GetType()));
+            return (T)GetAllBuildArtifacts(pipeline, config)?.FirstOrDefault(a => typeof(T).IsAssignableFrom(a.GetType()));
         }
 
-        public static IEnumerable<IBuildArtifact> GetAllBuildArtifacts(BuildConfiguration config)
+        public static IEnumerable<IBuildArtifact> GetAllBuildArtifacts(BuildPipelineBase pipeline, BuildConfiguration config)
         {
-            return GetBuildArtifactData(config)?.Artifacts ?? Enumerable.Empty<IBuildArtifact>();
+            return Deserialize(pipeline, config)?.Artifacts ?? Enumerable.Empty<IBuildArtifact>();
         }
 
-        public static BuildResult GetBuildResult(BuildConfiguration config)
+        public static BuildResult GetBuildResult(BuildPipelineBase pipeline, BuildConfiguration config)
         {
-            return GetBuildArtifactData(config)?.Result;
+            return Deserialize(pipeline, config)?.Result;
         }
 
-        public static void CleanBuildArtifact(BuildConfiguration config)
+        public static void CleanBuildArtifact(BuildPipelineBase pipeline, BuildConfiguration config)
         {
-            var path = GetBuildArtifactPath(config);
+            var path = GetBuildArtifactPath(pipeline, config);
             if (string.IsNullOrEmpty(path))
                 return;
 
@@ -85,17 +85,17 @@ namespace Unity.Build
                 throw new InvalidOperationException($"Build artifact type {buildArtifactType.FullName} cannot be constructed because it does not have a default, implicit or registered constructor.");
         }
 
-        static string GetBuildArtifactPath(BuildConfiguration config)
+        static string GetBuildArtifactPath(BuildPipelineBase pipeline, BuildConfiguration config)
         {
+            if (pipeline == null)
+                throw new ArgumentNullException(nameof(pipeline));
             if (config == null || !config)
                 throw new ArgumentNullException(nameof(config));
 
-            var json = config.SerializeToJson();
-            if (string.IsNullOrEmpty(json))
-                return null;
-
-            var name = config.name ?? string.Empty;
-            var hash = ComputeHashString(name + json);
+            var configName = config.name ?? string.Empty;
+            var configJson = config.SerializeToJson() ?? string.Empty;
+            var pipelineTypeName = pipeline.GetType().GetAssemblyQualifiedTypeName();
+            var hash = ComputeHashString(pipelineTypeName + configName + configJson);
             return Path.Combine(k_BaseDirectory, hash).ToForwardSlash();
         }
 
@@ -113,14 +113,6 @@ namespace Unity.Build
             return output.ToString();
         }
 
-        static ArtifactData GetBuildArtifactData(BuildConfiguration config)
-        {
-            if (config == null || !config)
-                throw new ArgumentNullException(nameof(config));
-
-            return Deserialize(config);
-        }
-
         internal static void Serialize(BuildResult result, IBuildArtifact[] artifacts)
         {
             if (result == null)
@@ -129,7 +121,7 @@ namespace Unity.Build
             if (artifacts == null)
                 throw new ArgumentNullException(nameof(artifacts));
 
-            var path = GetBuildArtifactPath(result.BuildConfiguration);
+            var path = GetBuildArtifactPath(result.BuildPipeline, result.BuildConfiguration);
             if (string.IsNullOrEmpty(path))
                 return;
 
@@ -147,12 +139,9 @@ namespace Unity.Build
             }));
         }
 
-        static ArtifactData Deserialize(BuildConfiguration config)
+        static ArtifactData Deserialize(BuildPipelineBase pipeline, BuildConfiguration config)
         {
-            if (config == null || !config)
-                return null;
-
-            var path = GetBuildArtifactPath(config);
+            var path = GetBuildArtifactPath(pipeline, config);
             if (string.IsNullOrEmpty(path))
                 return null;
 

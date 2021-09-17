@@ -45,9 +45,6 @@ namespace Unity.Build.DotsRuntime
             }
         }
 
-        public int SortingIndex => 0;
-        public bool SetupEnvironment() => false;
-
         /// <summary>
         /// Gets or sets which <see cref="Configuration"/> this profile is going to use for the build.
         /// </summary>
@@ -81,6 +78,15 @@ namespace Unity.Build.DotsRuntime
             }
             set => throw new InvalidOperationException($"Cannot explicitly set {nameof(Pipeline)}, set {nameof(Target)} property instead.");
         }
+
+        public Platform Platform
+        {
+            get => m_Target?.Platform;
+            set => throw new InvalidOperationException($"Cannot explicitly set {nameof(Platform)}, set {nameof(Target)} property instead.");
+        }
+
+        public int SortingIndex => 0;
+        public bool SetupEnvironment() => false;
 
         [HideInInspector]
         [CreateProperty]

@@ -7,10 +7,13 @@ using System.Linq;
 
 namespace Unity.Build.Editor
 {
+    /// <summary>
+    /// Utility class to handle creating build configuration assets from menu items.
+    /// </summary>
     public static class BuildConfigurationMenuItem
     {
-        public const string k_BuildConfigurationMenu = "Assets/Create/Build/";
-        const string k_CreateBuildConfigurationAssetEmpty = k_BuildConfigurationMenu + "Empty Build Configuration";
+        public const string k_MenuPathName = "Assets/Create/Build Configuration/";
+        const string k_AssetName = "Empty Build Configuration";
 
 #if UNITY_INTERNAL
         [MenuItem("INTERNAL/Upgrade All Build Assets")]
@@ -36,28 +39,30 @@ namespace Unity.Build.Editor
         }
 #endif
 
-        [MenuItem(k_CreateBuildConfigurationAssetEmpty)]
+        [MenuItem(k_MenuPathName + k_AssetName, false, 0)]
         static void CreateBuildConfigurationAsset()
         {
-            var newAsset = CreateAssetInActiveDirectory("Empty");
-            if (newAsset != null && newAsset)
-                ProjectWindowUtil.ShowCreatedAsset(newAsset);
+            CreateAssetInActiveDirectory(k_AssetName);
         }
 
-        public static BuildConfiguration CreateAssetInActiveDirectory(string prefix, params IBuildComponent[] components)
+        /// <summary>
+        /// Create a new build configuration asset saved to disk, in the active directory, and focus it for renaming.
+        /// </summary>
+        /// <remarks>
+        /// If a build configuration asset is set as the current active object of selection, it will be added to the build configuration dependencies.
+        /// </remarks>
+        /// <param name="name">The asset name.</param>
+        /// <param name="components">Build components to add to the new build configuration asset.</param>
+        public static void CreateAssetInActiveDirectory(string name, params IBuildComponent[] components)
         {
             var dependency = Selection.activeObject as BuildConfiguration;
-            return BuildConfiguration.CreateAssetInActiveDirectory(prefix + $"{nameof(BuildConfiguration)}{BuildConfiguration.AssetExtension}", (config) =>
+            BuildConfiguration.CreateAssetInActiveDirectory(name + BuildConfiguration.AssetExtension, (config) =>
             {
                 if (dependency != null && dependency)
-                {
                     config.AddDependency(dependency);
-                }
 
                 foreach (var component in components)
-                {
                     config.SetComponent(component);
-                }
             });
         }
     }

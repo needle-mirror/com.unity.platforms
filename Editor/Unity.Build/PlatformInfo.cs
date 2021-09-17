@@ -1,46 +1,82 @@
-﻿namespace Unity.Build
+﻿using System;
+
+namespace Unity.Build
 {
     /// <summary>
     /// Provides information about platform.
     /// </summary>
-    public sealed class PlatformInfo
+    sealed class PlatformInfo : IEquatable<PlatformInfo>
     {
         /// <summary>
-        /// Provide a name for platform, used for serialization
-        /// Note: Changing the name, will break serialization
+        /// Platform short name. Used by serialization.
+        /// <remarks>
+        /// Warning: Changing it might break serialization.
+        /// </remarks>
         /// </summary>
         public string Name { get; }
 
         /// <summary>
-        /// Text which is used to display a platform in UI?
+        /// Platform display name. Used for displaying on user interface.
         /// </summary>
         public string DisplayName { get; }
 
         /// <summary>
-        /// Provides a package name where platform's pipeline is implemented
-        /// This value can be null, that missing platform doesn't have a pipeline implemented
-        /// In case of Classic pipeline, MissingPipeline will be used
+        /// Platform package identifier.
         /// </summary>
-        public string PackageName { get; }
+        public string PackageId { get; }
 
         /// <summary>
-        /// Platform icon name
+        /// Platform icon file path.
         /// </summary>
-        public string IconName { get; }
+        public string IconPath { get; }
 
         /// <summary>
         /// Construct a new <see cref="PlatformInfo"/> instance.
         /// </summary>
         /// <param name="name">The <see cref="Platform"/> short name, used by serialization.</param>
         /// <param name="displayName">The <see cref="Platform"/> display name, used by user interface.</param>
-        /// <param name="packageName">The package name that contains the <see cref="Platform"/> type.</param>
-        /// <param name="iconName">The <see cref="Platform"/> icon name, used by user interface.</param>
-        internal PlatformInfo(string name, string displayName, string packageName, string iconName)
+        /// <param name="packageId">The package identifier that contains the <see cref="Platform"/> type.</param>
+        /// <param name="iconPath">The <see cref="Platform"/> icon name, used by user interface.</param>
+        internal PlatformInfo(string name, string displayName, string packageId, string iconPath)
         {
             Name = name;
             DisplayName = displayName;
-            PackageName = packageName;
-            IconName = iconName;
+            PackageId = packageId;
+            IconPath = iconPath;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return Equals(obj as PlatformInfo);
+        }
+
+        public bool Equals(PlatformInfo other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (ReferenceEquals(null, other))
+                return false;
+
+            return Name == other.Name;
+        }
+
+        public static bool operator ==(PlatformInfo lhs, PlatformInfo rhs)
+        {
+            if (ReferenceEquals(lhs, null))
+                return ReferenceEquals(rhs, null);
+
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(PlatformInfo lhs, PlatformInfo rhs)
+        {
+            return !(lhs == rhs);
+        }
+
+        public override int GetHashCode()
+        {
+            return Name?.GetHashCode() ?? 0;
         }
     }
 }

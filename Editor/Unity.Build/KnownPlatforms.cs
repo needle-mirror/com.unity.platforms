@@ -17,7 +17,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "win";
+            public const string Name = "StandaloneWindows64";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -27,14 +27,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = "com.unity.platforms.windows";
+            public const string PackageId = "com.unity.platforms.windows";
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Standalone";
+            public const string IconPath = "Icons/BuildSettings.Standalone.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -45,7 +51,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "macos";
+            public const string Name = "StandaloneOSX";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -55,14 +61,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = "com.unity.platforms.macos";
+            public const string PackageId = "com.unity.platforms.macos";
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Standalone";
+            public const string IconPath = "Icons/BuildSettings.Standalone.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -73,7 +85,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "linux";
+            public const string Name = "StandaloneLinux64";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -83,14 +95,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = "com.unity.platforms.linux";
+            public const string PackageId = "com.unity.platforms.linux";
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Standalone";
+            public const string IconPath = "Icons/BuildSettings.Standalone.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -101,7 +119,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "ios";
+            public const string Name = "iOS";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -111,14 +129,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = "com.unity.platforms.ios";
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "iPhone";
+            public const string IconPath = "Icons/BuildSettings.iPhone.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -129,7 +153,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "android";
+            public const string Name = "Android";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -139,42 +163,54 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = "com.unity.platforms.android";
+            public const string PackageId = "com.unity.platforms.android";
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Android";
+            public const string IconPath = "Icons/BuildSettings.Android.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
-        /// Constant platform information for WebGL platform.
+        /// Constant platform information for Web platform.
         /// </summary>
-        public static class WebGL
+        public static class Web
         {
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "webgl";
+            public const string Name = "WebGL";
 
             /// <summary>
             /// Platform display name, used for display.
             /// </summary>
-            public const string DisplayName = "WebGL";
+            public const string DisplayName = "Web";
 
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = "com.unity.platforms.web";
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "WebGL";
+            public const string IconPath = "Icons/BuildSettings.WebGL.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -185,7 +221,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "uwp";
+            public const string Name = "WSAPlayer";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -195,14 +231,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Metro";
+            public const string IconPath = "Icons/BuildSettings.Metro.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -213,7 +255,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "ps4";
+            public const string Name = "PS4";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -223,14 +265,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "PS4";
+            public const string IconPath = "Icons/BuildSettings.PS4.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -241,7 +289,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "xb1";
+            public const string Name = "XboxOne";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -251,14 +299,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "XboxOne";
+            public const string IconPath = "Icons/BuildSettings.XboxOne.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -269,7 +323,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "tvos";
+            public const string Name = "tvOS";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -279,14 +333,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "tvOS";
+            public const string IconPath = "Icons/BuildSettings.tvOS.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -297,7 +357,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "switch";
+            public const string Name = "Switch";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -307,14 +367,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Switch";
+            public const string IconPath = "Icons/BuildSettings.Switch.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -325,7 +391,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "stadia";
+            public const string Name = "Stadia";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -335,14 +401,20 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Stadia";
+            public const string IconPath = "Icons/BuildSettings.Stadia.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
         /// <summary>
@@ -353,7 +425,7 @@ namespace Unity.Build
             /// <summary>
             /// Platform name, used for serialization.
             /// </summary>
-            public const string Name = "lumin";
+            public const string Name = "Lumin";
 
             /// <summary>
             /// Platform display name, used for display.
@@ -363,55 +435,183 @@ namespace Unity.Build
             /// <summary>
             /// Platform package name.
             /// </summary>
-            public const string PackageName = null;
+            public const string PackageId = null;
 
             /// <summary>
             /// Platform icon name.
             /// </summary>
-            public const string IconName = "Lumin";
+            public const string IconPath = "Icons/BuildSettings.Lumin.png";
 
-            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageName, IconName);
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
         }
 
-        // Keep this list updated when adding a new platform
-        static readonly PlatformInfo[] s_KnownPlatforms = new[]
+        /// <summary>
+        /// Constant platform information for CloudRendering platform.
+        /// </summary>
+        public static class CloudRendering
+        {
+            /// <summary>
+            /// Platform name, used for serialization.
+            /// </summary>
+            public const string Name = "CloudRendering";
+
+            /// <summary>
+            /// Platform display name, used for display.
+            /// </summary>
+            public const string DisplayName = "Cloud Rendering";
+
+            /// <summary>
+            /// Platform package name.
+            /// </summary>
+            public const string PackageId = null;
+
+            /// <summary>
+            /// Platform icon name.
+            /// </summary>
+            public const string IconPath = "Icons/BuildSettings.Standalone.png";
+
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
+        }
+
+        /// <summary>
+        /// Constant platform information for GameCoreXboxSeries platform.
+        /// </summary>
+        public static class GameCoreXboxSeries
+        {
+            /// <summary>
+            /// Platform name, used for serialization.
+            /// </summary>
+            public const string Name = "GameCoreXboxSeries";
+
+            /// <summary>
+            /// Platform display name, used for display.
+            /// </summary>
+            public const string DisplayName = "GameCoreXboxSeries";
+
+            /// <summary>
+            /// Platform package name.
+            /// </summary>
+            public const string PackageId = null;
+
+            /// <summary>
+            /// Platform icon name.
+            /// </summary>
+            public const string IconPath = "Icons/BuildSettings.GameCoreScarlett.png";
+
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
+        }
+
+        /// <summary>
+        /// Constant platform information for PS5Player platform.
+        /// </summary>
+        public static class PS5Player
+        {
+            /// <summary>
+            /// Platform name, used for serialization.
+            /// </summary>
+            public const string Name = "PS5";
+
+            /// <summary>
+            /// Platform display name, used for display.
+            /// </summary>
+            public const string DisplayName = "PS5";
+
+            /// <summary>
+            /// Platform package name.
+            /// </summary>
+            public const string PackageId = null;
+
+            /// <summary>
+            /// Platform icon name.
+            /// </summary>
+            public const string IconPath = "Icons/BuildSettings.PS5.png";
+
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
+        }
+
+        /// <summary>
+        /// Constant platform information for GameCoreXboxOne platform.
+        /// </summary>
+        public static class GameCoreXboxOne
+        {
+            /// <summary>
+            /// Platform name, used for serialization.
+            /// </summary>
+            public const string Name = "GameCoreXboxOne";
+
+            /// <summary>
+            /// Platform display name, used for display.
+            /// </summary>
+            public const string DisplayName = "GameCoreXboxOne";
+
+            /// <summary>
+            /// Platform package name.
+            /// </summary>
+            public const string PackageId = null;
+
+            /// <summary>
+            /// Platform icon name.
+            /// </summary>
+            public const string IconPath = "Icons/BuildSettings.GameCoreXboxOne.png";
+
+            /// <summary>
+            /// Attempt to retrieve the platform using known information.
+            /// </summary>
+            /// <returns>The platform instance if found, <see langword="null"/> otherwise.</returns>
+            public static Platform GetPlatform() => Platform.GetPlatformByName(Name);
+
+            internal static PlatformInfo PlatformInfo { get; } = new PlatformInfo(Name, DisplayName, PackageId, IconPath);
+        }
+
+        // Keep these lists updated when adding a new platform
+        static readonly PlatformInfo[] s_AllPlatforms = new[]
         {
             Windows.PlatformInfo,
             macOS.PlatformInfo,
             Linux.PlatformInfo,
             iOS.PlatformInfo,
             Android.PlatformInfo,
-            WebGL.PlatformInfo,
+            Web.PlatformInfo,
             UniversalWindowsPlatform.PlatformInfo,
             PlayStation4.PlatformInfo,
             XboxOne.PlatformInfo,
             tvOS.PlatformInfo,
             Switch.PlatformInfo,
             Stadia.PlatformInfo,
-            Lumin.PlatformInfo
+            Lumin.PlatformInfo,
+            CloudRendering.PlatformInfo,
+            GameCoreXboxSeries.PlatformInfo,
+            PS5Player.PlatformInfo,
+            GameCoreXboxOne.PlatformInfo
         };
-
-        static KnownPlatforms()
-        {
-            // Verify known platforms have unique names
-            var knownPlatformsByName = new Dictionary<string, PlatformInfo>();
-            foreach (var platform in s_KnownPlatforms)
-            {
-                if (knownPlatformsByName.TryGetValue(platform.Name, out var registeredPlatform))
-                    throw new InvalidOperationException($"Duplicate platform info found. Platform info with name '{platform.Name}' already registered.");
-
-                knownPlatformsByName.Add(platform.Name, platform);
-            }
-        }
 
         internal static PlatformInfo GetPlatformInfo(string name)
         {
-            return s_KnownPlatforms.FirstOrDefault(info => info.Name == name);
-        }
-
-        internal static bool IsKnownPlatform(string name)
-        {
-            return s_KnownPlatforms.Any(info => info.Name == name);
+            return s_AllPlatforms.FirstOrDefault(info => info.Name == name);
         }
     }
 }

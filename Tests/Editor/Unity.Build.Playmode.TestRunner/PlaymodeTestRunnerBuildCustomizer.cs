@@ -26,9 +26,23 @@ namespace Unity.Build.Playmode.TestRunner
                 return base.ProvideBuildOptions();
             
             var compressionOptions = PlayerLauncherBuildOptions.GetCompressionBuildOptions(BuildPipeline.GetBuildTargetGroup(BuildTarget), BuildTarget);
-            // Note: Don't specify BuildOptions.ConnectToHost or BuildOptions.WaitForPlayerConnection, it's being handled by PlayerConnectionSettings component
+            // Replicate com.unity.test-framework@1.2.1-preview.4\UnityEditor.TestRunner\TestLaunchers\PlayerLauncher.cs behavior
+            var options = BuildOptions.IncludeTestAssemblies | BuildOptions.StrictMode | compressionOptions | BuildOptions.ConnectToHost;
 
-            return BuildOptions.IncludeTestAssemblies | BuildOptions.StrictMode | compressionOptions;
+            if (EditorUserBuildSettings.waitForPlayerConnection)
+                options |= BuildOptions.WaitForPlayerConnection;
+
+            if (EditorUserBuildSettings.allowDebugging)
+                options |= BuildOptions.AllowDebugging;
+
+            if (EditorUserBuildSettings.installInBuildFolder)
+                options |= BuildOptions.InstallInBuildFolder;
+            /*
+             // Don't ever pass AutoRunplayer since BuildConfiguration run players via dedicated Run method
+            else
+                options |= BuildOptions.AutoRunPlayer;
+            */
+            return options;
         }
     }
 }

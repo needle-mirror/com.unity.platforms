@@ -13,7 +13,8 @@ namespace Unity.Build.Classic.Private
             typeof(ClassicBuildProfile),
             typeof(SceneList),
             typeof(GeneralSettings),
-            typeof(OutputBuildDirectory)
+            typeof(OutputBuildDirectory),
+            typeof(RunSettings)
         };
 
         public override BuildResult Run(BuildContext context)

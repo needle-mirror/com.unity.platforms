@@ -36,12 +36,12 @@ namespace Unity.Build.Editor
                     items.Add(new SearchView.Item
                     {
                         Path = platform.DisplayName,
-                        Icon = Resources.GetPlatformIcon(platform.IconName),
+                        Icon = platform.GetIcon(),
                         Data = platform
                     });
                 }
 
-                items = items.OrderBy(item => item.Path).ToList();
+                items = items.OrderBy(item => item.Icon == null).ThenBy(item => item.Path).ToList();
 
                 SearchWindow searchWindow = SearchWindow.Create();
                 searchWindow.Title = "Platform";

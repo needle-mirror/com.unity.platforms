@@ -41,7 +41,7 @@ namespace Unity.Build.Tests
             };
 
             var pipeline = new TestBuildPipeline();
-            var config = BuildConfiguration.CreateInstance();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildPipelineComponent>());
             using (var context = new BuildContext(pipeline, config))
             {
                 Assert.That(steps.Run(context).Succeeded, Is.True);
@@ -59,7 +59,7 @@ namespace Unity.Build.Tests
             };
 
             var pipeline = new TestBuildPipeline();
-            var config = BuildConfiguration.CreateInstance();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildPipelineComponent>());
             using (var context = new BuildContext(pipeline, config))
             {
                 Assert.That(steps.Run(context).Succeeded, Is.False);
@@ -77,7 +77,7 @@ namespace Unity.Build.Tests
             };
 
             var pipeline = new TestBuildPipeline();
-            var config = BuildConfiguration.CreateInstance();
+            var config = BuildConfiguration.CreateInstance(c => c.SetComponent<TestBuildPipelineComponent>());
             using (var context = new BuildContext(pipeline, config))
             {
                 Assert.That(steps.Run(context).Succeeded, Is.False);

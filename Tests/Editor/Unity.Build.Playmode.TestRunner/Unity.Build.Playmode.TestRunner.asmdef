@@ -21,7 +21,7 @@
     "versionDefines": [
         {
             "name": "com.unity.test-framework",
-            "expression": "1.2.0",
+            "expression": "2.0.0",
             "define": "ENABLE_PLAYMODE_EXTENSION"
         }
     ],

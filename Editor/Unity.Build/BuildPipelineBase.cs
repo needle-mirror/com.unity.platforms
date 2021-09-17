@@ -54,16 +54,43 @@ namespace Unity.Build
         public bool IsComponentUsed<T>() where T : IBuildComponent => IsComponentUsed(typeof(T));
 
         /// <summary>
+        /// Determine if the environment can be prepared before the build pipeline can be used.
+        /// </summary>
+        /// <param name="config">The build configuration.</param>
+        /// <returns>A result indicating if the environment can be prepared.</returns>
+        public ResultBase CanPrepare(BuildConfiguration config)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            var context = new PrepareContext(config);
+            return CanPrepare(context);
+        }
+
+        /// <summary>
+        /// Prepare the environment to use the build pipeline.
+        /// </summary>
+        /// <param name="config">The build configuration.</param>
+        /// <returns>A result indicating if the operation is successful.</returns>
+        public ResultBase Prepare(BuildConfiguration config)
+        {
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            var context = new PrepareContext(config);
+            var canPrepare = CanPrepare(context);
+            return canPrepare ? OnPrepare(context) : canPrepare;
+        }
+
+        /// <summary>
         /// Determine if the build pipeline satisfy requirements to build.
         /// </summary>
         /// <param name="config">The build configuration to be used by this build pipeline.</param>
         /// <returns>A result describing if the pipeline can build or not.</returns>
-        public BoolResult CanBuild(BuildConfiguration config)
+        public ResultBase CanBuild(BuildConfiguration config)
         {
             if (config == null)
-            {
                 throw new ArgumentNullException(nameof(config));
-            }
 
             using (var context = new BuildContext(this, config))
             {
@@ -97,26 +124,18 @@ namespace Unity.Build
         public BuildProcess BuildIncremental(BuildConfiguration config, BuildProgress progress = null)
         {
             if (config == null)
-            {
                 throw new ArgumentNullException(nameof(config));
-            }
 
             if (EditorApplication.isCompiling)
-            {
                 throw new InvalidOperationException("Building is not allowed while Unity is compiling.");
-            }
 
             if (EditorUtility.scriptCompilationFailed)
-            {
                 throw new InvalidOperationException("Building is not allowed because scripts have compile errors in the editor.");
-            }
 
             var context = new BuildContext(this, config, progress);
             var canBuild = CanBuild(context);
-            if (!canBuild.Result)
-            {
-                return BuildProcess.Failure(this, config, canBuild.Reason);
-            }
+            if (!canBuild)
+                return BuildProcess.Failure(this, config, canBuild.Message);
 
             return new BuildProcess(context, OnBuild);
         }
@@ -127,12 +146,10 @@ namespace Unity.Build
         /// <param name="config">The build configuration corresponding to the build to be run.</param>
         /// <param name="runTargets">List of devices to deploy and run on.</param>
         /// <returns>A result describing if the pipeline can run or not.</returns>
-        public BoolResult CanRun(BuildConfiguration config, params RunTargetBase[] runTargets)
+        public ResultBase CanRun(BuildConfiguration config, params RunTargetBase[] runTargets)
         {
             if (config == null)
-            {
                 throw new ArgumentNullException(nameof(config));
-            }
 
             using (var context = new RunContext(this, config, runTargets))
             {
@@ -159,10 +176,8 @@ namespace Unity.Build
                 using (var context = new RunContext(this, config, runTargets))
                 {
                     var canRun = CanRun(context);
-                    if (!canRun.Result)
-                    {
-                        return RunResult.Failure(this, config, canRun.Reason);
-                    }
+                    if (!canRun)
+                        return RunResult.Failure(this, config, canRun.Message);
 
                     var startTime = DateTime.Now;
                     var timer = Stopwatch.StartNew();
@@ -212,8 +227,10 @@ namespace Unity.Build
                     var startTime = DateTime.Now;
                     var timer = Stopwatch.StartNew();
                     result = OnClean(context);
+
                     // Clean artifacts after OnClean, since OnClean might use artifacts to determine build directory
-                    config.CleanBuildArtifact();
+                    BuildArtifacts.CleanBuildArtifact(this, config);
+
                     timer.Stop();
 
                     if (result != null)
@@ -231,11 +248,44 @@ namespace Unity.Build
         }
 
         /// <summary>
+        /// Directory containing final build files.
+        /// </summary>
+        /// <param name="config">The build configuration containing the information .</param>
+        /// <returns>Returns the directory path.</returns>
+        public virtual DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            if (config.TryGetComponent<OutputBuildDirectory>(out var value))
+            {
+                return new DirectoryInfo(value.OutputDirectory);
+            }
+
+            return new DirectoryInfo($"Builds/{config.name}");
+        }
+
+        /// <summary>
+        /// Provides implementation to determine if the environment can be prepared for the build pipeline before using it.
+        /// </summary>
+        /// <param name="config"></param>
+        /// <returns></returns>
+        protected virtual ResultBase OnCanPrepare(PrepareContext context) => Result.Success();
+
+        /// <summary>
+        /// Provides implementation when preparing the environment for the build pipeline before using it.
+        /// </summary>
+        /// <param name="config">The build configuration.</param>
+        protected virtual ResultBase OnPrepare(PrepareContext context) => Result.Success();
+
+        /// <summary>
         /// Provides additional implementation to determine if the build pipeline satisfy requirements to build.
         /// </summary>
         /// <param name="context">The build context for the scope of the build operation.</param>
         /// <returns>A result describing if the pipeline can build or not.</returns>
-        protected virtual BoolResult OnCanBuild(BuildContext context) => BoolResult.True();
+        protected virtual ResultBase OnCanBuild(BuildContext context) => Result.Success();
 
         /// <summary>
         /// Provides implementation to build this build pipeline using the specified build configuration.
@@ -250,7 +300,7 @@ namespace Unity.Build
         /// </summary>
         /// <param name="context">The run context for the scope of the run operation.</param>
         /// <returns>A result describing if the pipeline can run or not.</returns>
-        protected virtual BoolResult OnCanRun(RunContext context) => BoolResult.True();
+        protected virtual ResultBase OnCanRun(RunContext context) => Result.Success();
 
         /// <summary>
         /// Provides implementation to run the last build of this build pipeline corresponding to the specified build configuration.
@@ -276,9 +326,9 @@ namespace Unity.Build
             {
                 var config = buildEntities[i].BuildConfiguration;
                 var canBuild = config.CanBuild();
-                if (!canBuild.Result)
+                if (!canBuild)
                 {
-                    buildPipelineResults[i] = BuildResult.Failure(config.GetBuildPipeline(), config, canBuild.Reason);
+                    buildPipelineResults[i] = BuildResult.Failure(config.GetBuildPipeline(), config, canBuild.Message);
                 }
                 else
                 {
@@ -301,12 +351,32 @@ namespace Unity.Build
             BuildQueue.instance.Clear();
         }
 
-        BoolResult CanBuild(BuildContext context)
+        ResultBase CanPrepare(PrepareContext context)
         {
             if (context == null)
-            {
                 throw new ArgumentNullException(nameof(context));
-            }
+
+            var platform = context.Platform;
+            if (platform == null)
+                return new ResultNoPlatformSpecified();
+
+            if (platform.HasPackage && !platform.IsPackageInstalled)
+                return new ResultPackageNotInstalled(platform);
+
+            return OnCanPrepare(context);
+        }
+
+        ResultBase CanBuild(BuildContext context)
+        {
+            if (context == null)
+                throw new ArgumentNullException(nameof(context));
+
+            var platform = context.Platform;
+            if (platform == null)
+                return new ResultNoPlatformSpecified();
+
+            if (platform.HasPackage && !platform.IsPackageInstalled)
+                return new ResultPackageNotInstalled(context.Platform);
 
             foreach (var type in UsedComponents)
             {
@@ -316,45 +386,26 @@ namespace Unity.Build
             return OnCanBuild(context);
         }
 
-        BoolResult CanRun(RunContext context)
+        ResultBase CanRun(RunContext context)
         {
             if (context == null)
-            {
                 throw new ArgumentNullException(nameof(context));
-            }
 
-            var result = BuildArtifacts.GetBuildResult(context.BuildConfiguration);
+            var platform = context.Platform;
+            if (platform == null)
+                return new ResultNoPlatformSpecified();
+
+            if (platform.HasPackage && !platform.IsPackageInstalled)
+                return new ResultPackageNotInstalled(context.Platform);
+
+            var result = BuildArtifacts.GetBuildResult(this, context.BuildConfiguration);
             if (result == null)
-            {
-                return BoolResult.False($"No build result found for {context.BuildConfiguration.ToHyperLink()}.");
-            }
+                return new ResultNoBuildResultFound(context.BuildConfiguration);
 
             if (result.Failed)
-            {
-                return BoolResult.False($"Last build failed with error:\n{result.Message}");
-            }
+                return new ResultLastBuildResultFailed(result);
 
             return OnCanRun(context);
-        }
-
-        /// <summary>
-        /// Directory containing final build files.
-        /// </summary>
-        /// <param name="config">The build configuration containing the information .</param>
-        /// <returns>Returns the directory path.</returns>
-        public virtual DirectoryInfo GetOutputBuildDirectory(BuildConfiguration config)
-        {
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config));
-            }
-
-            if (config.TryGetComponent<OutputBuildDirectory>(out var value))
-            {
-                return new DirectoryInfo(value.OutputDirectory);
-            }
-
-            return new DirectoryInfo($"Builds/{config.name}");
         }
     }
 }

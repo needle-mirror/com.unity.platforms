@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Unity.Properties.Editor;
 using UnityEditor;
 using UnityEngine;
+using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Unity.Build
 {
     /// <summary>
     /// Platform base class.
     /// </summary>
-    public abstract partial class Platform
+    public abstract partial class Platform : IEquatable<Platform>
     {
         static readonly Platform[] s_AvailablePlatforms;
-        readonly PlatformInfo m_PlatformInfo;
+        internal readonly PlatformInfo m_PlatformInfo;
 
         /// <summary>
         /// All available platforms.
@@ -21,24 +23,91 @@ namespace Unity.Build
         public static IEnumerable<Platform> AvailablePlatforms => s_AvailablePlatforms;
 
         /// <summary>
-        /// Platform name, used for serialization.
+        /// Platform short name. Used by serialization.
         /// </summary>
         public string Name => m_PlatformInfo.Name;
 
         /// <summary>
-        /// Platform display name, used in user interface.
+        /// Platform display name. Used for displaying on user interface.
         /// </summary>
         public string DisplayName => m_PlatformInfo.DisplayName;
 
         /// <summary>
-        /// Platform icon name.
+        /// Platform icon file path.
         /// </summary>
-        public string IconName => m_PlatformInfo.IconName;
+        public string IconPath => m_PlatformInfo.IconPath;
 
         /// <summary>
-        /// Platform package name.
+        /// Platform package identifier.
         /// </summary>
-        public string PackageName => m_PlatformInfo.PackageName;
+        public string PackageId => m_PlatformInfo.PackageId;
+
+        /// <summary>
+        /// Determine if the platform has a known package.
+        /// </summary>
+        public bool HasPackage => !string.IsNullOrEmpty(PackageId);
+
+        /// <summary>
+        /// Determine if the platform package is installed.
+        /// </summary>
+        public bool IsPackageInstalled => HasPackage ? PackageInfo.FindForAssetPath($"Packages/{PackageId}/package.json") != null : false;
+
+        /// <summary>
+        /// Determine if the platform is public, or closed (require license to use).
+        /// </summary>
+        public bool IsPublic => true;
+
+        /// <summary>
+        /// Start installation of platform package.
+        /// </summary>
+        public void InstallPackage()
+        {
+            if (!HasPackage || IsPackageInstalled)
+                return;
+
+            var request = UnityEditor.PackageManager.Client.Add(PackageId);
+            if (request.Status == UnityEditor.PackageManager.StatusCode.Failure)
+                Debug.LogError(request.Error.message);
+            else
+                Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "Started installation of {0} platform package [{1}].", DisplayName, PackageId);
+        }
+
+        /// <summary>
+        /// Get current platform name.
+        /// </summary>
+        /// <param name="legacyName"></param>
+        /// <returns>A the current platform name if the legacy name is found. Returns the input parameter otherwise.</returns>
+        public static string GetNameFromLegacyName(string legacyName)
+        {
+            string name = legacyName.ToLowerInvariant();
+            if (name == "windows" || name == "win")
+                name = "StandaloneWindows64";
+            else if (name == "osx" || name == "macos")
+                name = "StandaloneOSX";
+            else if (name == "linux")
+                name = "StandaloneLinux64";
+            else if (name == "ios")
+                name = "iOS";
+            else if (name == "android")
+                name = "Android";
+            else if (name == "webgl" || name == "web")
+                name = "WebGL";
+            else if (name == "wsa" || name == "uwp")    //@todo: Is uwp good in here?
+                name = "WSAPlayer";
+            else if (name == "ps4")
+                name = "PS4";
+            else if (name == "xboxone" || name == "xb1")
+                name = "XboxOne";
+            else if (name == "tvos")
+                name = "tvOS";
+            else if (name == "switch")
+                name = "Switch";
+            else if (name == "stadia")
+                name = "Stadia";
+            else if (name == "lumin")
+                name = "Lumin";
+            return name;
+        }
 
         /// <summary>
         /// Get platform by name.
@@ -54,33 +123,7 @@ namespace Unity.Build
             // This list does not need to be updated when adding new platforms.
             if (platform == null)
             {
-                if (name == "Windows")
-                    name = KnownPlatforms.Windows.Name;
-                else if (name == "OSX")
-                    name = KnownPlatforms.macOS.Name;
-                else if (name == "Linux")
-                    name = KnownPlatforms.Linux.Name;
-                else if (name == "IOS")
-                    name = KnownPlatforms.iOS.Name;
-                else if (name == "Android")
-                    name = KnownPlatforms.Android.Name;
-                else if (name == "WebGL")
-                    name = KnownPlatforms.WebGL.Name;
-                else if (name == "WSA")
-                    name = KnownPlatforms.UniversalWindowsPlatform.Name;
-                else if (name == "PS4")
-                    name = KnownPlatforms.PlayStation4.Name;
-                else if (name == "XboxOne")
-                    name = KnownPlatforms.XboxOne.Name;
-                else if (name == "tvOS")
-                    name = KnownPlatforms.tvOS.Name;
-                else if (name == "Switch")
-                    name = KnownPlatforms.Switch.Name;
-                else if (name == "Stadia")
-                    name = KnownPlatforms.Stadia.Name;
-                else if (name == "Lumin")
-                    name = KnownPlatforms.Lumin.Name;
-
+                name = GetNameFromLegacyName(name);
                 platform = s_AvailablePlatforms.FirstOrDefault(p => p.Name == name);
             }
             return platform;
@@ -105,33 +148,34 @@ namespace Unity.Build
             }
 
             // Fill up missing platforms
-            foreach (var buildTarget in Enum.GetValues(typeof(BuildTarget)).Cast<BuildTarget>())
+            var enumFields = typeof(BuildTarget).GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly);
+            foreach (var field in enumFields)
             {
+                var buildTargetName = field.Name;
+                var buildTarget = (BuildTarget)Enum.Parse(typeof(BuildTarget), buildTargetName);
                 if (buildTarget == BuildTarget.NoTarget ||
                     buildTarget == BuildTarget.StandaloneWindows)
                     continue;
 
-                if (buildTarget.HasAttribute<HideInInspector>() ||
-                    buildTarget.HasAttribute<ObsoleteAttribute>())
+                bool isObsolete = false;
+                foreach (var attribute in field.CustomAttributes)
+                {
+                    if (attribute.AttributeType == typeof(ObsoleteAttribute))
+                    {
+                        isObsolete = true;
+                        break;
+                    }
+                }
+                if (isObsolete)
                     continue;
 
-                var name = buildTarget.GetPlatformName();
-                if (platformsByName.ContainsKey(name))
+                if (platformsByName.ContainsKey(buildTargetName))
                     continue;
 
-                platformsByName.Add(name, new MissingPlatform(name));
+                platformsByName.Add(buildTargetName, new MissingPlatform(buildTargetName));
             }
 
             s_AvailablePlatforms = platformsByName.Values.ToArray();
-        }
-
-        internal Platform(string name)
-        {
-            var info = KnownPlatforms.GetPlatformInfo(name);
-            if (info == null)
-                info = new PlatformInfo(name, name, null, null);
-
-            m_PlatformInfo = info;
         }
 
         internal Platform(PlatformInfo info)
@@ -139,44 +183,38 @@ namespace Unity.Build
             m_PlatformInfo = info;
         }
 
-        public override int GetHashCode()
-        {
-            return Name?.GetHashCode() ?? 0;
-        }
-
         public override bool Equals(object obj)
         {
             return Equals(obj as Platform);
         }
 
-        public bool Equals(Platform p)
+        public bool Equals(Platform other)
         {
-            if (ReferenceEquals(p, null))
-                return false;
-
-            if (ReferenceEquals(this, p))
+            if (ReferenceEquals(this, other))
                 return true;
 
-            // We don't change type equality on purpose, since for ex.
-            // WindowsPlatform and MissingPlatform with internal name "Windows" means same platform
-            return Equals(Name, p.Name);
+            if (ReferenceEquals(null, other))
+                return false;
+
+            return m_PlatformInfo.Equals(other.m_PlatformInfo);
         }
 
         public static bool operator ==(Platform lhs, Platform rhs)
         {
             if (ReferenceEquals(lhs, null))
-            {
-                if (ReferenceEquals(rhs, null))
-                    return true;
+                return ReferenceEquals(rhs, null);
 
-                return false;
-            }
-            return Equals(lhs, rhs);
+            return lhs.Equals(rhs);
         }
 
         public static bool operator !=(Platform lhs, Platform rhs)
         {
             return !(lhs == rhs);
+        }
+
+        public override int GetHashCode()
+        {
+            return m_PlatformInfo.GetHashCode();
         }
     }
 }

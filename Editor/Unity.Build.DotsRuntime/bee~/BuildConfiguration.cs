@@ -8,13 +8,13 @@ using NiceIO;
 
 namespace Unity.Build.DotsRuntime
 {
-    internal class BuildConfiguration
+    internal class ObsoleteBuildConfiguration
     {
-        static List<Type> m_HasComponents = new List<Type>();
+        static HashSet<Type> m_HasComponents = new HashSet<Type>();
 
         public static bool HasComponent<T>()
         {
-            return m_HasComponents.IndexOf(typeof(T)) != -1;
+            return m_HasComponents.Contains(typeof(T));
         }
 
         public static void Read(NPath file, Type configType)
