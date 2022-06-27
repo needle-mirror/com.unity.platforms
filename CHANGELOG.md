@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.51.1] - 2022-06-27
+
+### Changed
+- Release preparation, no functional changes.
+
 ## [0.51.0] - 2022-05-04
 
 ### Changed

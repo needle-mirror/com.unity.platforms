@@ -223,6 +223,10 @@ namespace UnityEngine.UIExtras
                 m_ReturnButton.SetEnabled(true);
                 m_ReturnIcon.style.visibility = Visibility.Visible;
             }
+
+#if UNITY_2021_1_OR_NEWER
+            m_List.RefreshItems();
+#endif
         }
 
         void OnNavigationReturn()
