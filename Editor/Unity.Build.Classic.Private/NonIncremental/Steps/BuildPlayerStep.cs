@@ -6,7 +6,7 @@ using UnityEditor;
 
 namespace Unity.Build.Classic.Private
 {
-    sealed class BuildPlayerStep : BuildStepBase
+    internal sealed class BuildPlayerStep : BuildStepBase
     {
         public override Type[] UsedComponents { get; } =
         {
@@ -17,8 +17,11 @@ namespace Unity.Build.Classic.Private
             typeof(RunSettings)
         };
 
+        public static bool BuildFromBuildConfiguration;
+
         public override BuildResult Run(BuildContext context)
         {
+            BuildFromBuildConfiguration = true;
             var classicSharedData = context.GetValue<ClassicSharedData>();
             var target = classicSharedData.BuildTarget;
             if (target <= 0)
@@ -63,6 +66,8 @@ namespace Unity.Build.Classic.Private
 
             var report = UnityEditor.BuildPipeline.BuildPlayer(buildPlayerOptions);
             context.SetValue(report);
+
+            BuildFromBuildConfiguration = false;
 
             return report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ?
                 context.Success() : context.Failure("See console log for more details.");

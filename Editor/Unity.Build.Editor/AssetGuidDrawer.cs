@@ -1,4 +1,4 @@
-﻿using Unity.Properties.UI;
+﻿using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.Assertions;
@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace Unity.Build.Editor
 {
-    abstract class AssetGuidInspectorBase<T> : PropertyDrawer<T, AssetGuidAttribute>
+    abstract class AssetGuidInspectorBase<T> : PropertyInspector<T, AssetGuidAttribute>
     {
         protected ObjectField m_ObjectField;
 

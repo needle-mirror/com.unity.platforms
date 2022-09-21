@@ -1,4 +1,4 @@
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEngine.UIElements;
 

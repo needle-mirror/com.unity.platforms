@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using Unity.Properties.Editor;
+using Unity.Properties;
 using Unity.Serialization.Json;
 
 namespace Unity.Build
@@ -81,7 +81,7 @@ namespace Unity.Build
             if (!typeof(IBuildArtifact).IsAssignableFrom(buildArtifactType))
                 throw new InvalidOperationException($"Build artifact type {buildArtifactType.FullName} does not derive from {typeof(IBuildArtifact).FullName}.");
 
-            if (!TypeConstruction.CanBeConstructed(buildArtifactType))
+            if (!TypeUtility.CanBeInstantiated(buildArtifactType))
                 throw new InvalidOperationException($"Build artifact type {buildArtifactType.FullName} cannot be constructed because it does not have a default, implicit or registered constructor.");
         }
 

@@ -35,14 +35,14 @@ namespace Unity.Build.Playmode.TestRunner
             m_BuildConfigurationPlatform = m_TargetPlatform.GetPlatform() ?? throw new Exception($"Cannot resolve platform for {m_TargetPlatform}");
         }
 
-        private static SceneList.SceneInfo GetSceneInfo(string path)
+        private static SceneList.SceneInfo GetSceneInfo(string path, bool autoLoad)
         {
             var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
             // Note: Don't ever set AutoLoad to true, the tests are responsible for loading scenes
-            return new SceneList.SceneInfo() { AutoLoad = false, Scene = GlobalObjectId.GetGlobalObjectIdSlow(sceneAsset) };
+            return new SceneList.SceneInfo() { AutoLoad = autoLoad, Scene = GlobalObjectId.GetGlobalObjectIdSlow(sceneAsset) };
         }
 
-        private string GetBuildConfiguratioName()
+        private string GetBuildConfigurationName()
         {
             var name = m_BuildConfigurationPlatform.Name;
             return name;
@@ -53,11 +53,11 @@ namespace Unity.Build.Playmode.TestRunner
             var config = BuildConfiguration.CreateInstance();
 
             config.name = name;
-
+            var sceneInfos = new List<SceneList.SceneInfo>(m_BuildOptions.scenes.Select(x => GetSceneInfo(x, false)));
 
             config.SetComponent(new SceneList
             {
-                SceneInfos = new List<SceneList.SceneInfo>(m_BuildOptions.scenes.Select(GetSceneInfo))
+                SceneInfos = sceneInfos
             });
 
             var profile = new ClassicBuildProfile()
@@ -85,7 +85,7 @@ namespace Unity.Build.Playmode.TestRunner
 
         public virtual void Run()
         {
-            var name = GetBuildConfiguratioName();
+            var name = GetBuildConfigurationName();
             var path = $"Assets/{m_BuildConfigurationPlatform.Name}.buildConfiguration";
             Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, $"Creating build configuration at path {path}");
             var config = CreateBuildConfiguration(name);

@@ -1,12 +1,12 @@
 ﻿using JetBrains.Annotations;
 using System.IO;
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEngine.UIElements;
 
 namespace Unity.Build.Editor
 {
     [UsedImplicitly]
-    sealed class DirectoryInfoInspector : Inspector<DirectoryInfo>
+    sealed class DirectoryInfoInspector : PropertyInspector<DirectoryInfo>
     {
         TextField m_TextField;
 

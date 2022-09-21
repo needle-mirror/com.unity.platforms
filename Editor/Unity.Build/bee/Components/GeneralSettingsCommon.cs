@@ -7,7 +7,7 @@ namespace Unity.Build.Common
         public string ProductName = "Product Name";
         public string CompanyName = "Company Name";
 #if UNITY_EDITOR
-        [Unity.Properties.UI.SystemVersionUsage(Unity.Properties.UI.SystemVersionUsage.MajorMinor)]
+        [Unity.Platforms.UI.SystemVersionUsage(Unity.Platforms.UI.SystemVersionUsage.MajorMinor)]
 #endif
         public Version Version = new Version(1, 0);
     }

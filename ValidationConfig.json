@@ -9,7 +9,7 @@
                 [
                     "Editor/Unity.Build/Platform.cs",
                     "Editor/Unity.Build/KnownPlatforms.cs",
-                    "Editor/Unity.Build/Extensions/BuildTargetExtensions.cs",
+                    "Editor/Unity.Build/Extensions/BuildTargetExtensions.cs"
                     "Editor/Unity.Build.Classic/Components/BeePlatformDeprecated.cs"
                 ],
                 "Patterns":

@@ -88,8 +88,8 @@ namespace UnityEngine.UIExtras
             };
 
 #if UNITY_2020_1_OR_NEWER
-        m_List.onSelectionChange += OnListSelectionChange;
-        m_List.onItemsChosen += OnItemsChosen;
+        m_List.selectionChanged += OnListSelectionChange;
+        m_List.itemsChosen += OnItemsChosen;
 #else
             m_List.onSelectionChanged += OnListSelectionChanged;
             m_List.onItemChosen += OnitemChosen;
@@ -223,10 +223,7 @@ namespace UnityEngine.UIExtras
                 m_ReturnButton.SetEnabled(true);
                 m_ReturnIcon.style.visibility = Visibility.Visible;
             }
-
-#if UNITY_2021_1_OR_NEWER
             m_List.RefreshItems();
-#endif
         }
 
         void OnNavigationReturn()

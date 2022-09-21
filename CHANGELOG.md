@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.0.0-exp.6] - 2022-09-21
+
+### Added
+
+* An explicit dependency on the com.unity.modules.uielements module
+
+### Changed
+
+* Replaced now obsolete ResetValues call in BuildConfigurationScriptedImporterEditor with DiscardChanges
+* Updated com.unity.properties to `2.0.0-exp.11`
+* Updated com.unity.properties.ui to `2.0.0-exp.11`
+* Updated com.unity.serialization to `2.0.0-exp.11`
+
+
+
+### Fixed
+
+* Platform selection drop-downs now close properly if you click away from them on macOS and Linux.
+* Replaced Path.GetRandomFileName() usage in some unit tests to resolve occasional test failures stemming from a failed test setup involving folder creation with an invalid name
+
 ## [0.51.1] - 2022-06-27
 
 ### Changed
@@ -18,8 +38,18 @@
 ### Fixed
 - Correctly initialize PlayerSettings.bundleVersion from GeneralSettings component.
 
+## [0.13.0] - 2021-09-17
+### Changed
+- Renamed `ScriptingDebuggerSettings` to `EnableScriptDebugging` to better represent its behaviour.
+
+## [0.13.0] - 2021-04-06
+### Changed
+- Updated `com.unity.platforms` version to 0.13.0.
+### Fixed
+- Correctly initialize PlayerSettings.bundleVersion from GeneralSettings component.
+
 ## [0.12.0] - 2021-03-03
-### Changed 
+### Changed
 - Updated `com.unity.platforms` package dependency.
 
 ### Fixed
@@ -359,13 +389,13 @@ The package `com.unity.build` has been merged in the `com.unity.platforms` packa
 - `AvailableBuildTargets` will now contain all build targets regardless of `HideInBuildTargetPopup` value, as well as `UnknownBuildTarget` instances.
 
 ## [0.1.4-preview] - 2019-09-26
-- Bug fixes  
+- Bug fixes
 - Add iOS platform support
 - Add desktop platforms package
 
 ## [0.1.3-preview] - 2019-09-03
 
-- Bug fixes  
+- Bug fixes
 
 ## [0.1.2-preview] - 2019-08-13
 

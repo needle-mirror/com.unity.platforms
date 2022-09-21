@@ -1,6 +1,5 @@
 using System;
 using Unity.Serialization.Json;
-using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 
 namespace Unity.Build
@@ -10,24 +9,24 @@ namespace Unity.Build
         [InitializeOnLoadMethod]
         static void Register() => JsonSerialization.AddGlobalAdapter(new BuildPipelineBaseJsonAdapter());
 
-        public void Serialize(JsonStringBuffer writer, BuildPipelineBase value)
+        void IJsonAdapter<BuildPipelineBase>.Serialize(in JsonSerializationContext<BuildPipelineBase> context, BuildPipelineBase value)
         {
             string json = null;
             if (value != null)
             {
                 json = value.GetType().GetAssemblyQualifiedTypeName();
             }
-            writer.WriteEncodedJsonString(json);
+            context.Writer.WriteValue(json);
         }
 
-        public BuildPipelineBase Deserialize(SerializedValueView view)
+        BuildPipelineBase IJsonAdapter<BuildPipelineBase>.Deserialize(in JsonDeserializationContext<BuildPipelineBase> context)
         {
-            if (view.Type != TokenType.String)
+            if (context.SerializedValue.Type != TokenType.String)
             {
                 return null;
             }
 
-            var json = view.AsStringView().ToString();
+            var json = context.SerializedValue.AsStringView().ToString();
             if (string.IsNullOrEmpty(json))
             {
                 return null;

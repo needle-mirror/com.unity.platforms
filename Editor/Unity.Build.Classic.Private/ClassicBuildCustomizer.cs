@@ -39,8 +39,11 @@ namespace Unity.Build.Classic.Private
             // Build options from components
             if (Context.HasComponent<AutoRunPlayer>())
                 options |= BuildOptions.AutoRunPlayer;
+// DOTS-5792
+#pragma warning disable 618
             if (Context.HasComponent<EnableHeadlessMode>())
                 options |= BuildOptions.EnableHeadlessMode;
+#pragma warning restore 618 
             if (Context.HasComponent<IncludeTestAssemblies>())
                 options |= BuildOptions.IncludeTestAssemblies;
             if (Context.HasComponent<InstallInBuildFolder>())

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.Editor;
+using Unity.Properties;
 using Unity.Serialization;
 using UnityEditor;
 
@@ -20,7 +20,7 @@ namespace Unity.Build
         /// <returns>New instance of derived type.</returns>
         public static T ConstructTypeDerivedFrom<T>()
         {
-            return TypeConstruction.Construct<T>(GetConstructibleTypesDerivedFrom<T>().FirstOrDefault());
+            return TypeUtility.Instantiate<T>(GetConstructibleTypesDerivedFrom<T>().FirstOrDefault());
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace Unity.Build
         /// <returns>New instance of derived type.</returns>
         public static T ConstructTypeDerivedFrom<T>(Func<Type, bool> filter)
         {
-            return TypeConstruction.Construct<T>(GetConstructibleTypesDerivedFrom<T>(filter).FirstOrDefault());
+            return TypeUtility.Instantiate<T>(GetConstructibleTypesDerivedFrom<T>(filter).FirstOrDefault());
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Unity.Build
                 value = default;
                 return false;
             }
-            value = TypeConstruction.Construct<T>(types.FirstOrDefault());
+            value = TypeUtility.Instantiate<T>(types.FirstOrDefault());
             return true;
         }
 
@@ -95,7 +95,7 @@ namespace Unity.Build
                 value = default;
                 return false;
             }
-            value = TypeConstruction.Construct<T>(types.FirstOrDefault());
+            value = TypeUtility.Instantiate<T>(types.FirstOrDefault());
             return true;
         }
 
@@ -147,7 +147,7 @@ namespace Unity.Build
         /// <returns>Enumeration of constructed instance of all types derived from <typeparamref name="T"/>.</returns>
         public static IEnumerable<T> ConstructTypesDerivedFrom<T>()
         {
-            return GetConstructibleTypesDerivedFrom<T>().Select(TypeConstruction.Construct<T>);
+            return GetConstructibleTypesDerivedFrom<T>().Select(TypeUtility.Instantiate<T>);
         }
 
         /// <summary>
@@ -158,7 +158,7 @@ namespace Unity.Build
         /// <returns>Enumeration of constructed instance of all types derived from <typeparamref name="T"/>.</returns>
         public static IEnumerable<T> ConstructTypesDerivedFrom<T>(Func<Type, bool> filter)
         {
-            return GetConstructibleTypesDerivedFrom<T>(filter).Select(TypeConstruction.Construct<T>);
+            return GetConstructibleTypesDerivedFrom<T>(filter).Select(TypeUtility.Instantiate<T>);
         }
 
         /// <summary>
@@ -194,7 +194,7 @@ namespace Unity.Build
         public static T ConstructFromAssemblyQualifiedTypeName<T>(string assemblyQualifiedTypeName)
         {
             var type = GetTypeFromAssemblyQualifiedTypeName(assemblyQualifiedTypeName);
-            return type != null ? TypeConstruction.Construct<T>(type) : default;
+            return type != null ? TypeUtility.Instantiate<T>(type) : default;
         }
 
         /// <summary>
@@ -210,7 +210,7 @@ namespace Unity.Build
             try
             {
                 var type = GetTypeFromAssemblyQualifiedTypeName(assemblyQualifiedTypeName);
-                value = type != null ? TypeConstruction.Construct<T>(type) : throw null;
+                value = type != null ? TypeUtility.Instantiate<T>(type) : throw null;
                 return true;
             }
             catch
@@ -224,7 +224,7 @@ namespace Unity.Build
         {
             return TypeCache.GetTypesDerivedFrom<T>()
                 .Where(type => !type.IsAbstract && !type.IsGenericType)
-                .Where(type => TypeConstruction.CanBeConstructed(type));
+                .Where(type => TypeUtility.CanBeInstantiated(type));
         }
 
         static IEnumerable<Type> GetConstructibleTypesDerivedFrom<T>(Func<Type, bool> condition)
@@ -246,7 +246,7 @@ namespace Unity.Build
                 type = Type.GetType(currentTypeName);
             }
 
-            if (type == null || !TypeConstruction.CanBeConstructed(type))
+            if (type == null || !TypeUtility.CanBeInstantiated(type))
                 return null;
 
             return type;

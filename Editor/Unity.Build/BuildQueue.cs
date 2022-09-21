@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.Editor;
+using Unity.Properties;
 using Unity.Serialization.Json;
 using UnityEditor;
 using UnityEditor.Events;
@@ -221,7 +221,7 @@ namespace Unity.Build
                     EditorUtility.ClearProgressBar();
                     m_OnAllBuildsCompletedEvent.Invoke(m_QueueBuilds.Select(m =>
                     {
-                        var buildResult = TypeConstruction.Construct<BuildResult>();
+                        var buildResult = TypeUtility.Instantiate<BuildResult>();
                         JsonSerialization.TryFromJsonOverride(m.buildPipelineResult, ref buildResult, out _, new JsonSerializationParameters { DisableRootAdapters = true, SerializedType = typeof(BuildResult) });
                         return buildResult;
                     }).ToArray());

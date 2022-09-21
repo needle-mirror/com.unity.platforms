@@ -16,3 +16,4 @@
 [assembly: InternalsVisibleTo("Unity.Build.Web.Classic.Tests")]
 [assembly: InternalsVisibleTo("Unity.Build.Windows.Classic")]
 [assembly: InternalsVisibleTo("Unity.Build.Windows.Classic.Tests")]
+[assembly: InternalsVisibleTo("Unity.Scenes.Editor")]

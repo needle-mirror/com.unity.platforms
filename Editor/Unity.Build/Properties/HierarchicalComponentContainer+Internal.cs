@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Properties;
-using Unity.Properties.Editor;
 using UnityEngine.Pool;
 
 namespace Unity.Build
@@ -264,10 +263,10 @@ namespace Unity.Build
 
         internal static TComponent Construct(Type componentType)
         {
-            if (!TypeConstruction.CanBeConstructed(componentType))
+            if (!TypeUtility.CanBeInstantiated(componentType))
                 throw new InvalidOperationException($"Component type {componentType.FullName} cannot be constructed because it does not have a default, implicit or registered constructor.");
 
-            return TypeConstruction.Construct<TComponent>(componentType);
+            return TypeUtility.Instantiate<TComponent>(componentType);
         }
 
         internal static TComponent Clone(TComponent component)
@@ -275,7 +274,7 @@ namespace Unity.Build
             using (var pooledVisitor = CopyVisitor.Get(out var visitor))
             {
                 visitor.Result = Construct(component.GetType());
-                PropertyContainer.Visit(ref component, visitor);
+                PropertyContainer.Accept(visitor, ref component);
                 return visitor.Result;
             }
         }
@@ -303,7 +302,7 @@ namespace Unity.Build
                 TSrcList list;
                 if (typeof(TSrcList).IsArray)
                 {
-                    list = TypeConstruction.ConstructArray<TSrcList>(value.Count);
+                    list = TypeUtility.InstantiateArray<TSrcList>(value.Count);
                     for (var i = 0; i < value.Count; ++i)
                     {
                         list[i] = value[i];
@@ -311,7 +310,7 @@ namespace Unity.Build
                 }
                 else
                 {
-                    list = TypeConstruction.Construct<TSrcList>();
+                    list = TypeUtility.Instantiate<TSrcList>();
                     foreach (var item in value)
                     {
                         list.Add(item);
@@ -322,7 +321,7 @@ namespace Unity.Build
 
             protected override void VisitSet<TSrcContainer, TSrcSet, TSrcValue>(Property<TSrcContainer, TSrcSet> property, ref TSrcContainer container, ref TSrcSet value)
             {
-                var set = TypeConstruction.Construct<TSrcSet>();
+                var set = TypeUtility.Instantiate<TSrcSet>();
                 foreach (var item in value)
                 {
                     set.Add(item);
@@ -332,7 +331,7 @@ namespace Unity.Build
 
             protected override void VisitDictionary<TSrcContainer, TSrcDictionary, TSrcKey, TSrcValue>(Property<TSrcContainer, TSrcDictionary> property, ref TSrcContainer container, ref TSrcDictionary value)
             {
-                var dictionary = TypeConstruction.Construct<TSrcDictionary>();
+                var dictionary = TypeUtility.Instantiate<TSrcDictionary>();
                 foreach (var item in value)
                 {
                     dictionary.Add(item);

@@ -3,7 +3,6 @@ using System.Linq;
 using Unity.Properties;
 using Unity.Serialization;
 using Unity.Serialization.Json;
-using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
@@ -121,7 +120,7 @@ namespace Unity.Build.Common
 
             public int Version => 1;
 
-            public SceneList Migrate(JsonMigrationContext context)
+            public SceneList Migrate(in JsonMigrationContext context)
             {
                 context.TryRead<SceneList>(out var sceneList);
                 if (context.SerializedVersion == 0)

@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Linq;
 using Unity.Serialization.Json;
-using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 using UnityEngine;
 
@@ -353,7 +352,7 @@ namespace Unity.Build.Tests
 
             public int Version => 1;
 
-            public TestBuildComponentA Migrate(JsonMigrationContext context)
+            public TestBuildComponentA Migrate(in JsonMigrationContext context)
             {
                 context.TryRead<TestBuildComponentA>(out var component);
                 if (context.SerializedVersion == 0)

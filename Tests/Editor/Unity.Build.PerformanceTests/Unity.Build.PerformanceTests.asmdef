@@ -3,7 +3,6 @@
     "references": [
         "Unity.Build",
         "Unity.Properties",
-        "Unity.Properties.Editor",
         "Unity.Serialization",
         "Unity.PerformanceTesting"
     ],

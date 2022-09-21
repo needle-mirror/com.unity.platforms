@@ -1,11 +1,11 @@
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
 namespace Unity.Build.Editor
 {
-    class BuildComponentInspector : Inspector<BuildComponentInspectorData>
+    class BuildComponentInspector : PropertyInspector<BuildComponentInspectorData>
     {
         struct Classes
         {

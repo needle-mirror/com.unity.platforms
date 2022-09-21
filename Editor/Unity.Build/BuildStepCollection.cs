@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.Editor;
+using Unity.Properties;
 
 namespace Unity.Build
 {
@@ -28,7 +28,7 @@ namespace Unity.Build
         /// <param name="types">The build step types.</param>
         public BuildStepCollection(params Type[] types)
         {
-            m_BuildSteps = types.Select(type => TypeConstruction.Construct<BuildStepBase>(type)).ToArray();
+            m_BuildSteps = types.Select(type => TypeUtility.Instantiate<BuildStepBase>(type)).ToArray();
         }
 
         /// <summary>

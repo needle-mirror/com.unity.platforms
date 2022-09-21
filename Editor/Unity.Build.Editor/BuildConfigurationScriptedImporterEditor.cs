@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -92,9 +92,9 @@ namespace Unity.Build.Editor
             }
         }
 
-        protected override void ResetValues()
+        public override void DiscardChanges()
         {
-            base.ResetValues();
+            base.DiscardChanges();
             for (int i = 0; i < targets.Length; ++i)
             {
                 var target = targets[i];
@@ -179,7 +179,7 @@ namespace Unity.Build.Editor
                         break;
 
                     case 1: // Revert
-                        ResetValues();
+                        DiscardChanges();
                         AssetDatabase.Refresh();
                         break;
 

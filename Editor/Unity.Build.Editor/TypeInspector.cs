@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.Editor;
-using Unity.Properties.UI;
+using Unity.Properties;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -14,7 +14,7 @@ namespace Unity.Build.Editor
     /// Base inspector class for <see cref="Type"/> searcher field.
     /// </summary>
     /// <typeparam name="T">Type to populate the searcher with.</typeparam>
-    public abstract class TypeInspector<T> : Inspector<T>
+    internal abstract class TypeInspector<T> : PropertyInspector<T>
     {
         TextElement m_TextElement;
 
@@ -64,7 +64,7 @@ namespace Unity.Build.Editor
                         continue;
                     }
 
-                    if (!TypeConstruction.CanBeConstructed(type))
+                    if (!TypeUtility.CanBeInstantiated(type))
                     {
                         continue;
                     }
@@ -91,7 +91,7 @@ namespace Unity.Build.Editor
                 searchWindow.OnSelection += item =>
                 {
                     var type = (Type)item.Data;
-                    if (TypeConstruction.TryConstruct<T>(type, out var instance))
+                    if (TypeUtility.TryInstantiate<T>(type, out var instance))
                     {
                         Target = instance;
                         m_TextElement.text = GetName(type);
@@ -100,8 +100,9 @@ namespace Unity.Build.Editor
 
                 var rect = EditorWindow.focusedWindow.position;
                 var button = input.worldBound;
-                searchWindow.position = new Rect(rect.x + button.x, rect.y + button.y + button.height, 230, 315);
-                searchWindow.ShowPopup();
+                var buttonAbsolute = new Rect(rect.x + button.x, rect.y + button.y, button.width, button.height);
+
+                searchWindow.ShowAsDropDown(buttonAbsolute, new Vector2(230, 315));
 
                 e.StopPropagation();
             });

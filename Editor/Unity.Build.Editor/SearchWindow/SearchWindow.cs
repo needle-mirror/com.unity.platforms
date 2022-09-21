@@ -38,6 +38,7 @@ namespace UnityEngine.UIExtras
         public static SearchWindow Create()
         {
             SearchWindow window = EditorWindow.CreateInstance<SearchWindow>();
+
             return window;
         }
 
@@ -45,11 +46,6 @@ namespace UnityEngine.UIExtras
         private void OnFocus()
         {
             m_SearchView.Q<SearchField>().Q("unity-text-input").Focus();
-        }
-
-        private void OnLostFocus()
-        {
-            Close();
         }
     }
 }

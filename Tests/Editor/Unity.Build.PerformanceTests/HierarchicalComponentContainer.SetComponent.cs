@@ -2,7 +2,6 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using Unity.PerformanceTesting;
-using Unity.Properties.Editor;
 
 namespace Unity.Build.PerformanceTests
 {

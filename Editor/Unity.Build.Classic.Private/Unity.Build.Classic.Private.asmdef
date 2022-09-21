@@ -6,9 +6,8 @@
         "Unity.Build.Classic",
         "Unity.Build.Editor",
         "Unity.Properties",
-        "Unity.Properties.Editor",
-        "Unity.Properties.UI",
-        "Unity.Properties.UI.Editor",
+        "Unity.Platforms.UI",
+        "Unity.Platforms.UI.Editor",
         "Unity.Serialization",
         "Unity.ScriptableBuildPipeline",
         "Unity.ScriptableBuildPipeline.Editor"

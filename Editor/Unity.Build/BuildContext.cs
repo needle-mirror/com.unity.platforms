@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.Editor;
+using Unity.Properties;
 
 namespace Unity.Build
 {
@@ -98,7 +98,7 @@ namespace Unity.Build
             var artifact = GetBuildArtifact(buildArtifactType);
             if (artifact == null)
             {
-                artifact = TypeConstruction.Construct<IBuildArtifact>(buildArtifactType);
+                artifact = TypeUtility.Instantiate<IBuildArtifact>(buildArtifactType);
                 SetBuildArtifact(artifact);
             }
             return artifact;
@@ -115,7 +115,7 @@ namespace Unity.Build
             var artifact = GetBuildArtifact<T>();
             if (artifact == null)
             {
-                artifact = TypeConstruction.Construct<T>();
+                artifact = TypeUtility.Instantiate<T>();
                 SetBuildArtifact(artifact);
             }
             return artifact;

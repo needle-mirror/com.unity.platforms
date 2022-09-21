@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.Editor;
+using Unity.Properties;
 using UnityEditor;
 using UnityEngine;
 
@@ -90,7 +90,7 @@ namespace Unity.Build
             var value = GetValue<T>();
             if (value == null)
             {
-                value = TypeConstruction.Construct<T>();
+                value = TypeUtility.Instantiate<T>();
                 SetValue(value);
             }
             return value;
@@ -106,7 +106,7 @@ namespace Unity.Build
         public T GetValueOrDefault<T>() where T : class
         {
             ValidateValueTypeAndThrow(typeof(T));
-            return GetValue<T>() ?? TypeConstruction.Construct<T>();
+            return GetValue<T>() ?? TypeUtility.Instantiate<T>();
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace Unity.Build
         public void SetValue<T>() where T : class
         {
             ValidateValueTypeAndThrow(typeof(T));
-            SetValue(TypeConstruction.Construct<T>());
+            SetValue(TypeUtility.Instantiate<T>());
         }
 
         /// <summary>
@@ -410,7 +410,7 @@ namespace Unity.Build
         /// NOTE: The build configuration asset is not modified.
         /// </summary>
         /// <param name="type">Type of the component.</param>
-        public void SetComponent(Type type) => SetComponent(type, TypeConstruction.Construct<IBuildComponent>(type));
+        public void SetComponent(Type type) => SetComponent(type, TypeUtility.Instantiate<IBuildComponent>(type));
 
         /// <summary>
         /// Set the value of a component type on this context using an instance created using <see cref="TypeConstruction"/> utility.

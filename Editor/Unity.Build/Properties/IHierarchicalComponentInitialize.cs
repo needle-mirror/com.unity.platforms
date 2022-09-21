@@ -1,5 +1,3 @@
-using Unity.Properties.Editor;
-
 namespace Unity.Build
 {
     /// <summary>

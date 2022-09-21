@@ -1,5 +1,5 @@
 using Unity.Build.Editor;
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEngine.UIElements;
 
@@ -21,7 +21,7 @@ namespace Unity.Build.Classic
 
         public override VisualElement Build()
         {
-            var root = Resources.ClassicBuildProfile.Clone();
+            var root = Unity.Build.Editor.Resources.ClassicBuildProfile.Clone();
 
             var platform = root.Q("platform");
             DoDefaultGui(platform, nameof(ClassicBuildProfile.Platform));

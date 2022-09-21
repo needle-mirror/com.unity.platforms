@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Unity.Properties.Editor;
+using System.Text;
+using Unity.Properties;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions;
 using PackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Unity.Build
@@ -72,11 +74,6 @@ namespace Unity.Build
                 Debug.LogFormat(LogType.Log, LogOption.NoStacktrace, null, "Started installation of {0} platform package [{1}].", DisplayName, PackageId);
         }
 
-        /// <summary>
-        /// Get current platform name.
-        /// </summary>
-        /// <param name="legacyName"></param>
-        /// <returns>A the current platform name if the legacy name is found. Returns the input parameter otherwise.</returns>
         public static string GetNameFromLegacyName(string legacyName)
         {
             string name = legacyName.ToLowerInvariant();
@@ -135,8 +132,8 @@ namespace Unity.Build
                 .Where(type => type != typeof(MissingPlatform))
                 .Where(type => !type.IsAbstract && !type.IsGenericType)
                 .Where(type => !type.HasAttribute<ObsoleteAttribute>())
-                .Where(TypeConstruction.CanBeConstructed)
-                .Select(TypeConstruction.Construct<Platform>);
+                .Where(TypeUtility.CanBeInstantiated)
+                .Select(TypeUtility.Instantiate<Platform>);
 
             var platformsByName = new Dictionary<string, Platform>();
             foreach (var platform in platforms)

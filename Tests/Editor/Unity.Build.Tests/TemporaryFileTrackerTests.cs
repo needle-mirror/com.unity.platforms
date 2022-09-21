@@ -12,15 +12,14 @@ namespace Unity.Build.Tests
         [SetUp]
         public void Setup()
         {
-            m_TestDirectory = "Assets/" + Path.GetRandomFileName();
-            Directory.CreateDirectory(m_TestDirectory);
+            var guid = AssetDatabase.CreateFolder("Assets", nameof(TemporaryFileTrackerTests));
+            m_TestDirectory = AssetDatabase.GUIDToAssetPath(guid);
         }
 
         [TearDown]
         public void Teardown()
         {
-            FileUtil.DeleteFileOrDirectory(m_TestDirectory);
-            FileUtil.DeleteFileOrDirectory(m_TestDirectory + ".meta");
+            AssetDatabase.DeleteAsset(m_TestDirectory);
         }
 
         [Test]

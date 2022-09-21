@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -11,7 +11,7 @@ using UnityEngine.UIExtras;
 
 namespace Unity.Build.Editor
 {
-    class BuildConfigurationInspector : Inspector<BuildConfigurationInspectorData>
+    class BuildConfigurationInspector : PropertyInspector<BuildConfigurationInspectorData>
     {
         struct Classes
         {
@@ -78,10 +78,9 @@ namespace Unity.Build.Editor
         static readonly BuildAction[] s_ActionsNoRun = new[] { s_BuildAction, s_BuildAndRunAction, s_CleanAction };
         static Platform lastPlatform;
 
-        SearchElement m_Search;
+        //static BuildAction[] s_ValidActions = null;
+
         VisualElement m_Components;
-        Dictionary<BuildComponentInspectorData, PropertyElement> m_ComponentsMap;
-        bool m_SearchBindingRegistered;
         bool actionsEnabled;
 
         public static bool ShowUsedComponents
@@ -273,15 +272,33 @@ namespace Unity.Build.Editor
                 element.Q<Button>("remove").clickable = new Clickable(() =>
                 {
                     Target.Dependencies.RemoveAt(index);
+#if UNITY_2022_2_OR_NEWER
+                    dependencies.style.minHeight = Target.Dependencies.Count * dependencies.fixedItemHeight;
+#else
                     dependencies.style.minHeight = Target.Dependencies.Count * dependencies.itemHeight;
+#endif
+
+#if UNITY_2022_1_OR_NEWER
+                    dependencies.Rebuild();
+#else
                     dependencies.Refresh();
+#endif
                 });
             };
+
+#if UNITY_2022_2_OR_NEWER
+            dependencies.fixedItemHeight = 22;
+#else
             dependencies.itemHeight = 22;
+#endif
             dependencies.selectionType = SelectionType.Single;
             dependencies.reorderable = true;
             dependencies.style.flexGrow = 1;
+#if UNITY_2022_2_OR_NEWER
+            dependencies.style.minHeight = Target.Dependencies.Count * dependencies.fixedItemHeight;
+#else
             dependencies.style.minHeight = Target.Dependencies.Count * dependencies.itemHeight;
+#endif
 
             var addDependency = dependenciesFoldout.Q<Button>("add");
             addDependency.SetEnabled(!Target.IsReadOnly);
@@ -289,15 +306,21 @@ namespace Unity.Build.Editor
             addDependency.clickable.clicked += () =>
             {
                 Target.Dependencies.Add(default);
+
+#if UNITY_2022_2_OR_NEWER
+                dependencies.style.minHeight = Target.Dependencies.Count * dependencies.fixedItemHeight;
+#else
                 dependencies.style.minHeight = Target.Dependencies.Count * dependencies.itemHeight;
+#endif
+
+#if UNITY_2022_1_OR_NEWER
+                dependencies.Rebuild();
+#else
                 dependencies.Refresh();
+#endif
             };
 
-            m_Search = root.Q<SearchElement>("search");
-            m_Search.AddSearchDataCallback<BuildComponentInspectorData>(c => new[] { c.ComponentName }.Concat(c.FieldNames));
-
             m_Components = root.Q("components");
-            m_ComponentsMap = new Dictionary<BuildComponentInspectorData, PropertyElement>(Target.Components.Length);
             UpdateComponents();
 
             var addComponentButton = root.Q<Button>("add-component");
@@ -347,15 +370,14 @@ namespace Unity.Build.Editor
 
                 var rect = EditorWindow.focusedWindow.position;
                 var button = addComponentButton.worldBound;
-                searchWindow.position = new Rect(rect.x + button.x, rect.y + button.y + button.height, button.width, 315);
-                searchWindow.ShowPopup();
+                var buttonAbsolute = new Rect(rect.x + button.x, rect.y + button.y, button.width, button.height);
+
+                searchWindow.ShowAsDropDown(buttonAbsolute, new Vector2(button.width, 315));
             };
 
             Target.OnComponentsChanged += () =>
             {
-                m_Search.value = string.Empty;
                 m_Components.Clear();
-                m_ComponentsMap.Clear();
                 UpdateComponents();
             };
             Target.Dependencies.OnChanged += () => Target.RefreshComponents();
@@ -382,33 +404,6 @@ namespace Unity.Build.Editor
         public override void Update()
         {
             UpdatePlatform();
-
-            if (!m_SearchBindingRegistered)
-            {
-                var handler = m_Search.GetUxmlSearchHandler() as SearchHandler<BuildComponentInspectorData>;
-                if (handler == null)
-                {
-                    return;
-                }
-
-                handler.OnBeginSearch += query =>
-                {
-                    foreach (var element in m_ComponentsMap.Values)
-                    {
-                        element.style.display = DisplayStyle.None;
-                    }
-                };
-
-                handler.OnFilter += (query, filtered) =>
-                {
-                    foreach (var component in filtered)
-                    {
-                        m_ComponentsMap[component].style.display = DisplayStyle.Flex;
-                    }
-                };
-
-                m_SearchBindingRegistered = true;
-            }
         }
 
         void UpdateComponents()
@@ -418,7 +413,6 @@ namespace Unity.Build.Editor
                 var element = new PropertyElement();
                 element.SetTarget(component);
                 m_Components.Add(element);
-                m_ComponentsMap.Add(component, element);
             }
         }
     }

@@ -1,4 +1,4 @@
-<UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:uip="Unity.Properties.UI">
+<UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xmlns:platforms="Unity.Platforms.UI">
   <ui:VisualElement name="header" class="build-configuration__header">
     <ui:VisualElement style="flex-direction: row; flex-grow: 1">
       <ui:BindableElement name="icon" class="build-configuration__icon"/>
@@ -21,9 +21,6 @@
       </ui:VisualElement>
     </ui:VisualElement>
   </ui:Foldout>
-  <ui:VisualElement name="search-container" class="build-configuration__search-container">
-    <uip:SearchElement name="search" handler-type="async" search-filters="c:ComponentName f:FieldNames" source-data="Components" filtered-data="FilteredComponents"/>
-  </ui:VisualElement>
   <ui:VisualElement name="components" class="build-configuration__components"/>
   <ui:VisualElement name="footer" class="build-configuration__footer">
     <ui:Button name="add-component" class="build-configuration__add-component"/>

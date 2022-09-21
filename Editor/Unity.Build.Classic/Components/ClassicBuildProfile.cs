@@ -2,7 +2,6 @@
 using Unity.Properties;
 using Unity.Serialization;
 using Unity.Serialization.Json;
-using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 
 namespace Unity.Build.Classic
@@ -121,7 +120,7 @@ namespace Unity.Build.Classic
 
             public int Version => 1;
 
-            public ClassicBuildProfile Migrate(JsonMigrationContext context)
+            public ClassicBuildProfile Migrate(in JsonMigrationContext context)
             {
                 context.TryRead<ClassicBuildProfile>(out var profile);
                 if (context.SerializedVersion == 0)

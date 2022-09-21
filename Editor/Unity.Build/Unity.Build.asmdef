@@ -3,11 +3,9 @@
     "references": [
         "Unity.InternalAPIEditorBridge.012",
         "Unity.Properties",
-        "Unity.Properties.Editor",
-        "Unity.Properties.UI",
-        "Unity.Properties.UI.Editor",
-        "Unity.Serialization",
-        "Unity.Serialization.Properties"
+        "Unity.Platforms.UI",
+        "Unity.Platforms.UI.Editor",
+        "Unity.Serialization"
     ],
     "includePlatforms": [
         "Editor"

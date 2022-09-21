@@ -1,5 +1,4 @@
 using Unity.Serialization.Json;
-using Unity.Serialization.Json.Adapters;
 using UnityEditor;
 
 namespace Unity.Build
@@ -9,24 +8,24 @@ namespace Unity.Build
         [InitializeOnLoadMethod]
         static void Register() => JsonSerialization.AddGlobalAdapter(new PlatformJsonAdapter());
 
-        public void Serialize(JsonStringBuffer writer, Platform value)
+        void IJsonAdapter<Platform>.Serialize(in JsonSerializationContext<Platform> context, Platform value)
         {
             string json = null;
             if (value != null)
             {
                 json = value.Name;
             }
-            writer.WriteEncodedJsonString(json);
+            context.Writer.WriteValue(json);
         }
 
-        public Platform Deserialize(SerializedValueView view)
+        Platform IJsonAdapter<Platform>.Deserialize(in JsonDeserializationContext<Platform> context)
         {
-            if (view.Type != TokenType.String)
+            if (context.SerializedValue.Type != TokenType.String)
             {
                 return null;
             }
 
-            var json = view.AsStringView().ToString();
+            var json = context.SerializedValue.AsStringView().ToString();
             if (string.IsNullOrEmpty(json))
             {
                 return null;

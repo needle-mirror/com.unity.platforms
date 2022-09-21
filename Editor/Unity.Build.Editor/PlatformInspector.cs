@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -9,7 +9,7 @@ using UnityEngine.UIExtras;
 
 namespace Unity.Build.Editor
 {
-    sealed class PlatformInspector : Inspector<Platform>
+    sealed class PlatformInspector : PropertyInspector<Platform>
     {
         TextElement m_TextElement;
 
@@ -54,8 +54,9 @@ namespace Unity.Build.Editor
 
                 var rect = EditorWindow.focusedWindow.position;
                 var button = input.worldBound;
-                searchWindow.position = new Rect(rect.x + button.x, rect.y + button.y + button.height, 230, 315);
-                searchWindow.ShowPopup();
+                var buttonAbsolute = new Rect(rect.x + button.x, rect.y + button.y, button.width, button.height);
+
+                searchWindow.ShowAsDropDown(buttonAbsolute, new Vector2(230, 315));
 
                 e.StopPropagation();
             });

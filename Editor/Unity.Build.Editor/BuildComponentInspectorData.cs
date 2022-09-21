@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Properties;
-using Unity.Properties.UI;
+using Unity.Platforms.UI;
 using UnityEditor;
 using UnityEngine;
 
@@ -49,7 +49,7 @@ namespace Unity.Build.Editor
             ComponentName = ObjectNames.NicifyVariableName(ComponentType.Name);
 
             var visitor = new ComponentVisitor();
-            PropertyContainer.Visit(ref value, visitor);
+            PropertyContainer.Accept(visitor, ref value);
             FieldNames = visitor.FieldNames;
 
             IsPipelineComponent = typeof(IBuildPipelineComponent).IsAssignableFrom(ComponentType);
